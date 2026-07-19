@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Coach",
-  description: "Personality-led training coach",
+  title: "Vaeon",
+  description: "Your bespoke personal trainer and accountability partner",
 };
 
 export default function RootLayout({ children }) {
