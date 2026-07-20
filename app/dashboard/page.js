@@ -164,4 +164,3 @@ export default async function DashboardPage() {
     </main>
   );
 }
-import { redirect } from "next/navigation";
