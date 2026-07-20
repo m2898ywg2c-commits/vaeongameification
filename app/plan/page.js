@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { buildWeek, goalNames, defaultSessionType } from "@/lib/training";
+import { buildWeek, goalNames, defaultSessionType, primaryCategory } from "@/lib/training";
+import { weeksFor, currentWeek, workingWeight, increaseHint, BLOCK_WEEKS } from "@/lib/progression";
 
 export default function PlanPage() {
   const [profile, setProfile] = useState(null);
@@ -91,6 +92,11 @@ export default function PlanPage() {
 
   const day = week[active];
   const names = goalNames(profile.goals);
+  const category = primaryCategory(profile.goals);
+  const weekNo = currentWeek(profile.block_start);
+  const weekRules = weeksFor(category);
+  const rule = weekRules[weekNo - 1] || weekRules[0];
+  const hasBaselines = profile.baseline_bench || profile.baseline_squat;
 
   return (
     <main className="min-h-screen bg-[#0E1224] text-white px-6 py-10">
@@ -98,7 +104,30 @@ export default function PlanPage() {
         <a href="/dashboard" className="text-xs text-gray-400 underline">Back to dashboard</a>
         <h1 className="text-2xl font-bold mt-4 mb-1">Your plan this week</h1>
         <p className="text-sm text-gray-400 mb-1">{names.join(" + ")}</p>
-        <p className="text-xs text-gray-500 mb-6">{profile.sessions_per_week} sessions a week</p>
+        <p className="text-xs text-gray-500 mb-5">{profile.sessions_per_week} sessions a week</p>
+
+        <div className="rounded-xl border border-white/10 bg-white/5 p-5 mb-5">
+          <div className="flex items-baseline justify-between mb-2">
+            <p className="text-lg font-bold">
+              Week {weekNo} of {BLOCK_WEEKS}
+            </p>
+            <span
+              className="text-xs font-bold px-3 py-1 rounded-full"
+              style={{ background: "linear-gradient(90deg, #4CC9F0, #FF6B57)", color: "#0E1224" }}
+            >
+              {rule.label}
+            </span>
+          </div>
+          <p className="text-sm text-gray-200 mb-3">{rule.focus}</p>
+          <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">This week is increases</p>
+          <p className="text-sm text-gray-300">{rule.increase}</p>
+          {!profile.block_start ? (
+            <p className="text-xs text-amber-400 mt-3">
+              No block start date set, so this defaults to week 1.{" "}
+              <a href="/settings" className="underline">Set it in Settings</a>.
+            </p>
+          ) : null}
+        </div>
 
         <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
           {week.map(function (dd, i) {
@@ -137,11 +166,21 @@ export default function PlanPage() {
 
         <div className="space-y-4 mb-6">
           {day.exercises.map(function (ex) {
+            const target = category === "endurance" ? null : workingWeight(ex.name, profile, rule.pct);
             return (
               <div key={ex.name} className="rounded-xl border border-white/10 bg-white/5 p-4">
                 <p className="font-bold text-sm">{ex.name}</p>
                 <p className="text-xs text-gray-400 mb-1">{ex.sets} sets x {ex.reps}</p>
-                {ex.note ? <p className="text-xs text-gray-500 mb-3">{ex.note}</p> : null}
+                {target ? (
+                  <p className="text-sm mb-1">
+                    <span className="text-emerald-400 font-bold">Work at {target}kg</span>
+                    <span className="text-gray-500"> ({Math.round(rule.pct * 100)}% of baseline)</span>
+                  </p>
+                ) : null}
+                {ex.note ? <p className="text-xs text-gray-500 mb-1">{ex.note}</p> : null}
+                {category !== "endurance" ? (
+                  <p className="text-xs text-gray-500 mb-3">{increaseHint(ex.name)}</p>
+                ) : null}
                 <div className="space-y-2">
                   {Array.from({ length: ex.sets }).map(function (_, i) {
                     const k = key(ex.name, i);
@@ -152,7 +191,7 @@ export default function PlanPage() {
                         <input
                           value={v.weight || ""}
                           onChange={function (e) { setField(ex.name, i, "weight", e.target.value); }}
-                          placeholder="kg"
+                          placeholder={target ? String(target) : "kg"}
                           inputMode="decimal"
                           className="w-16 px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm placeholder-gray-600"
                         />
@@ -177,6 +216,16 @@ export default function PlanPage() {
             );
           })}
         </div>
+
+        {!hasBaselines && category !== "endurance" ? (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 mb-6">
+            <p className="text-sm text-amber-200">
+              Set your bench and squat baselines in{" "}
+              <a href="/settings" className="underline font-bold">Settings</a>{" "}
+              and Vaeon will tell you exactly what to load each week.
+            </p>
+          </div>
+        ) : null}
 
         {day.conditioning && day.conditioning.length ? (
           <div className="mb-6">
