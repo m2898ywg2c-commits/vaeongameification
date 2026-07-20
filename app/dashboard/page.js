@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { TYPES } from "@/lib/personality";
 import { computeStats, coachMessage } from "@/lib/plan";
-import { goalNames, adherenceScore } from "@/lib/training";
+import { goalNames, adherenceScore, primaryCategory } from "@/lib/training";
+import { currentWeek, weeksFor, blockComplete, BLOCK_WEEKS } from "@/lib/progression";
 import SignOutButton from "./SignOutButton";
 
 export default async function DashboardPage() {
@@ -38,6 +39,10 @@ export default async function DashboardPage() {
   const score = adherenceScore(stats.thisWeekCount, pledged);
   const nudge = type ? coachMessage(assessment.type_id, stats) : null;
   const names = goalNames(profile.goals);
+  const category = primaryCategory(profile.goals);
+  const weekNo = currentWeek(profile.block_start);
+  const rule = weeksFor(category)[weekNo - 1] || weeksFor(category)[0];
+  const finished = blockComplete(profile.block_start);
 
   return (
     <main className="min-h-screen bg-[#0E1224] text-white px-6 py-10">
@@ -64,6 +69,26 @@ export default async function DashboardPage() {
             <p className="text-[10px] uppercase tracking-wide text-gray-400 mt-1">Week streak</p>
             <p className="text-[10px] text-gray-500 mt-1">{stats.totalXp} xp</p>
           </div>
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-white/5 p-5 mb-4">
+          <div className="flex items-baseline justify-between mb-1">
+            <p className="text-sm font-bold">
+              Block {profile.block_number || 1}, week {weekNo} of {BLOCK_WEEKS}
+            </p>
+            <span className="text-xs text-gray-400">{rule.label}</span>
+          </div>
+          <p className="text-sm text-gray-300">{rule.increase}</p>
+          {finished ? (
+            <p className="text-sm text-emerald-400 mt-3">
+              Block complete. <a href="/settings" className="underline">Update your baselines and start the next one</a>.
+            </p>
+          ) : null}
+          {!profile.block_start ? (
+            <p className="text-xs text-amber-400 mt-3">
+              <a href="/settings" className="underline">Set your block start date</a> so this tracks properly.
+            </p>
+          ) : null}
         </div>
 
         {type ? (
@@ -105,17 +130,22 @@ export default async function DashboardPage() {
           </a>
           <a href="/progress" className="rounded-xl border border-white/10 bg-white/5 p-4">
             <p className="text-sm font-bold">Progress</p>
-            <p className="text-xs text-gray-400 mt-1">Measurements and lifts</p>
+            <p className="text-xs text-gray-400 mt-1">Is it actually working?</p>
           </a>
           <a href="/fallback" className="rounded-xl border border-white/10 bg-white/5 p-4">
             <p className="text-sm font-bold">Cannot get to the gym</p>
             <p className="text-xs text-gray-400 mt-1">Desk, hotel or home</p>
           </a>
-          <a href="/onboarding" className="rounded-xl border border-white/10 bg-white/5 p-4">
-            <p className="text-sm font-bold">Change goals</p>
-            <p className="text-xs text-gray-400 mt-1">Goals and sessions a week</p>
+          <a href="/settings" className="rounded-xl border border-white/10 bg-white/5 p-4">
+            <p className="text-sm font-bold">Settings</p>
+            <p className="text-xs text-gray-400 mt-1">Block dates and baselines</p>
           </a>
         </div>
+
+        <a href="/onboarding" className="block rounded-xl border border-white/10 bg-white/5 p-4 mb-4">
+          <p className="text-sm font-bold">Change goals</p>
+          <p className="text-xs text-gray-400 mt-1">Goals and sessions a week</p>
+        </a>
 
         {type ? (
           <div className="rounded-xl border border-white/10 bg-white/5 p-5">
@@ -134,3 +164,4 @@ export default async function DashboardPage() {
     </main>
   );
 }
+import { redirect } from "next/navigation";
