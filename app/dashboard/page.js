@@ -5,6 +5,7 @@ import { computeStats, coachMessage } from "@/lib/plan";
 import { goalNames, adherenceScore, primaryCategory } from "@/lib/training";
 import { currentWeek, weeksFor, blockComplete, BLOCK_WEEKS } from "@/lib/progression";
 import SignOutButton from "./SignOutButton";
+import AchievementWatcher from "./AchievementWatcher";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -33,9 +34,9 @@ export default async function DashboardPage() {
     .order("logged_at", { ascending: false })
     .limit(300);
 
-  const type = assessment ? TYPES[assessment.type_id] : null;
-  const stats = computeStats(sessions || []);
   const pledged = profile.sessions_per_week || 3;
+  const type = assessment ? TYPES[assessment.type_id] : null;
+  const stats = computeStats(sessions || [], pledged);
   const score = adherenceScore(stats.thisWeekCount, pledged);
   const nudge = type ? coachMessage(assessment.type_id, stats) : null;
   const names = goalNames(profile.goals);
@@ -43,6 +44,11 @@ export default async function DashboardPage() {
   const weekNo = currentWeek(profile.block_start);
   const rule = weeksFor(category)[weekNo - 1] || weeksFor(category)[0];
   const finished = blockComplete(profile.block_start);
+
+  const plain = {
+    sessions_per_week: pledged,
+    block_start: profile.block_start || null,
+  };
 
   return (
     <main className="min-h-screen bg-[#0E1224] text-white px-6 py-10">
@@ -123,6 +129,8 @@ export default async function DashboardPage() {
           </div>
         )}
 
+        <AchievementWatcher profile={plain} />
+
         <div className="grid grid-cols-2 gap-3 mb-4">
           <a href="/leaderboard" className="rounded-xl border border-white/10 bg-white/5 p-4">
             <p className="text-sm font-bold">Leaderboard</p>
@@ -164,3 +172,4 @@ export default async function DashboardPage() {
     </main>
   );
 }
+import { redirect } from "next/navigation";
