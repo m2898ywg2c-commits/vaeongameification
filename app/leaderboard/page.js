@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Home from "../Home";
 
 export default function LeaderboardPage() {
   const [rows, setRows] = useState([]);
@@ -27,8 +28,10 @@ export default function LeaderboardPage() {
   return (
     <main className="min-h-screen bg-[#0E1224] text-white px-6 py-10">
       <div className="max-w-md mx-auto">
-        <a href="/dashboard" className="text-xs text-gray-400 underline">Back to dashboard</a>
-        <h1 className="text-2xl font-bold mt-4 mb-2">This week</h1>
+        <div className="mb-6">
+          <Home />
+        </div>
+        <h1 className="text-2xl font-bold mb-2">This week</h1>
         <p className="text-sm text-gray-300 mb-6">
           Scored on the percentage of your own pledge you actually hit, so someone training twice
           a week can top someone training six. Pledging more days gives a small edge, but only if
@@ -74,4 +77,3 @@ export default function LeaderboardPage() {
     </main>
   );
 }
-
