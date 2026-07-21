@@ -11,12 +11,24 @@ const EQUIPMENT = [
   { id: "none", icon: "🤸", name: "Freestyling it", blurb: "Bodyweight, the park, whatever is to hand." },
 ];
 
+// 0 = Sunday, matching profiles.train_days
+const WEEKDAYS = [
+  { n: 1, short: "Mon" },
+  { n: 2, short: "Tue" },
+  { n: 3, short: "Wed" },
+  { n: 4, short: "Thu" },
+  { n: 5, short: "Fri" },
+  { n: 6, short: "Sat" },
+  { n: 0, short: "Sun" },
+];
+
 export default function OnboardingPage() {
   const [step, setStep] = useState("goals");
   const [picked, setPicked] = useState([]);
   const [sessions, setSessions] = useState(3);
   const [equipment, setEquipment] = useState("gym");
   const [fixedDays, setFixedDays] = useState(null);
+  const [trainDays, setTrainDays] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const router = useRouter();
@@ -24,6 +36,11 @@ export default function OnboardingPage() {
   const toggle = function (id) {
     if (picked.indexOf(id) !== -1) setPicked(picked.filter(function (g) { return g !== id; }));
     else if (picked.length < 2) setPicked(picked.concat([id]));
+  };
+
+  const toggleDay = function (n) {
+    if (trainDays.indexOf(n) !== -1) setTrainDays(trainDays.filter(function (d) { return d !== n; }));
+    else setTrainDays(trainDays.concat([n]).sort(function (a, b) { return a - b; }));
   };
 
   const save = async function () {
@@ -38,6 +55,7 @@ export default function OnboardingPage() {
       sessions_per_week: sessions,
       equipment: equipment,
       fixed_days: fixedDays === null ? true : fixedDays,
+      train_days: fixedDays ? trainDays : [],
     }).eq("id", user.id);
     setSaving(false);
     if (e) { setError(e.message); return; }
@@ -50,7 +68,7 @@ export default function OnboardingPage() {
       (active ? "border-white bg-white/20" : "border-white/10 bg-white/5");
   };
 
-  const primaryBtn = { background: "linear-gradient(90deg, #4CC9F0, #FF6B57)", color: "#0E1224" };
+  const primaryBtn = { background: "linear-gradient(90deg, #2DD4BF, #0F766E)", color: "#0E1224" };
   const dimBtn = { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" };
 
   if (step === "equipment") {
@@ -116,6 +134,10 @@ export default function OnboardingPage() {
   }
 
   if (step === "days") {
+    const needsDays = fixedDays === true && trainDays.length === 0;
+    const blocked = fixedDays === null || needsDays;
+    const mismatch = fixedDays === true && trainDays.length > 0 && trainDays.length !== sessions;
+
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
         <div className="w-full max-w-md">
@@ -127,16 +149,16 @@ export default function OnboardingPage() {
           <div className="space-y-3 mb-8">
             <button onClick={function () { setFixedDays(true); }} className={card(fixedDays === true)}>
               <span className="flex items-center gap-3">
-                <span className="text-2xl" aria-hidden="true">📅</span>
+                <span className="text-2xl" aria-hidden="true">&#128197;</span>
                 <span>
                   <span className="block font-bold">Yes, give me days</span>
                   <span className="block text-xs text-gray-400">Mon, Tue, Wed and so on</span>
                 </span>
               </span>
             </button>
-            <button onClick={function () { setFixedDays(false); }} className={card(fixedDays === false)}>
+            <button onClick={function () { setFixedDays(false); setTrainDays([]); }} className={card(fixedDays === false)}>
               <span className="flex items-center gap-3">
-                <span className="text-2xl" aria-hidden="true">🔢</span>
+                <span className="text-2xl" aria-hidden="true">&#128290;</span>
                 <span>
                   <span className="block font-bold">No, just number them</span>
                   <span className="block text-xs text-gray-400">Session 1, 2, 3. Do them whenever suits.</span>
@@ -144,12 +166,38 @@ export default function OnboardingPage() {
               </span>
             </button>
           </div>
+
+          {fixedDays === true ? (
+            <div className="mb-8">
+              <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">Which days?</p>
+              <div className="grid grid-cols-4 gap-2">
+                {WEEKDAYS.map(function (d) {
+                  const on = trainDays.indexOf(d.n) !== -1;
+                  return (
+                    <button
+                      key={d.n}
+                      onClick={function () { toggleDay(d.n); }}
+                      className={"py-4 rounded-2xl border text-sm font-bold " + (on ? "border-white bg-white/20" : "border-white/10 bg-white/5")}
+                    >
+                      {d.short}
+                    </button>
+                  );
+                })}
+              </div>
+              {mismatch ? (
+                <p className="text-xs mt-3" style={{ color: "#FFB020" }}>
+                  {trainDays.length} day{trainDays.length === 1 ? "" : "s"} picked against a pledge of {sessions}. You can change either later.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           {error ? <p className="text-sm text-red-400 mb-3">{error}</p> : null}
           <div className="flex gap-3">
-            <button onClick={save} disabled={saving || fixedDays === null}
+            <button onClick={save} disabled={saving || blocked}
               className="px-6 py-3 rounded-full font-bold text-sm"
-              style={fixedDays === null ? dimBtn : primaryBtn}>
-              {saving ? "Saving..." : "Find my type"}
+              style={blocked ? dimBtn : primaryBtn}>
+              {saving ? "Saving..." : needsDays ? "Pick your days" : "Find my type"}
             </button>
             <button onClick={function () { setStep("sessions"); }} className="px-6 py-3 rounded-full font-bold text-sm border border-white/20">Back</button>
           </div>
@@ -186,4 +234,3 @@ export default function OnboardingPage() {
     </main>
   );
 }
-
