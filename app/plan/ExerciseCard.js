@@ -8,45 +8,63 @@ function videoLink(name) {
   return "https://www.youtube.com/results?search_query=" + encodeURIComponent(name + " proper form technique");
 }
 
-export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, doneSets, onComplete, onReopen }) {
+const BODYWEIGHT = ["push up", "press up", "push-up", "press-up", "pull up", "pull-up", "chin up",
+  "dip", "burpee", "mountain climber", "jumping jack", "pistol", "handstand", "muscle up",
+  "australian", "scapular", "nordic", "jump squat", "glute bridge", "sit up", "crunch",
+  "leg raise", "dead bug", "russian twist", "bodyweight", "step up", "high knee"];
+
+const TIMED = ["plank", "hold", "hang", "l-sit", "sit hold", "carry", "walk", "wall sit"];
+
+function loadType(ex) {
+  const reps = String(ex.reps || "").toLowerCase();
+  const name = String(ex.name || "").toLowerCase();
+  if (reps.indexOf("sec") !== -1 || reps.indexOf("min") !== -1) return "time";
+  if (TIMED.some(function (t) { return name.indexOf(t) !== -1; })) return "time";
+  if (reps.indexOf("m") !== -1 && /\d\s*k?m/.test(reps)) return "distance";
+  if (BODYWEIGHT.some(function (b) { return name.indexOf(b) !== -1; })) return "reps";
+  return "weight";
+}
+
+const HINTS = {
+  time: "Timed hold. Log how long you held it, in seconds.",
+  reps: "Bodyweight. No weight to log, just count your reps.",
+  distance: "Log your time or distance for this one.",
+  weight: "",
+};
+
+export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, onComplete, onReopen }) {
   const [fields, setFields] = useState({});
   const [tip, setTip] = useState(null);
 
   const total = Number(ex.sets) || 1;
-  const suggested = workingWeight(ex.name, profile, weekPct);
+  const kind = loadType(ex);
+  const suggested = kind === "weight" ? workingWeight(ex.name, profile, weekPct) : null;
   const swap = homeMode && needsGym(ex.name);
 
-  function key(i) { return dayKey + "|" + exIdx + "|" + i; }
-
-  let complete = true;
-  for (let i = 0; i < total; i++) {
-    if (!doneSets[key(i)]) { complete = false; break; }
-  }
-
-  function setField(k, which, val) {
+  function setField(i, which, val) {
     setFields(function (f) {
       const next = Object.assign({}, f);
-      next[k] = Object.assign({}, next[k] || {});
-      next[k][which] = val;
+      next[i] = Object.assign({}, next[i] || {});
+      next[i][which] = val;
       return next;
     });
   }
 
-  if (complete) {
+  if (done) {
     return (
       <button
         onClick={function () { onReopen(exIdx); }}
         className="w-full flex items-center gap-3 rounded-2xl p-4 mb-3 border text-left"
-        style={{ borderColor: "rgba(61,220,151,0.4)", background: "rgba(61,220,151,0.12)" }}
+        style={{ borderColor: "rgba(61,220,151,0.45)", background: "rgba(61,220,151,0.14)" }}
       >
-        <span className="text-xl" aria-hidden="true">OK</span>
+        <span className="text-lg font-bold" style={{ color: "#3DDC97" }}>&#10003;</span>
         <span className="flex-1 text-sm font-bold" style={{ color: "#3DDC97" }}>{ex.name}</span>
-        <span className="text-xs text-gray-400">{total} sets done</span>
+        <span className="text-xs text-gray-400">Tap to reopen</span>
       </button>
     );
   }
 
-  const bigField = "w-full px-3 py-4 rounded-2xl bg-white/10 border-2 border-white/15 text-xl font-bold text-center text-white placeholder-gray-500";
+  const field = "w-full px-3 py-4 rounded-2xl bg-white/10 border-2 border-white/15 text-xl font-bold text-center text-white placeholder-gray-500";
   const tipBtn = "flex-1 py-2 rounded-xl text-xs font-bold border border-white/15 bg-white/5";
 
   return (
@@ -57,7 +75,8 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
           {total} x {ex.reps}
         </span>
       </div>
-      {ex.note ? <p className="text-xs text-gray-400 mb-2">{ex.note}</p> : null}
+      {ex.note ? <p className="text-xs text-gray-400 mb-1">{ex.note}</p> : null}
+      {HINTS[kind] ? <p className="text-xs mb-2" style={{ color: accent }}>{HINTS[kind]}</p> : null}
 
       {suggested ? (
         <div className="rounded-xl px-3 py-2 mb-3" style={{ background: accent + "1A" }}>
@@ -83,40 +102,39 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       {tip === "coach" ? <p className="text-xs text-gray-300 mb-3 rounded-xl bg-white/5 p-3">{coachTip(ex.name)}</p> : null}
 
       {Array.from({ length: total }).map(function (_, i) {
-        const k = key(i);
-        if (doneSets[k]) return null;
-        const v = fields[k] || {};
+        const v = fields[i] || {};
         return (
           <div key={i} className="mb-3">
             <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">Set {i + 1}</p>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="number"
-                inputMode="decimal"
-                placeholder={suggested ? String(suggested) : "kg"}
-                value={v.weight || ""}
-                onChange={function (e) { setField(k, "weight", e.target.value); }}
-                className={bigField}
-              />
-              <input
-                type="number"
-                inputMode="numeric"
-                placeholder="reps"
-                value={v.reps || ""}
-                onChange={function (e) { setField(k, "reps", e.target.value); }}
-                className={bigField}
-              />
+            <div className="flex gap-2">
+              {kind === "weight" ? (
+                <input type="number" inputMode="decimal" placeholder={suggested ? String(suggested) : "kg"}
+                  value={v.weight || ""} onChange={function (e) { setField(i, "weight", e.target.value); }} className={field} />
+              ) : null}
+              {kind === "time" ? (
+                <input type="number" inputMode="numeric" placeholder="seconds"
+                  value={v.secs || ""} onChange={function (e) { setField(i, "secs", e.target.value); }} className={field} />
+              ) : null}
+              {kind === "distance" ? (
+                <input type="text" placeholder="time or distance"
+                  value={v.text || ""} onChange={function (e) { setField(i, "text", e.target.value); }} className={field} />
+              ) : null}
+              {kind === "weight" || kind === "reps" ? (
+                <input type="number" inputMode="numeric" placeholder="reps"
+                  value={v.reps || ""} onChange={function (e) { setField(i, "reps", e.target.value); }} className={field} />
+              ) : null}
             </div>
-            <button
-              onClick={function () { onComplete(ex, exIdx, i, v); }}
-              className="w-full py-3 rounded-2xl font-bold text-sm"
-              style={{ background: accent, color: "#0E1224" }}
-            >
-              Done
-            </button>
           </div>
         );
       })}
+
+      <button
+        onClick={function () { onComplete(ex, exIdx, fields, total, kind); }}
+        className="w-full py-4 rounded-2xl font-bold text-base"
+        style={{ background: accent, color: "#0E1224" }}
+      >
+        Completed
+      </button>
     </div>
   );
 }
