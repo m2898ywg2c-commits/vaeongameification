@@ -20,7 +20,7 @@ export default function PlanPage() {
   const [typeId, setTypeId] = useState(null);
   const [days, setDays] = useState([]);
   const [active, setActive] = useState(0);
-  const [doneSets, setDoneSets] = useState({});
+  const [done, setDone] = useState({});
   const [praise, setPraise] = useState(null);
   const [count, setCount] = useState(0);
   const [showQuote, setShowQuote] = useState(true);
@@ -57,33 +57,51 @@ export default function PlanPage() {
   const homeMode = profile && profile.equipment && profile.equipment !== "gym";
   const noBaselines = profile && !profile.baseline_bench && !profile.baseline_squat;
 
-  async function completeSet(ex, exIdx, setIdx, v) {
+  async function completeSet(ex, exIdx, fields, total, kind) {
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from("exercise_logs").insert({
-        user_id: user.id, day_key: day.key, exercise: ex.name, set_index: setIdx + 1,
-        weight: v.weight ? Number(v.weight) : null, reps: v.reps ? Number(v.reps) : null,
-      });
+    if (user && day) {
+      const rows = [];
+      for (let i = 0; i < total; i++) {
+        const v = fields[i] || {};
+        rows.push({
+          user_id: user.id, day_key: day.key, exercise: ex.name, set_index: i + 1,
+          weight: kind === "weight" && v.weight ? Number(v.weight) : null,
+          reps: v.reps ? Number(v.reps) : null,
+          time_text: kind === "time" ? (v.secs ? v.secs + " sec" : null) : (kind === "distance" ? (v.text || null) : null),
+        });
+      }
+      await supabase.from("exercise_logs").insert(rows);
     }
     const n = count + 1;
     setCount(n);
     setPraise(praiseFor(tid, n));
     setTimeout(function () { setPraise(null); }, 1600);
-    setDoneSets(function (d) {
+    setDone(function (d) {
       const next = Object.assign({}, d);
-      next[day.key + "|" + exIdx + "|" + setIdx] = true;
+      next[exIdx] = true;
       return next;
     });
   }
 
   function reopen(exIdx) {
-    setDoneSets(function (d) {
+    setDone(function (d) {
       const next = Object.assign({}, d);
-      Object.keys(next).forEach(function (k) {
-        if (k.indexOf(day.key + "|" + exIdx + "|") === 0) delete next[k];
-      });
+      delete next[exIdx];
       return next;
     });
+  }
+
+  async function logStation(station, value) {
+    if (!value) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && day) {
+      await supabase.from("exercise_logs").insert({
+        user_id: user.id, day_key: day.key, exercise: station.name, set_index: 1,
+        weight: null, reps: null, time_text: value,
+      });
+    }
+    setPraise("Logged");
+    setTimeout(function () { setPraise(null); }, 1400);
   }
 
   async function finish() {
@@ -106,12 +124,12 @@ export default function PlanPage() {
   }
 
   return (
-    <main className="min-h-screen text-white px-5 py-8" style={{ background: "linear-gradient(180deg, " + deep + "33 0%, #0E1224 42%)" }}>
+    <main className="min-h-screen text-white px-5 py-6" style={{ background: "#0E1224" }}>
       <div className="max-w-md mx-auto">
 
         {showQuote ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ background: "rgba(6,8,18,0.9)" }}>
-            <div className="w-full max-w-sm rounded-3xl p-6 text-center border-2" style={{ borderColor: accent + "66", background: "linear-gradient(160deg, " + deep + "cc, #0E1224)" }}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ background: "rgba(6,8,18,0.94)" }}>
+            <div className="w-full max-w-sm rounded-3xl p-6 text-center border-2" style={{ borderColor: accent + "66", background: "#141A2E" }}>
               <div className="flex justify-center mb-3"><TypeOrb typeId={tid} size={72} /></div>
               <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: accent }}>{type ? type.name : "Your coach"}</p>
               <p className="text-lg font-bold leading-snug mb-4">{quoteFor(tid, active)}</p>
@@ -128,15 +146,17 @@ export default function PlanPage() {
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <TypeOrb typeId={tid} size={40} />
-            <div>
-              <p className="text-sm font-bold leading-tight">{type ? type.name : "Your plan"}</p>
-              <p className="text-xs text-gray-400 leading-tight">Week {weekNo}/{BLOCK_WEEKS} · {rule.label}</p>
-            </div>
+        <a href="/dashboard" className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-bold text-base mb-4 border-2"
+          style={{ borderColor: accent + "66", background: "rgba(255,255,255,0.05)", color: accent }}>
+          &#8592; Back to dashboard
+        </a>
+
+        <div className="flex items-center gap-3 mb-4">
+          <TypeOrb typeId={tid} size={40} />
+          <div>
+            <p className="text-sm font-bold leading-tight">{type ? type.name : "Your plan"}</p>
+            <p className="text-xs text-gray-400 leading-tight">Week {weekNo}/{BLOCK_WEEKS} &middot; {rule.label}</p>
           </div>
-          <a href="/dashboard" className="text-xs text-gray-400 underline">Back</a>
         </div>
 
         {noBaselines ? (
@@ -150,8 +170,8 @@ export default function PlanPage() {
           {days.map(function (d, i) {
             const on = i === active;
             return (
-              <button key={d.key} onClick={function () { setActive(i); setFinished(false); }}
-                className="px-4 py-2 rounded-xl text-sm font-bold flex-shrink-0 border"
+              <button key={d.key} onClick={function () { setActive(i); setFinished(false); setDone({}); }}
+                className="px-4 py-3 rounded-xl text-sm font-bold flex-shrink-0 border"
                 style={on ? { background: accent, color: "#0E1224", borderColor: accent }
                   : { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>
                 {profile.fixed_days === false ? "S" + (i + 1) : d.dayLabel}
@@ -161,8 +181,8 @@ export default function PlanPage() {
         </div>
 
         <DayView day={day} active={active} profile={profile} rule={rule} accent={accent} deep={deep}
-          tid={tid} homeMode={homeMode} doneSets={doneSets} onComplete={completeSet}
-          onReopen={reopen} finished={finished} onFinish={finish} />
+          tid={tid} homeMode={homeMode} done={done} onComplete={completeSet}
+          onReopen={reopen} finished={finished} onFinish={finish} onStation={logStation} />
       </div>
     </main>
   );
