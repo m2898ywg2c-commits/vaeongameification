@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LOCATIONS, fallbackFor } from "@/lib/fallbacks";
 import { primaryCategory } from "@/lib/training";
+import Home from "../Home";
 
 export default function FallbackPage() {
   const [category, setCategory] = useState("general");
@@ -43,10 +44,13 @@ export default function FallbackPage() {
     return (
       <main className="min-h-screen bg-[#0E1224] text-white px-6 py-10">
         <div className="max-w-md mx-auto">
-          <button onClick={function () { setLocation(null); setLogged(false); }} className="text-xs text-gray-400 underline">
-            Pick a different place
-          </button>
-          <h1 className="text-2xl font-bold mt-4 mb-1">{workout.title}</h1>
+          <div className="flex items-center justify-between mb-6">
+            <Home />
+            <button onClick={function () { setLocation(null); setLogged(false); }} className="text-xs text-gray-400 underline">
+              Pick a different place
+            </button>
+          </div>
+          <h1 className="text-2xl font-bold mb-1">{workout.title}</h1>
           <p className="text-xs uppercase tracking-wide text-gray-400 mb-5">{workout.minutes} minutes</p>
 
           <div className="rounded-xl border border-white/10 bg-white/5 p-5 mb-5">
@@ -60,15 +64,11 @@ export default function FallbackPage() {
           <button
             onClick={function () { logIt(workout); }}
             className="w-full px-6 py-3 rounded-full font-bold text-sm mb-2"
-            style={{ background: "linear-gradient(90deg, #4CC9F0, #FF6B57)", color: "#0E1224" }}
+            style={{ background: "linear-gradient(90deg, #2DD4BF, #0F766E)", color: "#0E1224" }}
           >
             {logged ? "Logged" : "Done, log it"}
           </button>
           {logged ? <p className="text-sm text-emerald-400 text-center">Counts towards your week. Streak intact.</p> : null}
-
-          <p className="text-center mt-6">
-            <a href="/dashboard" className="text-xs text-gray-400 underline">Back to dashboard</a>
-          </p>
         </div>
       </main>
     );
@@ -77,8 +77,10 @@ export default function FallbackPage() {
   return (
     <main className="min-h-screen bg-[#0E1224] text-white px-6 py-10">
       <div className="max-w-md mx-auto">
-        <a href="/dashboard" className="text-xs text-gray-400 underline">Back to dashboard</a>
-        <h1 className="text-2xl font-bold mt-4 mb-2">Cannot get to the gym?</h1>
+        <div className="mb-6">
+          <Home />
+        </div>
+        <h1 className="text-2xl font-bold mb-2">Cannot get to the gym?</h1>
         <p className="text-sm text-gray-300 mb-8">
           Missing a session is how streaks die. Pick where you actually are and do something
           smaller instead. It still counts.
@@ -102,4 +104,3 @@ export default function FallbackPage() {
     </main>
   );
 }
-
