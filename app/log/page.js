@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SESSION_TYPES } from "@/lib/plan";
+import Home from "../Home";
 
 const DURATIONS = [15, 30, 45, 60, 90];
 
@@ -89,10 +90,10 @@ export default function LogPage() {
   return (
     <main className="min-h-screen bg-[#0E1224] text-white px-6 py-12">
       <div className="max-w-md mx-auto">
-        <a href="/dashboard" className="text-xs text-gray-400 underline">
-          Back to dashboard
-        </a>
-        <h1 className="text-2xl font-bold mt-4 mb-6">Log a session</h1>
+        <div className="mb-6">
+          <Home />
+        </div>
+        <h1 className="text-2xl font-bold mb-6">Log a session</h1>
 
         <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">What was it?</p>
         <div className="flex flex-wrap gap-2 mb-6">
@@ -138,7 +139,7 @@ export default function LogPage() {
           onClick={save}
           disabled={saving}
           className="px-8 py-3 rounded-full font-bold text-sm mb-3"
-          style={{ background: "linear-gradient(90deg, #4CC9F0, #FF6B57)", color: "#0E1224" }}
+          style={{ background: "linear-gradient(90deg, #2DD4BF, #0F766E)", color: "#0E1224" }}
         >
           {saving ? "Saving..." : "Save session"}
         </button>
@@ -182,4 +183,3 @@ export default function LogPage() {
     </main>
   );
 }
-
