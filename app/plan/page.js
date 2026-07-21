@@ -1,0 +1,169 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { TYPES } from "@/lib/personality";
+import { buildWeek, primaryCategory, defaultSessionType } from "@/lib/training";
+import { currentWeek, weeksFor, BLOCK_WEEKS } from "@/lib/progression";
+import { quoteFor, sessionIntro, praiseFor } from "@/lib/voice";
+import TypeOrb from "../TypeOrb";
+import DayView from "./DayView";
+
+const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+export default function PlanPage() {
+  const router = useRouter();
+  const [supabase] = useState(function () { return createClient(); });
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
+  const [typeId, setTypeId] = useState(null);
+  const [days, setDays] = useState([]);
+  const [active, setActive] = useState(0);
+  const [doneSets, setDoneSets] = useState({});
+  const [praise, setPraise] = useState(null);
+  const [count, setCount] = useState(0);
+  const [showQuote, setShowQuote] = useState(true);
+  const [finished, setFinished] = useState(false);
+
+  useEffect(function () {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push("/login"); return; }
+      const { data: p } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+      if (!p || !p.goals || p.goals.length === 0) { router.push("/onboarding"); return; }
+      const { data: a } = await supabase.from("assessment_results").select("*")
+        .eq("user_id", user.id).order("completed_at", { ascending: false }).limit(1).maybeSingle();
+      const week = buildWeek(p.goals, p.sessions_per_week || 3);
+      let idx = week.findIndex(function (d) { return d.dayLabel === SHORT[new Date().getDay()]; });
+      if (idx < 0) idx = 0;
+      setProfile(p);
+      setTypeId(a ? a.type_id : null);
+      setDays(week);
+      setActive(idx);
+      setLoading(false);
+    }
+    load();
+  }, [supabase, router]);
+
+  const type = typeId ? TYPES[typeId] : null;
+  const tid = typeId || "architect";
+  const accent = type ? type.colors[0] : "#4CC9F0";
+  const deep = type ? type.colors[1] : "#3D2E8C";
+  const day = days[active] || null;
+  const weekNo = profile ? currentWeek(profile.block_start) : 1;
+  const cat = profile ? primaryCategory(profile.goals) : "general";
+  const rule = weeksFor(cat)[weekNo - 1] || weeksFor(cat)[0];
+  const homeMode = profile && profile.equipment && profile.equipment !== "gym";
+  const noBaselines = profile && !profile.baseline_bench && !profile.baseline_squat;
+
+  async function completeSet(ex, exIdx, setIdx, v) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("exercise_logs").insert({
+        user_id: user.id, day_key: day.key, exercise: ex.name, set_index: setIdx + 1,
+        weight: v.weight ? Number(v.weight) : null, reps: v.reps ? Number(v.reps) : null,
+      });
+    }
+    const n = count + 1;
+    setCount(n);
+    setPraise(praiseFor(tid, n));
+    setTimeout(function () { setPraise(null); }, 1600);
+    setDoneSets(function (d) {
+      const next = Object.assign({}, d);
+      next[day.key + "|" + exIdx + "|" + setIdx] = true;
+      return next;
+    });
+  }
+
+  function reopen(exIdx) {
+    setDoneSets(function (d) {
+      const next = Object.assign({}, d);
+      Object.keys(next).forEach(function (k) {
+        if (k.indexOf(day.key + "|" + exIdx + "|") === 0) delete next[k];
+      });
+      return next;
+    });
+  }
+
+  async function finish() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && day) {
+      await supabase.from("training_sessions").insert({
+        user_id: user.id, session_type: defaultSessionType(profile.goals, day.key),
+        duration_min: 60, effort: 3, note: day.title,
+      });
+    }
+    setFinished(true);
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen text-white flex items-center justify-center" style={{ background: "#0E1224" }}>
+        <p className="text-sm text-gray-400">Building your session...</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen text-white px-5 py-8" style={{ background: "linear-gradient(180deg, " + deep + "33 0%, #0E1224 42%)" }}>
+      <div className="max-w-md mx-auto">
+
+        {showQuote ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ background: "rgba(6,8,18,0.9)" }}>
+            <div className="w-full max-w-sm rounded-3xl p-6 text-center border-2" style={{ borderColor: accent + "66", background: "linear-gradient(160deg, " + deep + "cc, #0E1224)" }}>
+              <div className="flex justify-center mb-3"><TypeOrb typeId={tid} size={72} /></div>
+              <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: accent }}>{type ? type.name : "Your coach"}</p>
+              <p className="text-lg font-bold leading-snug mb-4">{quoteFor(tid, active)}</p>
+              <p className="text-xs text-gray-400 mb-5">{sessionIntro(tid, rule.label)}</p>
+              <button onClick={function () { setShowQuote(false); }} className="w-full py-4 rounded-2xl font-bold"
+                style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", color: "#fff" }}>Ready</button>
+            </div>
+          </div>
+        ) : null}
+
+        {praise ? (
+          <div className="fixed left-0 right-0 bottom-8 z-40 flex justify-center pointer-events-none">
+            <div className="px-6 py-3 rounded-full font-bold shadow-lg" style={{ background: accent, color: "#0E1224" }}>{praise}</div>
+          </div>
+        ) : null}
+
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <TypeOrb typeId={tid} size={40} />
+            <div>
+              <p className="text-sm font-bold leading-tight">{type ? type.name : "Your plan"}</p>
+              <p className="text-xs text-gray-400 leading-tight">Week {weekNo}/{BLOCK_WEEKS} · {rule.label}</p>
+            </div>
+          </div>
+          <a href="/dashboard" className="text-xs text-gray-400 underline">Back</a>
+        </div>
+
+        {noBaselines ? (
+          <a href="/settings" className="block rounded-2xl border-2 p-4 mb-3" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.10)" }}>
+            <p className="text-sm font-bold" style={{ color: "#FFB020" }}>Enter your starting weights first</p>
+            <p className="text-xs text-gray-300">No idea what they are? We explain it in bags of sugar.</p>
+          </a>
+        ) : null}
+
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
+          {days.map(function (d, i) {
+            const on = i === active;
+            return (
+              <button key={d.key} onClick={function () { setActive(i); setFinished(false); }}
+                className="px-4 py-2 rounded-xl text-sm font-bold flex-shrink-0 border"
+                style={on ? { background: accent, color: "#0E1224", borderColor: accent }
+                  : { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>
+                {profile.fixed_days === false ? "S" + (i + 1) : d.dayLabel}
+              </button>
+            );
+          })}
+        </div>
+
+        <DayView day={day} active={active} profile={profile} rule={rule} accent={accent} deep={deep}
+          tid={tid} homeMode={homeMode} doneSets={doneSets} onComplete={completeSet}
+          onReopen={reopen} finished={finished} onFinish={finish} />
+      </div>
+    </main>
+  );
+}
