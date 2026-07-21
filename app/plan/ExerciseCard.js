@@ -25,21 +25,46 @@ function loadType(ex) {
   return "weight";
 }
 
+// Pull the number the plan asked for so we can prefill it.
+function targetNumber(reps) {
+  const m = String(reps || "").match(/\d+/);
+  return m ? m[0] : "";
+}
+
+function targetSeconds(reps) {
+  const s = String(reps || "").toLowerCase();
+  const m = s.match(/(\d+)\s*(sec|min)/);
+  if (!m) return "";
+  return m[2] === "min" ? String(Number(m[1]) * 60) : m[1];
+}
+
 const HINTS = {
-  time: "Timed hold. Log how long you held it, in seconds.",
-  reps: "Bodyweight. No weight to log, just count your reps.",
+  time: "Timed hold. The plan target is filled in. Change it if you held it for longer or shorter.",
+  reps: "Bodyweight. The plan target is filled in. Type over it if you got more or fewer.",
   distance: "Log your time or distance for this one.",
-  weight: "",
+  weight: "Your target is filled in. Type over anything you did differently.",
 };
 
 export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, onComplete, onReopen }) {
-  const [fields, setFields] = useState({});
-  const [tip, setTip] = useState(null);
-
   const total = Number(ex.sets) || 1;
   const kind = loadType(ex);
   const suggested = kind === "weight" ? workingWeight(ex.name, profile, weekPct) : null;
   const swap = homeMode && needsGym(ex.name);
+
+  // Prefill every set with what the plan asked for.
+  const [fields, setFields] = useState(function () {
+    const seed = {};
+    for (let i = 0; i < total; i++) {
+      seed[i] = {
+        weight: suggested ? String(suggested) : "",
+        reps: kind === "weight" || kind === "reps" ? targetNumber(ex.reps) : "",
+        secs: kind === "time" ? targetSeconds(ex.reps) : "",
+        text: "",
+      };
+    }
+    return seed;
+  });
+  const [tip, setTip] = useState(null);
 
   function setField(i, which, val) {
     setFields(function (f) {
@@ -108,7 +133,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
             <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">Set {i + 1}</p>
             <div className="flex gap-2">
               {kind === "weight" ? (
-                <input type="number" inputMode="decimal" placeholder={suggested ? String(suggested) : "kg"}
+                <input type="number" inputMode="decimal" placeholder="kg"
                   value={v.weight || ""} onChange={function (e) { setField(i, "weight", e.target.value); }} className={field} />
               ) : null}
               {kind === "time" ? (
@@ -133,7 +158,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         className="w-full py-4 rounded-2xl font-bold text-base"
         style={{ background: accent, color: "#0E1224" }}
       >
-        Completed
+        Completed as planned
       </button>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { stretchFor } from "@/lib/exercisedb";
+import { sessionMusic, stationMusic } from "@/lib/music";
 import ExerciseCard from "./ExerciseCard";
 import TypeOrb from "../TypeOrb";
 import { sessionDone } from "@/lib/voice";
@@ -15,6 +16,8 @@ export default function DayView({ day, active, profile, rule, accent, deep, tid,
 
   if (!day) return null;
   const flow = stretchFor(day);
+  const music = sessionMusic(day, profile.birth_year);
+  const stationTunes = stationMusic(profile.birth_year);
   const label = profile.fixed_days === false
     ? "Session " + (active + 1)
     : (day.dayLabel === SHORT[new Date().getDay()] ? "Today" : day.dayLabel);
@@ -29,6 +32,13 @@ export default function DayView({ day, active, profile, rule, accent, deep, tid,
         <p className="text-2xl font-bold leading-tight">{day.title}</p>
         <p className="text-sm opacity-90 mt-1">{day.focus} &middot; {rule.focus}</p>
       </div>
+
+      <a href={music.href} target="_blank" rel="noopener noreferrer"
+        className="flex items-center justify-between rounded-2xl border p-4 mb-3"
+        style={{ borderColor: "rgba(30,215,96,0.4)", background: "rgba(30,215,96,0.08)" }}>
+        <span className="text-sm font-medium text-gray-200">{music.label}</span>
+        <span className="text-xs font-bold flex-shrink-0 ml-3" style={{ color: "#1ED760" }}>Open Spotify</span>
+      </a>
 
       <button onClick={function () { setOpenWarmup(!openWarmup); }} className={panel}>
         <span className="text-sm font-bold">Warm up</span>
@@ -52,7 +62,11 @@ export default function DayView({ day, active, profile, rule, accent, deep, tid,
 
       {day.conditioning && day.conditioning.length ? (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-3">
-          <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: accent }}>Stations</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold uppercase tracking-wide" style={{ color: accent }}>Stations</p>
+            <a href={stationTunes.href} target="_blank" rel="noopener noreferrer"
+              className="text-xs font-bold" style={{ color: "#1ED760" }}>Loud tunes</a>
+          </div>
           {day.conditioning.map(function (c, i) {
             const v = stations[i] || "";
             return (
