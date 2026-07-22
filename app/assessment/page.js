@@ -3,7 +3,24 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { ANSWERS, QUESTIONS, TYPES, scoreAnswers } from "@/lib/personality";
+import {
+  ANSWERS,
+  QUESTIONS,
+  FRAMING_QUESTIONS,
+  CHRONOTYPE_PROMPT,
+  CHRONOTYPE_OPTIONS,
+  TYPES,
+  scoreAnswers,
+  scoreFraming,
+} from "@/lib/personality";
+import {
+  FRAMING_LABEL,
+  FRAMING_EXPLAINER,
+  CHRONOTYPE_LABEL,
+  CHRONOTYPE_TIP,
+} from "@/lib/framing";
+
+const GRAD = "linear-gradient(90deg, #2DD4BF, #0F766E)";
 
 function Orb({ type, size }) {
   const s = size || 96;
@@ -31,26 +48,24 @@ export default function AssessmentPage() {
   const [stage, setStage] = useState("intro");
   const [index, setIndex] = useState(0);
   const [values, setValues] = useState([]);
+  const [chrono, setChrono] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
 
-  const answer = async (value) => {
-    const next = values.slice();
-    next[index] = value;
-    setValues(next);
-    if (index + 1 < QUESTIONS.length) {
-      setIndex(index + 1);
-      return;
-    }
-    const scored = scoreAnswers(next);
+  const TYPE_N = QUESTIONS.length;
+  const FRAMING_N = FRAMING_QUESTIONS.length;
+  const LIKERT_N = TYPE_N + FRAMING_N;
+  const TOTAL = LIKERT_N + 1; // final step is the chronotype choice
+
+  const finalise = async (vals, chronoValue) => {
+    const scored = scoreAnswers(vals.slice(0, TYPE_N));
+    const framed = scoreFraming(vals.slice(TYPE_N, LIKERT_N));
     setSaving(true);
     setError(null);
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       router.push("/login");
       return;
@@ -63,13 +78,37 @@ export default function AssessmentPage() {
       social_score: scored.social,
       goals: [],
     });
-    setSaving(false);
     if (insertError) {
+      setSaving(false);
       setError(insertError.message);
       return;
     }
-    setResult(scored);
+    // Framing and chronotype live on the profile, not the assessment row, so the coach
+    // and any future reminder timing can read the latest without a join.
+    const { error: profileError } = await supabase.from("profiles").update({
+      framing: framed.framing,
+      framing_score: framed.score,
+      chronotype: chronoValue,
+    }).eq("id", user.id);
+    setSaving(false);
+    if (profileError) {
+      setError(profileError.message);
+      return;
+    }
+    setResult({ scored: scored, framed: framed, chrono: chronoValue });
     setStage("result");
+  };
+
+  const answer = (value) => {
+    const next = values.slice();
+    next[index] = value;
+    setValues(next);
+    setIndex(index + 1); // Likert steps always advance; the chronotype step ends the survey
+  };
+
+  const chooseChrono = (value) => {
+    setChrono(value);
+    finalise(values, value);
   };
 
   const back = () => {
@@ -78,33 +117,61 @@ export default function AssessmentPage() {
   };
 
   if (stage === "quiz") {
-    const q = QUESTIONS[index];
-    const pct = Math.round((index / QUESTIONS.length) * 100);
+    const onChrono = index >= LIKERT_N;
+    const pct = Math.round((index / TOTAL) * 100);
+    const section = index < TYPE_N ? "How you like to train"
+      : index < LIKERT_N ? "What drives you"
+      : "When you are at your best";
+
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
         <div className="w-full max-w-md">
-          <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">
-            Statement {index + 1} of {QUESTIONS.length}
-          </p>
+          <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{section}</p>
+          <p className="text-xs text-gray-500 mb-2">Step {index + 1} of {TOTAL}</p>
           <div className="h-1.5 rounded-full bg-white/10 mb-8">
-            <div
-              className="h-1.5 rounded-full"
-              style={{ width: pct + "%", background: "linear-gradient(90deg, #4CC9F0, #FF6B57)" }}
-            />
+            <div className="h-1.5 rounded-full" style={{ width: pct + "%", background: GRAD }} />
           </div>
-          <h1 className="text-xl font-bold mb-8 min-h-16">{q.text}</h1>
-          <div className="space-y-2">
-            {ANSWERS.map((a) => (
-              <button
-                key={a.value}
-                onClick={() => answer(a.value)}
-                disabled={saving}
-                className="w-full text-left px-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/15 text-sm font-medium"
-              >
-                {a.label}
-              </button>
-            ))}
-          </div>
+
+          {onChrono ? (
+            <div>
+              <h1 className="text-xl font-bold mb-2 min-h-8">{CHRONOTYPE_PROMPT}</h1>
+              <p className="text-sm text-gray-400 mb-6">
+                Your body clock changes when you perform best and how hard a session costs you. No wrong answer.
+              </p>
+              <div className="space-y-2">
+                {CHRONOTYPE_OPTIONS.map((o) => (
+                  <button
+                    key={o.value}
+                    onClick={() => chooseChrono(o.value)}
+                    disabled={saving}
+                    className="w-full text-left px-4 py-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/15"
+                  >
+                    <span className="block text-sm font-bold">{o.label}</span>
+                    <span className="block text-xs text-gray-400 mt-0.5">{o.blurb}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <h1 className="text-xl font-bold mb-8 min-h-16">
+                {index < TYPE_N ? QUESTIONS[index].text : FRAMING_QUESTIONS[index - TYPE_N].text}
+              </h1>
+              <div className="space-y-2">
+                {ANSWERS.map((a) => (
+                  <button
+                    key={a.value}
+                    onClick={() => answer(a.value)}
+                    disabled={saving}
+                    className="w-full text-left px-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/15 text-sm font-medium"
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {saving ? <p className="text-sm text-gray-400 mt-4">Saving your result...</p> : null}
           {error ? <p className="text-sm text-red-400 mt-4">{error}</p> : null}
           <button onClick={back} className="text-xs text-gray-500 underline mt-6" disabled={saving}>
@@ -117,6 +184,8 @@ export default function AssessmentPage() {
 
   if (stage === "result" && result) {
     const t = TYPES[result.typeId];
+    const framing = result.framed.framing;
+    const chronoValue = result.chrono;
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
         <div className="w-full max-w-md text-center">
@@ -131,22 +200,30 @@ export default function AssessmentPage() {
             <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Your training plan</p>
             <p className="text-sm">{t.plan}</p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/5 p-5 text-left mb-8">
+          <div className="rounded-xl border border-white/10 bg-white/5 p-5 text-left mb-4">
             <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">How you will be coached</p>
             <p className="text-sm">{t.coaching}</p>
           </div>
 
+          <div className="rounded-xl border border-white/10 bg-white/5 p-5 text-left mb-8">
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">What else we learned</p>
+            <p className="text-sm mb-2">
+              You are <span className="font-bold">{FRAMING_LABEL[framing]}</span>, {FRAMING_EXPLAINER[framing]}
+            </p>
+            <p className="text-sm">
+              At your best <span className="font-bold">{CHRONOTYPE_LABEL[chronoValue]}</span>. {CHRONOTYPE_TIP[chronoValue]}
+            </p>
+          </div>
+
           <div className="flex gap-3 justify-center">
-            <a
-              href="/dashboard"
-              className="px-6 py-2.5 rounded-full font-bold text-sm"
-              style={{ background: "linear-gradient(90deg, #4CC9F0, #FF6B57)", color: "#0E1224" }}
-            >
+            <a href="/dashboard" className="px-6 py-2.5 rounded-full font-bold text-sm" style={{ background: GRAD, color: "#0E1224" }}>
               Go to dashboard
             </a>
             <button
               onClick={() => {
                 setValues([]);
+                setChrono(null);
+                setResult(null);
                 setIndex(0);
                 setStage("quiz");
               }}
@@ -165,20 +242,18 @@ export default function AssessmentPage() {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-2 text-center">Find your training personality</h1>
         <p className="text-sm text-gray-300 text-center max-w-xl mx-auto mb-10">
-          Twelve quick statements, about two minutes. There are no right or wrong answers, so go
-          with your first instinct. Your answers place you on three dials: how planned you like
-          training to be, whether numbers or feelings drive you, and whether you thrive solo or
-          with others. The combination reveals one of eight training personalities.
+          Seventeen quick questions, about three minutes. Go with your first instinct. Twelve
+          statements place you on three dials: how planned you like training, whether numbers or
+          feelings drive you, and whether you thrive solo or with others. A few more read what
+          switches your motivation on, and when your body is at its best. The result is one of
+          eight training personalities, tuned to you.
         </p>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           {Object.keys(TYPES).map((id) => {
             const t = TYPES[id];
             return (
-              <div
-                key={id}
-                className="rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col items-center text-center"
-              >
+              <div key={id} className="rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col items-center text-center">
                 <Orb type={t} size={84} />
                 <p className="font-bold text-sm mt-2">{t.name}</p>
                 <p className="text-[10px] uppercase tracking-wide text-gray-400 mt-1">{t.code}</p>
@@ -191,19 +266,16 @@ export default function AssessmentPage() {
         <div className="rounded-xl border border-white/10 bg-white/5 p-5 max-w-xl mx-auto mb-10">
           <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Why it matters</p>
           <p className="text-sm text-gray-200 mb-3">
-            Your type decides the shape of the plan Vaeon builds for you. Planned types get a
-            structured programme with fixed sessions; freestyle types get a flexible menu and
-            rolling challenges.
+            Your type decides the shape of the plan Vaeon builds. Planned types get a structured
+            programme with fixed sessions; freestyle types get a flexible menu and rolling challenges.
           </p>
           <p className="text-sm text-gray-200 mb-3">
-            It also decides what success looks like. Outcome types chase numbers, personal bests
-            and streaks; experience types build habits measured by consistency and how sessions
-            feel.
+            It also decides what success looks like, and sets your coaching voice. Solo types get
+            sharp, private check-ins; together types get group energy and friendly competition.
           </p>
           <p className="text-sm text-gray-200">
-            Most of all, it sets your coaching voice. Solo types get sharp, private check-ins;
-            together types get group energy, shared goals and friendly competition. Same goal,
-            very different journey.
+            The last few questions add a personal edge on top: whether your coach frames things
+            around chasing a gain or protecting your momentum, and when in the day you train best.
           </p>
         </div>
 
@@ -211,7 +283,7 @@ export default function AssessmentPage() {
           <button
             onClick={() => setStage("quiz")}
             className="px-8 py-3 rounded-full font-bold text-sm"
-            style={{ background: "linear-gradient(90deg, #4CC9F0, #FF6B57)", color: "#0E1224" }}
+            style={{ background: GRAD, color: "#0E1224" }}
           >
             Start the assessment
           </button>
@@ -221,4 +293,3 @@ export default function AssessmentPage() {
     </main>
   );
 }
-
