@@ -209,6 +209,7 @@ export default function OnboardingPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
       <div className="w-full max-w-lg">
+        <a href="/dashboard" className="inline-block text-xs text-gray-400 underline mb-4">Back to dashboard</a>
         <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">What is this really for</p>
         <h1 className="text-3xl font-bold mb-2">Pick up to two.</h1>
         <p className="text-sm text-gray-300 mb-8">Your goals decide the sessions Vaeon builds for you.</p>
