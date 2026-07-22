@@ -240,6 +240,7 @@ export default function AssessmentPage() {
   return (
     <main className="min-h-screen bg-[#0E1224] text-white px-6 py-12">
       <div className="max-w-3xl mx-auto">
+        <a href="/dashboard" className="inline-block text-xs text-gray-400 underline mb-6">Back to dashboard</a>
         <h1 className="text-3xl font-bold mb-2 text-center">Find your training personality</h1>
         <p className="text-sm text-gray-300 text-center max-w-xl mx-auto mb-10">
           Seventeen quick questions, about three minutes. Go with your first instinct. Twelve
