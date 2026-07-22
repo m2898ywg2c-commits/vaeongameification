@@ -40,7 +40,7 @@ export default async function DashboardPage() {
   const typeId = assessment ? assessment.type_id : null;
   const type = typeId ? TYPES[typeId] : null;
   const stats = computeStats(sessions || [], pledged);
-  const nudge = type ? coachMessage(typeId, stats) : null;
+  const nudge = type ? coachMessage(typeId, stats, profile.framing) : null;
   const names = goalNames(profile.goals);
   const category = primaryCategory(profile.goals);
   const weekNo = currentWeek(profile.block_start);
