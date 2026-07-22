@@ -40,7 +40,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#FF6B57]"
+              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#2DD4BF]"
             />
           </div>
           <div>
@@ -50,15 +50,18 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#FF6B57]"
+              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#2DD4BF]"
             />
+            <div className="text-right mt-1">
+              <a href="/forgot-password" className="text-xs text-gray-400 underline">Forgot password?</a>
+            </div>
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
           <button
             type="submit"
             disabled={loading}
             className="w-full py-3 rounded-full font-bold text-sm"
-            style={{ background: "linear-gradient(90deg, #4CC9F0, #FF6B57)", color: "#0E1224" }}
+            style={{ background: "linear-gradient(90deg, #2DD4BF, #0F766E)", color: "#0E1224" }}
           >
             {loading ? "Logging in..." : "Log in"}
           </button>
@@ -78,7 +81,7 @@ export default function LoginPage() {
           <a
             href="/signup"
             className="block w-full py-3 rounded-full font-bold text-sm border-2"
-            style={{ borderColor: "#4CC9F0", color: "#4CC9F0" }}
+            style={{ borderColor: "#2DD4BF", color: "#2DD4BF" }}
           >
             Create an account
           </a>
