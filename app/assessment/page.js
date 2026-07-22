@@ -183,7 +183,7 @@ export default function AssessmentPage() {
   }
 
   if (stage === "result" && result) {
-    const t = TYPES[result.typeId];
+    const t = TYPES[result.scored.typeId];
     const framing = result.framed.framing;
     const chronoValue = result.chrono;
     return (
