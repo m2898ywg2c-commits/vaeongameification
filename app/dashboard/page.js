@@ -126,7 +126,7 @@ export default async function DashboardPage() {
 
         {type ? (
           <div className="rounded-2xl p-4 mb-3 border" style={{ borderColor: accent + "55", background: "rgba(255,255,255,0.04)" }}>
-            <a href={"/type/" + typeId} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 mb-2">
+            <a href={"/type?id=" + typeId} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 mb-2">
               <TypeOrb typeId={typeId} size={26} />
               <p className="text-xs font-bold uppercase tracking-wide flex-1" style={{ color: accent }}>About the {type.name.replace("The ", "")} training style</p>
               <span className="text-sm" style={{ color: accent }} aria-hidden="true">{"↗"}</span>
