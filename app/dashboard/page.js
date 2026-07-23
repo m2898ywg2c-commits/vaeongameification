@@ -7,6 +7,7 @@ import { currentWeek, weeksFor, blockComplete, BLOCK_WEEKS } from "@/lib/progres
 import SignOutButton from "./SignOutButton";
 import AchievementWatcher from "./AchievementWatcher";
 import TypeOrb from "../TypeOrb";
+import ShareButton from "../ShareButton";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -171,7 +172,10 @@ export default async function DashboardPage() {
           </a>
         </div>
 
+        <div className="mb-4"><ShareButton accent={accent} /></div>
+
         <a href="/onboarding" className="block text-center text-xs text-gray-500 underline">Change goals, days or sessions a week</a>
+        <a href="/feedback" className="block text-center text-xs text-gray-500 underline mt-2">Send feedback</a>
       </div>
     </main>
   );
