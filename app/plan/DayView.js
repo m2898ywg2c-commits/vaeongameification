@@ -13,6 +13,7 @@ export default function DayView({ day, active, profile, rule, accent, deep, tid,
   const [openWarmup, setOpenWarmup] = useState(false);
   const [openFlow, setOpenFlow] = useState(false);
   const [stations, setStations] = useState({});
+  const [loggedStations, setLoggedStations] = useState({});
 
   if (!day) return null;
   const flow = stretchFor(day);
@@ -21,6 +22,11 @@ export default function DayView({ day, active, profile, rule, accent, deep, tid,
   const label = profile.fixed_days === false
     ? "Session " + (active + 1)
     : (day.dayLabel === SHORT[new Date().getDay()] ? "Today" : day.dayLabel);
+
+  const stationCount = day.conditioning ? day.conditioning.length : 0;
+  const stationMin = Math.min(3, stationCount);
+  const stationsDone = Object.keys(loggedStations).length;
+  const stationsMet = stationsDone >= stationMin;
 
   const panel = "w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 mb-3 text-left";
   const field = "w-full px-3 py-3 rounded-xl bg-white/10 border-2 border-white/15 text-base font-bold text-center text-white placeholder-gray-500";
@@ -62,16 +68,26 @@ export default function DayView({ day, active, profile, rule, accent, deep, tid,
 
       {day.conditioning && day.conditioning.length ? (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-3">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-1">
             <p className="text-xs font-bold uppercase tracking-wide" style={{ color: accent }}>Stations</p>
             <a href={stationTunes.href} target="_blank" rel="noopener noreferrer"
               className="text-xs font-bold" style={{ color: "#1ED760" }}>Loud tunes</a>
           </div>
+          <p className="text-xs text-gray-400 mb-3">
+            {stationCount} on the menu. Pick any {stationMin} to finish, more if you fancy it.{" "}
+            <span className="font-bold" style={{ color: stationsMet ? "#3DDC97" : accent }}>
+              {stationsMet ? "That is " + stationsDone + " logged, you are good to go." : stationsDone + " of " + stationMin + " logged"}
+            </span>
+          </p>
           {day.conditioning.map(function (c, i) {
             const v = stations[i] || "";
+            const isLogged = !!loggedStations[i];
             return (
               <div key={i} className="mb-4">
-                <p className="text-sm font-bold">{c.name}</p>
+                <div className="flex items-center gap-2">
+                  {isLogged ? <span className="text-sm" style={{ color: "#3DDC97" }} aria-hidden="true">&#10003;</span> : null}
+                  <p className="text-sm font-bold">{c.name}</p>
+                </div>
                 <p className="text-xs text-gray-400 mb-2">{c.target} &middot; {c.note}</p>
                 <div className="flex gap-2">
                   <input
@@ -89,11 +105,18 @@ export default function DayView({ day, active, profile, rule, accent, deep, tid,
                     className={field}
                   />
                   <button
-                    onClick={function () { onStation(c, v); }}
+                    onClick={function () {
+                      onStation(c, v);
+                      if (v) setLoggedStations(function (l) {
+                        const next = Object.assign({}, l);
+                        next[i] = true;
+                        return next;
+                      });
+                    }}
                     className="px-5 rounded-xl font-bold text-sm flex-shrink-0"
-                    style={{ background: accent, color: "#0E1224" }}
+                    style={{ background: isLogged ? "rgba(61,220,151,0.2)" : accent, color: isLogged ? "#3DDC97" : "#0E1224" }}
                   >
-                    Log
+                    {isLogged ? "Logged" : "Log"}
                   </button>
                 </div>
               </div>
