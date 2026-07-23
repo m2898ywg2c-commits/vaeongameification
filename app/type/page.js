@@ -1,7 +1,8 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { TYPES } from "@/lib/personality";
 import { DIMENSIONS, TYPE_POLES, DIM_ORDER, LAYERS, modelsFor, sourcesFor } from "@/lib/typeguide";
 import TypeOrb from "../TypeOrb";
@@ -9,6 +10,68 @@ import TypeOrb from "../TypeOrb";
 function joinModels(models) {
   if (models.length <= 1) return models.join("");
   return models.slice(0, -1).join(", ") + ", and " + models[models.length - 1];
+}
+
+// 1-5 resonance rating, so we learn whether each type actually lands.
+function TypeFeedback({ typeId, accent }) {
+  const [score, setScore] = useState(null);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(function () {
+    const supabase = createClient();
+    supabase.auth.getUser().then(function (res) {
+      const user = res.data.user;
+      if (!user) return;
+      supabase.from("type_feedback").select("score")
+        .eq("user_id", user.id).eq("type_id", typeId).maybeSingle()
+        .then(function (r) { if (r.data) setScore(r.data.score); });
+    });
+  }, [typeId]);
+
+  const rate = async function (v) {
+    setScore(v);
+    setSaved(true);
+    const supabase = createClient();
+    const res = await supabase.auth.getUser();
+    const user = res.data.user;
+    if (!user) return;
+    await supabase.from("type_feedback").upsert(
+      { user_id: user.id, type_id: typeId, score: v },
+      { onConflict: "user_id,type_id" }
+    );
+    setTimeout(function () { setSaved(false); }, 2000);
+  };
+
+  return (
+    <div className="rounded-2xl border p-5 mb-4" style={{ borderColor: accent + "55", background: "rgba(255,255,255,0.04)" }}>
+      <p className="text-sm font-bold mb-1">How well does this fit you?</p>
+      <p className="text-xs text-gray-400 mb-3">1 is nothing like me, 5 is that is me exactly. It helps us tune the types.</p>
+      <div className="grid grid-cols-5 gap-2">
+        {[1, 2, 3, 4, 5].map(function (v) {
+          const on = score === v;
+          return (
+            <button
+              key={v}
+              onClick={function () { rate(v); }}
+              className="py-3 rounded-2xl border text-lg font-bold"
+              style={{
+                borderColor: on ? accent : "rgba(255,255,255,0.12)",
+                background: on ? accent + "22" : "rgba(255,255,255,0.05)",
+                color: on ? accent : "#fff",
+              }}
+            >
+              {v}
+            </button>
+          );
+        })}
+      </div>
+      {score ? (
+        <p className="text-xs mt-3" style={{ color: accent }}>
+          {saved ? "Thanks, saved." : "You rated this " + score + " out of 5."}
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 function TypeContent() {
@@ -96,6 +159,9 @@ function TypeContent() {
             );
           })}
         </div>
+
+        {/* ---------- Does it resonate? ---------- */}
+        <TypeFeedback typeId={id} accent={accent} />
 
         {/* ---------- Sources ---------- */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5 mb-4">
