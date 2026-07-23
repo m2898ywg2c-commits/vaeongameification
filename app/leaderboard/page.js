@@ -63,6 +63,9 @@ export default function LeaderboardPage() {
   };
 
   const myTypeColour = myType && TYPES[myType] ? TYPES[myType].colors[0] : "#2DD4BF";
+  // Anyone in the recent-PB feed gets a star on their row.
+  const pbUserIds = {};
+  pbs.forEach(function (p) { pbUserIds[p.user_id] = true; });
   const visible = rows.filter(function (r) {
     return filter === "mine" && myType ? r.type_id === myType : true;
   });
@@ -149,7 +152,10 @@ export default function LeaderboardPage() {
                     <span className="text-sm font-bold w-5 text-gray-400">{i + 1}</span>
                     {t ? <TypeOrb typeId={r.type_id} size={38} /> : <span className="w-[38px] h-[38px] rounded-full bg-white/10 inline-block" />}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold truncate">{r.screen_name}{mine ? " (you)" : ""}</p>
+                      <p className="text-sm font-bold truncate">
+                        {pbUserIds[r.user_id] ? <span title="Just hit a personal best" aria-label="recent PB">⭐ </span> : null}
+                        {r.screen_name}{mine ? " (you)" : ""}
+                      </p>
                       <p className="text-xs text-gray-400">
                         {t ? t.name : "No type yet"} &middot; {r.done} this block &middot; wk {r.weeks}/6
                       </p>
