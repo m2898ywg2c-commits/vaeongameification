@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TYPES } from "@/lib/personality";
 import { buildWeek, primaryCategory, defaultSessionType } from "@/lib/training";
-import { currentWeek, weeksFor, BLOCK_WEEKS } from "@/lib/progression";
+import { currentWeek, weeksFor, BLOCK_WEEKS, estimateMax } from "@/lib/progression";
 import { quoteFor, sessionIntro, praiseFor } from "@/lib/voice";
 import TypeOrb from "../TypeOrb";
 import DayView from "./DayView";
@@ -25,6 +25,7 @@ export default function PlanPage() {
   const [count, setCount] = useState(0);
   const [showQuote, setShowQuote] = useState(true);
   const [finished, setFinished] = useState(false);
+  const [maxes, setMaxes] = useState({});
 
   useEffect(function () {
     async function load() {
@@ -34,11 +35,15 @@ export default function PlanPage() {
       if (!p || !p.goals || p.goals.length === 0) { router.push("/onboarding"); return; }
       const { data: a } = await supabase.from("assessment_results").select("*")
         .eq("user_id", user.id).order("completed_at", { ascending: false }).limit(1).maybeSingle();
+      const { data: lm } = await supabase.from("lift_maxes").select("exercise, est_max").eq("user_id", user.id);
+      const map = {};
+      (lm || []).forEach(function (r) { map[(r.exercise || "").toLowerCase()] = Number(r.est_max); });
       const week = buildWeek(p.goals, p.sessions_per_week || 3);
       let idx = week.findIndex(function (d) { return d.dayLabel === SHORT[new Date().getDay()]; });
       if (idx < 0) idx = 0;
       setProfile(p);
       setTypeId(a ? a.type_id : null);
+      setMaxes(map);
       setDays(week);
       setActive(idx);
       setLoading(false);
@@ -52,6 +57,7 @@ export default function PlanPage() {
   const deep = type ? type.colors[1] : "#3D2E8C";
   const day = days[active] || null;
   const weekNo = profile ? currentWeek(profile.block_start) : 1;
+  const isTestWeek = weekNo === 1;
   const cat = profile ? primaryCategory(profile.goals) : "general";
   const rule = weeksFor(cat)[weekNo - 1] || weeksFor(cat)[0];
   const homeMode = profile && profile.equipment && profile.equipment !== "gym";
@@ -71,6 +77,27 @@ export default function PlanPage() {
         });
       }
       await supabase.from("exercise_logs").insert(rows);
+
+      // Learn this lift's max from what was actually done, so the plan builds off real data.
+      if (kind === "weight") {
+        let best = 0;
+        for (let i = 0; i < total; i++) {
+          const v = fields[i] || {};
+          if (v.weight) {
+            const est = estimateMax(v.weight, v.reps);
+            if (est > best) best = est;
+          }
+        }
+        if (best > 0) {
+          await supabase.rpc("record_lift_max", { p_exercise: ex.name, p_est: best });
+          setMaxes(function (m) {
+            const next = Object.assign({}, m);
+            const key = (ex.name || "").toLowerCase();
+            next[key] = Math.max(next[key] || 0, best);
+            return next;
+          });
+        }
+      }
     }
     const n = count + 1;
     setCount(n);
@@ -159,7 +186,16 @@ export default function PlanPage() {
           </div>
         </div>
 
-        {noBaselines ? (
+        {isTestWeek ? (
+          <div className="rounded-2xl border-2 p-4 mb-3" style={{ borderColor: accent + "66", background: accent + "12" }}>
+            <p className="text-sm font-bold" style={{ color: accent }}>Testing week</p>
+            <p className="text-xs text-gray-300">
+              Week one sets your baselines. On the main lifts, work up to a strong set you could stop with a rep or two left, and log what you used. Every block after this builds off those real numbers.
+            </p>
+          </div>
+        ) : null}
+
+        {noBaselines && !isTestWeek ? (
           <a href="/settings" className="block rounded-2xl border-2 p-4 mb-3" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.10)" }}>
             <p className="text-sm font-bold" style={{ color: "#FFB020" }}>Enter your starting weights first</p>
             <p className="text-xs text-gray-300">No idea what they are? We explain it in bags of sugar.</p>
@@ -181,8 +217,8 @@ export default function PlanPage() {
         </div>
 
         <DayView day={day} active={active} profile={profile} rule={rule} accent={accent} deep={deep}
-          tid={tid} homeMode={homeMode} done={done} onComplete={completeSet}
-          onReopen={reopen} finished={finished} onFinish={finish} onStation={logStation} />
+          tid={tid} homeMode={homeMode} done={done} maxes={maxes} isTestWeek={isTestWeek}
+          onComplete={completeSet} onReopen={reopen} finished={finished} onFinish={finish} onStation={logStation} />
       </div>
     </main>
   );

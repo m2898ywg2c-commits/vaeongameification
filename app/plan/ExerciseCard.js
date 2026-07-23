@@ -45,18 +45,22 @@ const HINTS = {
   weight: "Your target is filled in. Type over anything you did differently.",
 };
 
-export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, onComplete, onReopen }) {
+export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, onComplete, onReopen }) {
   const total = Number(ex.sets) || 1;
   const kind = loadType(ex);
-  const suggested = kind === "weight" ? workingWeight(ex.name, profile, weekPct) : null;
+  const suggested = kind === "weight" ? workingWeight(ex.name, profile, weekPct, maxes) : null;
+  const hasRealMax = !!(maxes && maxes[(ex.name || "").toLowerCase()]);
+  // On the testing week, weighted lifts we have no real number for get no prescribed weight,
+  // so you find and log your own. Everything else prefills as normal.
+  const calibrating = isTestWeek && kind === "weight" && !hasRealMax;
   const swap = homeMode && needsGym(ex.name);
 
-  // Prefill every set with what the plan asked for.
+  // Prefill every set with what the plan asked for, unless we are calibrating this lift.
   const [fields, setFields] = useState(function () {
     const seed = {};
     for (let i = 0; i < total; i++) {
       seed[i] = {
-        weight: suggested ? String(suggested) : "",
+        weight: (!calibrating && suggested) ? String(suggested) : "",
         reps: kind === "weight" || kind === "reps" ? targetNumber(ex.reps) : "",
         secs: kind === "time" ? targetSeconds(ex.reps) : "",
         text: "",
@@ -101,12 +105,17 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         </span>
       </div>
       {ex.note ? <p className="text-xs text-gray-400 mb-1">{ex.note}</p> : null}
-      {HINTS[kind] ? <p className="text-xs mb-2" style={{ color: accent }}>{HINTS[kind]}</p> : null}
 
-      {suggested ? (
+      {calibrating ? (
+        <p className="text-xs mb-2" style={{ color: accent }}>
+          Testing week. No target today, work up to a strong set you could stop with a rep or two left, then log the weight and reps. That becomes your baseline for this lift.
+        </p>
+      ) : (HINTS[kind] ? <p className="text-xs mb-2" style={{ color: accent }}>{HINTS[kind]}</p> : null)}
+
+      {suggested && !calibrating ? (
         <div className="rounded-xl px-3 py-2 mb-3" style={{ background: accent + "1A" }}>
           <p className="text-sm font-bold" style={{ color: accent }}>Today: {suggested}kg</p>
-          <p className="text-[11px] text-gray-400">{increaseHint(ex.name)}</p>
+          <p className="text-[11px] text-gray-400">{hasRealMax ? "From your logged max. " : ""}{increaseHint(ex.name)}</p>
         </div>
       ) : null}
 
@@ -158,7 +167,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         className="w-full py-4 rounded-2xl font-bold text-base"
         style={{ background: accent, color: "#0E1224" }}
       >
-        Completed as planned
+        {calibrating ? "Log it" : "Completed as planned"}
       </button>
     </div>
   );

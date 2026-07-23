@@ -9,7 +9,7 @@ import { sessionDone } from "@/lib/voice";
 
 const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export default function DayView({ day, active, profile, rule, accent, deep, tid, homeMode, done, onComplete, onReopen, finished, onFinish, onStation }) {
+export default function DayView({ day, active, profile, rule, accent, deep, tid, homeMode, done, maxes, isTestWeek, onComplete, onReopen, finished, onFinish, onStation }) {
   const [openWarmup, setOpenWarmup] = useState(false);
   const [openFlow, setOpenFlow] = useState(false);
   const [stations, setStations] = useState({});
@@ -62,6 +62,7 @@ export default function DayView({ day, active, profile, rule, accent, deep, tid,
         return (
           <ExerciseCard key={i} ex={ex} exIdx={i} dayKey={day.key} profile={profile}
             weekPct={rule.pct} accent={accent} homeMode={homeMode} done={!!done[i]}
+            maxes={maxes} isTestWeek={isTestWeek}
             onComplete={onComplete} onReopen={onReopen} />
         );
       })}
