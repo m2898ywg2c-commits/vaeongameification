@@ -83,7 +83,17 @@ export default function SettingsPage() {
 
       supabase.from("body_metrics").select("*").eq("user_id", user.id)
         .order("logged_at", { ascending: false }).limit(1).maybeSingle()
-        .then(function (r) { if (r.data) setLastStats(r.data); });
+        .then(function (r) {
+          if (r.data) {
+            setLastStats(r.data);
+            // Keep last measurements on screen until they are typed over, like the baselines.
+            const seed = {};
+            MEASURES.forEach(function (m) {
+              if (r.data[m.key] !== null && r.data[m.key] !== undefined) seed[m.key] = String(r.data[m.key]);
+            });
+            setStats(seed);
+          }
+        });
     });
   }, [router]);
 
@@ -165,7 +175,7 @@ export default function SettingsPage() {
         <div className={card}>
           <p className="text-base font-bold mb-1">Log your body stats</p>
           <p className="text-sm text-gray-300 mb-4">
-            Fill in what you can be bothered with. Bodyweight alone is enough to draw a trend.
+            Your last numbers stay filled in. Type over whatever has changed, bodyweight alone is enough to draw a trend.
           </p>
 
           <div className="grid grid-cols-2 gap-3 mb-3">
@@ -350,20 +360,23 @@ export default function SettingsPage() {
               {noBaselines ? "Set your starting weights" : "Your starting weights"}
             </p>
           </div>
-          <p className="text-sm text-gray-300 mb-4">
+          <p className="text-sm text-gray-300 mb-2">
             {noBaselines
               ? "Vaeon needs these to work out what you should lift each week. Without them your plan has no numbers on it."
-              : "Vaeon uses these to calculate your working weight for every week of the block."}
+              : "Vaeon uses these to calculate your working weight for every week of the block, and to scale every other lift."}
+          </p>
+          <p className="text-xs text-gray-400 mb-4">
+            Enter your working max: the heaviest you can manage for one to three clean reps. Not a true one-rep max, there is no need to test that and it is how people get hurt.
           </p>
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">Bench (kg)</label>
+              <label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">Bench max (kg)</label>
               <input value={bench} onChange={function (e) { setBench(e.target.value); }} inputMode="decimal" placeholder="20"
                 className={bigInput} style={{ borderColor: accent + "66" }} />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">Squat (kg)</label>
+              <label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">Squat max (kg)</label>
               <input value={squat} onChange={function (e) { setSquat(e.target.value); }} inputMode="decimal" placeholder="20"
                 className={bigInput} style={{ borderColor: accent + "66" }} />
             </div>
