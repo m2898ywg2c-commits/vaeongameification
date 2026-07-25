@@ -192,6 +192,13 @@ export default function OnboardingPage() {
             </div>
           ) : null}
 
+          <div className="rounded-2xl border p-4 mb-4" style={{ borderColor: "#2DD4BF55", background: "rgba(45,212,191,0.08)" }}>
+            <p className="text-sm font-bold mb-1" style={{ color: "#2DD4BF" }}>Next: find your training type</p>
+            <p className="text-xs text-gray-300">
+              A quick two-minute quiz. To build you the best training experience we can, we need to understand how you tick: what actually drives you, how you like to train, and when your body is at its best. That is what finding your type means.
+            </p>
+          </div>
+
           {error ? <p className="text-sm text-red-400 mb-3">{error}</p> : null}
           <div className="flex gap-3">
             <button onClick={save} disabled={saving || blocked}
