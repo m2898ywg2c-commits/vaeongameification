@@ -9,9 +9,11 @@ import {
   FRAMING_QUESTIONS,
   CHRONOTYPE_PROMPT,
   CHRONOTYPE_OPTIONS,
+  TIEBREAKERS,
   TYPES,
   scoreAnswers,
   scoreFraming,
+  resolveType,
 } from "@/lib/personality";
 import {
   FRAMING_LABEL,
@@ -49,6 +51,9 @@ export default function AssessmentPage() {
   const [index, setIndex] = useState(0);
   const [values, setValues] = useState([]);
   const [chrono, setChrono] = useState(null);
+  const [tieDims, setTieDims] = useState([]);
+  const [tieIndex, setTieIndex] = useState(0);
+  const [tieChoices, setTieChoices] = useState({});
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -57,10 +62,13 @@ export default function AssessmentPage() {
   const TYPE_N = QUESTIONS.length;
   const FRAMING_N = FRAMING_QUESTIONS.length;
   const LIKERT_N = TYPE_N + FRAMING_N;
-  const TOTAL = LIKERT_N + 1; // final step is the chronotype choice
+  const TOTAL = LIKERT_N + 1; // final fixed step is the chronotype choice
 
-  const finalise = async (vals, chronoValue) => {
+  const finalise = async (vals, chronoValue, ties) => {
     const scored = scoreAnswers(vals.slice(0, TYPE_N));
+    // A dimension that lands dead even is resolved by the forced-choice tiebreaker the
+    // respondent just answered, not by a hidden default that would skew one type.
+    const typeId = resolveType(scored, ties);
     const framed = scoreFraming(vals.slice(TYPE_N, LIKERT_N));
     setSaving(true);
     setError(null);
@@ -72,7 +80,7 @@ export default function AssessmentPage() {
     }
     const { error: insertError } = await supabase.from("assessment_results").insert({
       user_id: user.id,
-      type_id: scored.typeId,
+      type_id: typeId,
       structure_score: scored.structure,
       orientation_score: scored.orientation,
       social_score: scored.social,
@@ -95,7 +103,7 @@ export default function AssessmentPage() {
       setError(profileError.message);
       return;
     }
-    setResult({ scored: scored, framed: framed, chrono: chronoValue });
+    setResult({ scored: { ...scored, typeId: typeId }, framed: framed, chrono: chronoValue });
     setStage("result");
   };
 
@@ -108,13 +116,74 @@ export default function AssessmentPage() {
 
   const chooseChrono = (value) => {
     setChrono(value);
-    finalise(values, value);
+    const scored = scoreAnswers(values.slice(0, TYPE_N));
+    if (scored.ties.length > 0) {
+      setTieDims(scored.ties);
+      setTieIndex(0);
+      setTieChoices({});
+      setStage("tiebreak");
+    } else {
+      finalise(values, value, {});
+    }
+  };
+
+  const chooseTie = (dim, v) => {
+    const next = { ...tieChoices, [dim]: v };
+    setTieChoices(next);
+    if (tieIndex + 1 < tieDims.length) {
+      setTieIndex(tieIndex + 1);
+    } else {
+      finalise(values, chrono, next);
+    }
   };
 
   const back = () => {
     if (index > 0) setIndex(index - 1);
     else setStage("intro");
   };
+
+  const tieBack = () => {
+    if (tieIndex > 0) setTieIndex(tieIndex - 1);
+    else setStage("quiz"); // returns to the chronotype step, index is still LIKERT_N
+  };
+
+  if (stage === "tiebreak") {
+    const dim = tieDims[tieIndex];
+    const tb = TIEBREAKERS[dim];
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
+        <div className="w-full max-w-md">
+          <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">A dead heat: {tb.label.toLowerCase()}</p>
+          <p className="text-xs text-gray-500 mb-2">Tiebreaker {tieIndex + 1} of {tieDims.length}</p>
+          <div className="h-1.5 rounded-full bg-white/10 mb-8">
+            <div className="h-1.5 rounded-full" style={{ width: "100%", background: GRAD }} />
+          </div>
+          <h1 className="text-xl font-bold mb-2 min-h-8">{tb.prompt}</h1>
+          <p className="text-sm text-gray-400 mb-6">
+            Your answers landed dead even on this dial. It happens to about one person in
+            seven. Rather than guess, we ask. Go with your gut.
+          </p>
+          <div className="space-y-2">
+            {tb.options.map((o) => (
+              <button
+                key={o.value}
+                onClick={() => chooseTie(dim, o.value)}
+                disabled={saving}
+                className="w-full text-left px-4 py-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/15 text-sm font-medium"
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+          {saving ? <p className="text-sm text-gray-400 mt-4">Saving your result...</p> : null}
+          {error ? <p className="text-sm text-red-400 mt-4">{error}</p> : null}
+          <button onClick={tieBack} className="text-xs text-gray-500 underline mt-6" disabled={saving}>
+            Back
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   if (stage === "quiz") {
     const onChrono = index >= LIKERT_N;
@@ -223,6 +292,9 @@ export default function AssessmentPage() {
               onClick={() => {
                 setValues([]);
                 setChrono(null);
+                setTieDims([]);
+                setTieIndex(0);
+                setTieChoices({});
                 setResult(null);
                 setIndex(0);
                 setStage("quiz");
