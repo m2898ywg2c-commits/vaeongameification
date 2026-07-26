@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { BrandLockup } from "../Brand";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -29,6 +30,10 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
       <div className="w-full max-w-sm">
+        <div className="mb-7">
+          <BrandLockup size={30} />
+        </div>
+
         <h1 className="text-3xl font-bold mb-1">Welcome back</h1>
         <p className="text-sm text-gray-400 mb-8">Log in to pick up where you left off.</p>
 

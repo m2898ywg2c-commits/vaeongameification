@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { BrandLockup } from "../Brand";
 
 const AGE_GROUPS = ["Under 18", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
 
@@ -52,6 +53,10 @@ export default function SignUpPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
       <div className="w-full max-w-sm">
+        <div className="mb-6">
+          <BrandLockup size={30} />
+        </div>
+
         <h1 className="text-2xl font-bold mb-1">Create your account</h1>
         <p className="text-sm text-gray-400 mb-6">Your screen name is what other people see, never your real name.</p>
 

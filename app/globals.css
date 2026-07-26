@@ -24,3 +24,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Brand bar.
+   The bar renders above every page from the root layout, but each page paints
+   itself with min-h-screen. Left alone that means viewport height plus bar
+   height, so every screen in the app would gain a small permanent scroll.
+   Shaving the bar height off min-h-screen keeps pages exactly one screen tall.
+   Keep the 34px in sync with BAR_HEIGHT in app/Brand.js. */
+main.min-h-screen {
+  min-height: calc(100vh - 34px);
+}
