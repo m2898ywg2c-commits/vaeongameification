@@ -4,6 +4,7 @@ import { TYPES } from "@/lib/personality";
 import { computeStats, coachMessage } from "@/lib/plan";
 import { goalNames, primaryCategory } from "@/lib/training";
 import { currentWeek, weeksFor, blockComplete, BLOCK_WEEKS } from "@/lib/progression";
+import { noteText } from "@/lib/kudos";
 import SignOutButton from "./SignOutButton";
 import AchievementWatcher from "./AchievementWatcher";
 import TypeOrb from "../TypeOrb";
@@ -36,6 +37,11 @@ const { data: sessions } = await supabase.from("training_sessions").select("*")
 // Have they logged body stats this week?
 const { data: thisWeekMetrics } = await supabase.from("body_metrics").select("id")
 .eq("user_id", user.id).gte("logged_at", startOfWeek()).limit(1).maybeSingle();
+
+// Kudos sent TO me. RLS on the kudos table is outgoing-only, so this comes from a
+// security definer function rather than a direct select.
+const { data: kudosIn } = await supabase.rpc("get_my_kudos");
+const myKudos = (kudosIn || []).slice(0, 5);
 
 const pledged = profile.sessions_per_week || 3;
 const typeId = assessment ? assessment.type_id : null;
@@ -151,6 +157,33 @@ return (
 <p className="text-xs text-gray-400">Two minutes. It decides how you get coached.</p>
 </a>
 )}
+
+{/* ---------- Kudos received ---------- */}
+{myKudos.length > 0 ? (
+<div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-3">
+<p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">Your kudos</p>
+<div className="space-y-3">
+{myKudos.map(function (k, i) {
+const line = noteText(k.note_code);
+const kt = k.from_type_id ? TYPES[k.from_type_id] : null;
+return (
+<div key={i} className="flex items-start gap-3">
+{kt ? <TypeOrb typeId={k.from_type_id} size={26} /> : <span className="w-[26px] flex-shrink-0" />}
+<div className="flex-1 min-w-0">
+<p className="text-sm">
+<span className="font-bold">{k.from_screen_name}</span> sent you {k.emoji}
+</p>
+{line ? <p className="text-xs text-gray-300 italic mt-0.5">&ldquo;{line}&rdquo;</p> : null}
+</div>
+</div>
+);
+})}
+</div>
+<a href="/leaderboard" className="inline-block text-xs underline mt-3" style={{ color: accent }}>
+Send some back
+</a>
+</div>
+) : null}
 
 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-5">
 <div className="flex items-center justify-between mb-1">
