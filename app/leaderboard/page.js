@@ -10,7 +10,6 @@ const KUDOS_EMOJI = ["👏", "🔥", "💪", "🙌", "⚡", "👊"];
 
 export default function LeaderboardPage() {
 const [rows, setRows] = useState([]);
-const [pbs, setPbs] = useState([]);
 const [meId, setMeId] = useState(null);
 const [myType, setMyType] = useState(null);
 const [myKudos, setMyKudos] = useState({}); // to_user -> emoji I gave
@@ -18,6 +17,10 @@ const [filter, setFilter] = useState("all"); // all | mine
 const [pickerFor, setPickerFor] = useState(null);
 const [loading, setLoading] = useState(true);
 
+// The recent-PB feed and the PR star both used to live here. Both are gone: in a testing
+// week every logged set is a new max, so the feed buried the board and the star ended up
+// on practically everyone, which made it meaningless. get_recent_pbs still exists in the
+// database if we ever want it somewhere it can breathe.
 const load = async function () {
 const supabase = createClient();
 const res = await supabase.auth.getUser();
@@ -34,10 +37,6 @@ setMyKudos(map);
 }
 const lb = await supabase.rpc("get_leaderboard");
 setRows(lb.data || []);
-// Still fetched, but only to put a small star against anyone with a recent personal best.
-// The full PB feed was dropped: in a testing week it fills the screen and buries the board.
-const pb = await supabase.rpc("get_recent_pbs");
-setPbs(pb.data || []);
 setLoading(false);
 };
 
@@ -58,9 +57,6 @@ load();
 };
 
 const myTypeColour = myType && TYPES[myType] ? TYPES[myType].colors[0] : "#2DD4BF";
-// Anyone in the recent-PB feed gets a star on their row.
-const pbUserIds = {};
-pbs.forEach(function (p) { pbUserIds[p.user_id] = true; });
 const visible = rows.filter(function (r) {
 return filter === "mine" && myType ? r.type_id === myType : true;
 });
@@ -126,7 +122,6 @@ className={"rounded-2xl border p-4 " + (mine ? "border-white/40 bg-white/15" : "
 {t ? <TypeOrb typeId={r.type_id} size={38} /> : <span className="w-[38px] h-[38px] rounded-full bg-white/10 inline-block" />}
 <div className="flex-1 min-w-0">
 <p className="text-sm font-bold truncate">
-{pbUserIds[r.user_id] ? <span title="Just hit a personal best" aria-label="recent PB">⭐ </span> : null}
 {r.screen_name}{mine ? " (you)" : ""}
 </p>
 <p className="text-xs text-gray-400">
