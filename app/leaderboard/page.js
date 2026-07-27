@@ -7,6 +7,8 @@ import { KUDOS_EMOJI, KUDOS_NOTES, noteText } from "@/lib/kudos";
 import TypeOrb from "../TypeOrb";
 import Home from "../Home";
 
+const TOP_N = 5;
+
 export default function LeaderboardPage() {
 const [rows, setRows] = useState([]);
 const [meId, setMeId] = useState(null);
@@ -15,6 +17,7 @@ const [myKudos, setMyKudos] = useState({}); // to_user -> { emoji, note }
 const [filter, setFilter] = useState("all"); // all | mine
 const [pickerFor, setPickerFor] = useState(null);
 const [noteFor, setNoteFor] = useState(null);
+const [expanded, setExpanded] = useState(false);
 const [loading, setLoading] = useState(true);
 
 // The recent-PB feed and the PR star both used to live here. Both are gone: in a testing
@@ -81,53 +84,14 @@ const visible = rows.filter(function (r) {
 return filter === "mine" && myType ? r.type_id === myType : true;
 });
 
-return (
-<main className="min-h-screen bg-[#0E1224] text-white px-5 py-8">
-<div className="max-w-md mx-auto">
-<div className="mb-6"><Home accent={myTypeColour} /></div>
+// Only the top five by default, so the board stays readable on a phone.
+const shown = expanded ? visible : visible.slice(0, TOP_N);
+const myIndex = meId ? visible.findIndex(function (r) { return r.user_id === meId; }) : -1;
+// If you are outside the top five, your own row is pinned underneath rather than hidden.
+// Seeing where you actually sit is the entire reason most people open this page.
+const pinMe = !expanded && myIndex >= TOP_N;
 
-<h1 className="text-2xl font-bold mb-2">This block</h1>
-<p className="text-sm text-gray-300 mb-5">
-Scored on how much of your own pledge you have hit so far this six-week block, not raw
-counts, so someone in week one is compared fairly with someone in week six. Resets when
-your block does.
-</p>
-
-{/* ---------- Filter ---------- */}
-<div className="grid grid-cols-2 gap-2 mb-4">
-<button
-onClick={function () { setFilter("all"); }}
-className="py-2.5 rounded-full border text-sm font-bold"
-style={{
-borderColor: filter === "all" ? myTypeColour : "rgba(255,255,255,0.12)",
-background: filter === "all" ? myTypeColour + "22" : "rgba(255,255,255,0.04)",
-}}
->
-Everyone
-</button>
-<button
-onClick={function () { if (myType) setFilter("mine"); }}
-disabled={!myType}
-className="py-2.5 rounded-full border text-sm font-bold"
-style={{
-borderColor: filter === "mine" ? myTypeColour : "rgba(255,255,255,0.12)",
-background: filter === "mine" ? myTypeColour + "22" : "rgba(255,255,255,0.04)",
-opacity: myType ? 1 : 0.4,
-}}
->
-My fellow {myType && TYPES[myType] ? TYPES[myType].name.replace("The ", "") + "s" : "types"}
-</button>
-</div>
-
-{loading ? (
-<p className="text-sm text-gray-400">Loading...</p>
-) : visible.length === 0 ? (
-<p className="text-sm text-gray-400">
-{filter === "mine" ? "Nobody of your type on the board yet." : "Nobody has logged anything yet."}
-</p>
-) : (
-<div className="space-y-2">
-{visible.map(function (r, i) {
+const renderRow = function (r, rankIndex) {
 const t = r.type_id ? TYPES[r.type_id] : null;
 const mine = meId && r.user_id === meId;
 const gave = myKudos[r.user_id];
@@ -139,7 +103,7 @@ key={r.user_id}
 className={"rounded-2xl border p-4 " + (mine ? "border-white/40 bg-white/15" : "border-white/10 bg-white/5")}
 >
 <div className="flex items-center gap-3">
-<span className="text-sm font-bold w-5 text-gray-400">{i + 1}</span>
+<span className="text-sm font-bold w-5 text-gray-400">{rankIndex + 1}</span>
 {t ? <TypeOrb typeId={r.type_id} size={38} /> : <span className="w-[38px] h-[38px] rounded-full bg-white/10 inline-block" />}
 <div className="flex-1 min-w-0">
 <p className="text-sm font-bold truncate">
@@ -225,8 +189,75 @@ style={{ color: accent }}
 ) : null}
 </div>
 );
-})}
+};
+
+return (
+<main className="min-h-screen bg-[#0E1224] text-white px-5 py-8">
+<div className="max-w-md mx-auto">
+<div className="mb-6"><Home accent={myTypeColour} /></div>
+
+<h1 className="text-2xl font-bold mb-2">This block</h1>
+<p className="text-sm text-gray-300 mb-5">
+Scored on how much of your own pledge you have hit so far this six-week block, not raw
+counts, so someone in week one is compared fairly with someone in week six. Resets when
+your block does.
+</p>
+
+{/* ---------- Filter ---------- */}
+<div className="grid grid-cols-2 gap-2 mb-4">
+<button
+onClick={function () { setFilter("all"); setExpanded(false); }}
+className="py-2.5 rounded-full border text-sm font-bold"
+style={{
+borderColor: filter === "all" ? myTypeColour : "rgba(255,255,255,0.12)",
+background: filter === "all" ? myTypeColour + "22" : "rgba(255,255,255,0.04)",
+}}
+>
+Everyone
+</button>
+<button
+onClick={function () { if (myType) { setFilter("mine"); setExpanded(false); } }}
+disabled={!myType}
+className="py-2.5 rounded-full border text-sm font-bold"
+style={{
+borderColor: filter === "mine" ? myTypeColour : "rgba(255,255,255,0.12)",
+background: filter === "mine" ? myTypeColour + "22" : "rgba(255,255,255,0.04)",
+opacity: myType ? 1 : 0.4,
+}}
+>
+My fellow {myType && TYPES[myType] ? TYPES[myType].name.replace("The ", "") + "s" : "types"}
+</button>
 </div>
+
+{loading ? (
+<p className="text-sm text-gray-400">Loading...</p>
+) : visible.length === 0 ? (
+<p className="text-sm text-gray-400">
+{filter === "mine" ? "Nobody of your type on the board yet." : "Nobody has logged anything yet."}
+</p>
+) : (
+<>
+<div className="space-y-2">
+{shown.map(function (r, i) { return renderRow(r, i); })}
+</div>
+
+{pinMe ? (
+<div className="mt-2">
+<p className="text-center text-xs text-gray-600 mb-2">&middot; &middot; &middot;</p>
+{renderRow(visible[myIndex], myIndex)}
+</div>
+) : null}
+
+{visible.length > TOP_N ? (
+<button
+onClick={function () { setExpanded(!expanded); }}
+className="w-full mt-3 py-3 rounded-full border text-sm font-bold"
+style={{ borderColor: myTypeColour + "55", color: myTypeColour, background: myTypeColour + "12" }}
+>
+{expanded ? "Show top " + TOP_N + " only" : "Show all " + visible.length}
+</button>
+) : null}
+</>
 )}
 
 <p className="text-xs text-gray-500 mt-6">
