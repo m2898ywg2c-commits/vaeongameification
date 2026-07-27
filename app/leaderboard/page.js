@@ -3,18 +3,18 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TYPES } from "@/lib/personality";
+import { KUDOS_EMOJI, KUDOS_NOTES, noteText } from "@/lib/kudos";
 import TypeOrb from "../TypeOrb";
 import Home from "../Home";
-
-const KUDOS_EMOJI = ["👏", "🔥", "💪", "🙌", "⚡", "👊"];
 
 export default function LeaderboardPage() {
 const [rows, setRows] = useState([]);
 const [meId, setMeId] = useState(null);
 const [myType, setMyType] = useState(null);
-const [myKudos, setMyKudos] = useState({}); // to_user -> emoji I gave
+const [myKudos, setMyKudos] = useState({}); // to_user -> { emoji, note }
 const [filter, setFilter] = useState("all"); // all | mine
 const [pickerFor, setPickerFor] = useState(null);
+const [noteFor, setNoteFor] = useState(null);
 const [loading, setLoading] = useState(true);
 
 // The recent-PB feed and the PR star both used to live here. Both are gone: in a testing
@@ -30,9 +30,9 @@ setMeId(user.id);
 const a = await supabase.from("assessment_results").select("type_id")
 .eq("user_id", user.id).order("completed_at", { ascending: false }).limit(1).maybeSingle();
 if (a.data) setMyType(a.data.type_id);
-const k = await supabase.from("kudos").select("to_user, emoji").eq("from_user", user.id);
+const k = await supabase.from("kudos").select("to_user, emoji, note_code").eq("from_user", user.id);
 const map = {};
-(k.data || []).forEach(function (r) { map[r.to_user] = r.emoji; });
+(k.data || []).forEach(function (r) { map[r.to_user] = { emoji: r.emoji, note: r.note_code }; });
 setMyKudos(map);
 }
 const lb = await supabase.rpc("get_leaderboard");
@@ -42,15 +42,35 @@ setLoading(false);
 
 useEffect(function () { load(); }, []);
 
+// One tap still sends. The note panel opens afterwards so adding a line is a bonus
+// rather than an extra hurdle, which matters with a phone and sweaty hands.
 const sendKudos = async function (toUser, emoji) {
 if (!meId) return;
+const existing = myKudos[toUser] || {};
 const next = Object.assign({}, myKudos);
-next[toUser] = emoji;
+next[toUser] = { emoji: emoji, note: existing.note || null };
 setMyKudos(next);
 setPickerFor(null);
+setNoteFor(toUser);
 const supabase = createClient();
 await supabase.from("kudos").upsert(
-{ from_user: meId, to_user: toUser, emoji: emoji },
+{ from_user: meId, to_user: toUser, emoji: emoji, note_code: existing.note || null },
+{ onConflict: "from_user,to_user" }
+);
+load();
+};
+
+const sendNote = async function (toUser, code) {
+if (!meId) return;
+const existing = myKudos[toUser] || {};
+if (!existing.emoji) return;
+const next = Object.assign({}, myKudos);
+next[toUser] = { emoji: existing.emoji, note: code };
+setMyKudos(next);
+setNoteFor(null);
+const supabase = createClient();
+await supabase.from("kudos").upsert(
+{ from_user: meId, to_user: toUser, emoji: existing.emoji, note_code: code },
 { onConflict: "from_user,to_user" }
 );
 load();
@@ -111,6 +131,7 @@ My fellow {myType && TYPES[myType] ? TYPES[myType].name.replace("The ", "") + "s
 const t = r.type_id ? TYPES[r.type_id] : null;
 const mine = meId && r.user_id === meId;
 const gave = myKudos[r.user_id];
+const gaveNote = gave ? noteText(gave.note) : null;
 const accent = t ? t.colors[0] : "#2DD4BF";
 return (
 <div
@@ -144,7 +165,7 @@ return (
 key={em}
 onClick={function () { sendKudos(r.user_id, em); }}
 className="text-xl w-9 h-9 rounded-full border border-white/15 bg-white/5"
-style={gave === em ? { borderColor: accent, background: accent + "22" } : null}
+style={gave && gave.emoji === em ? { borderColor: accent, background: accent + "22" } : null}
 >
 {em}
 </button>
@@ -154,14 +175,51 @@ style={gave === em ? { borderColor: accent, background: accent + "22" } : null}
 close
 </button>
 </div>
+) : noteFor === r.user_id ? (
+<div>
+<p className="text-xs text-gray-400 mb-2">Add a line? Optional.</p>
+<div className="space-y-1.5">
+{KUDOS_NOTES.map(function (n) {
+const on = gave && gave.note === n.code;
+return (
+<button
+key={n.code}
+onClick={function () { sendNote(r.user_id, n.code); }}
+className="w-full text-left text-xs px-3 py-2.5 rounded-xl border"
+style={{
+borderColor: on ? accent : "rgba(255,255,255,0.12)",
+background: on ? accent + "22" : "rgba(255,255,255,0.04)",
+}}
+>
+{n.text}
+</button>
+);
+})}
+</div>
+<button onClick={function () { setNoteFor(null); }} className="text-xs text-gray-500 underline mt-2">
+No thanks, just the emoji
+</button>
+</div>
 ) : (
+<div>
 <button
 onClick={function () { setPickerFor(r.user_id); }}
 className="text-xs font-bold px-3 py-1.5 rounded-full border"
 style={{ borderColor: accent + "55", color: accent, background: accent + "12" }}
 >
-{gave ? "Sent " + gave + " · change" : "＋ Send kudos"}
+{gave ? "Sent " + gave.emoji + " · change" : "＋ Send kudos"}
 </button>
+{gave ? (
+<button
+onClick={function () { setNoteFor(r.user_id); }}
+className="text-xs underline ml-3"
+style={{ color: accent }}
+>
+{gaveNote ? "Change your line" : "Add a line"}
+</button>
+) : null}
+{gaveNote ? <p className="text-xs text-gray-400 mt-2 italic">&ldquo;{gaveNote}&rdquo;</p> : null}
+</div>
 )}
 </div>
 ) : null}
@@ -172,8 +230,8 @@ style={{ borderColor: accent + "55", color: accent, background: accent + "12" }}
 )}
 
 <p className="text-xs text-gray-500 mt-6">
-Kudos are one per person, and you can change the emoji any time. Consistency across the
-block beats a single big week, which is the whole point.
+Kudos are one per person, and you can change the emoji or the line any time. Consistency
+across the block beats a single big week, which is the whole point.
 </p>
 </div>
 </main>
