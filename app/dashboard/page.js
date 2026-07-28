@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { TYPES } from "@/lib/personality";
 import { computeStats, coachMessage } from "@/lib/plan";
 import { goalNames, primaryCategory } from "@/lib/training";
-import { currentWeek, weeksFor, blockComplete, BLOCK_WEEKS } from "@/lib/progression";
+import { weeksFor } from "@/lib/progression";
+import { isGymReady, blockWeeksFor, currentWeekIn, blockCompleteIn } from "@/lib/gymready";
 import SignOutButton from "./SignOutButton";
 import AchievementWatcher from "./AchievementWatcher";
 import KudosCard from "./KudosCard";
@@ -49,15 +50,19 @@ const typeId = assessment ? assessment.type_id : null;
 const type = typeId ? TYPES[typeId] : null;
 const stats = computeStats(sessions || [], pledged);
 const nudge = type ? coachMessage(typeId, stats, profile.framing) : null;
+const gym = isGymReady(profile.goals);
 const names = goalNames(profile.goals);
 const category = primaryCategory(profile.goals);
-const weekNo = currentWeek(profile.block_start);
+const blockWeeks = blockWeeksFor(profile);
+const weekNo = currentWeekIn(profile.block_start, blockWeeks);
 const rule = weeksFor(category)[weekNo - 1] || weeksFor(category)[0];
-const finished = blockComplete(profile.block_start);
+const finished = blockCompleteIn(profile.block_start, blockWeeks);
 const today = DAYS[new Date().getDay()];
 const accent = type ? type.colors[0] : "#2DD4BF";
 const deep = type ? type.colors[1] : "#0F766E";
-const noBaselines = !profile.baseline_bench && !profile.baseline_squat;
+// Gym ready users get their loads from their coach, so nagging them for baselines is
+// both useless and a bit insulting.
+const noBaselines = !gym && !profile.baseline_bench && !profile.baseline_squat;
 const plain = { sessions_per_week: pledged, block_start: profile.block_start || null };
 
 const tile = "rounded-2xl border border-white/10 bg-white/5 p-3 text-center";
@@ -71,7 +76,9 @@ return (
 {type ? <TypeOrb typeId={typeId} size={46} /> : null}
 <div>
 <p className="text-lg font-bold leading-tight">{profile.screen_name}</p>
-<p className="text-xs leading-tight" style={{ color: accent }}>{type ? type.name : names.join(" + ")}</p>
+<p className="text-xs leading-tight" style={{ color: accent }}>
+{type ? type.name : (gym ? "Gym ready" : names.join(" + "))}
+</p>
 </div>
 </div>
 <SignOutButton />
@@ -82,7 +89,7 @@ return (
 <span className="text-2xl" aria-hidden="true">{"\u{1F3C1}"}</span>
 <div className="flex-1">
 <p className="text-sm font-bold" style={{ color: "#3DDC97" }}>Block {profile.block_number || 1} complete</p>
-<p className="text-xs text-gray-300">See your six-week summary and roll straight into the next one.</p>
+<p className="text-xs text-gray-300">See your {blockWeeks}-week summary and roll straight into the next one.</p>
 </div>
 <span style={{ color: "#3DDC97" }}>&rsaquo;</span>
 </a>
@@ -116,6 +123,7 @@ return (
 <p className="text-sm font-medium opacity-90 mt-1">Tap to open and start logging</p>
 </a>
 
+{!gym ? (
 <a href="/fallback" className="flex items-center gap-3 rounded-2xl border-2 p-4 mb-5" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.08)" }}>
 <span className="text-2xl" aria-hidden="true">{"\u{1F3E0}"}</span>
 <div className="flex-1">
@@ -124,6 +132,7 @@ return (
 </div>
 <span className="text-lg" style={{ color: "#FFB020" }}>&rsaquo;</span>
 </a>
+) : <div className="mb-5" />}
 
 <div className="grid grid-cols-3 gap-2 mb-5">
 <div className={tile}>
@@ -164,10 +173,16 @@ return (
 
 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-5">
 <div className="flex items-center justify-between mb-1">
-<p className="text-sm font-bold">Block {profile.block_number || 1} &middot; Week {weekNo}/{BLOCK_WEEKS}</p>
+<p className="text-sm font-bold">Block {profile.block_number || 1} &middot; Week {weekNo}/{blockWeeks}</p>
+{!gym ? (
 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: accent + "33", color: accent }}>{rule.label}</span>
+) : null}
 </div>
-<p className="text-xs text-gray-300">{rule.increase}</p>
+<p className="text-xs text-gray-300">
+{gym
+? "Your coach sets the training. Vaeon counts the sessions and reports back at the end of the block."
+: rule.increase}
+</p>
 {finished ? <a href="/blockend" className="text-xs underline block mt-2" style={{ color: "#3DDC97" }}>Block complete. See your summary and start the next one.</a> : null}
 {!profile.block_start ? <a href="/settings" className="text-xs underline block mt-2" style={{ color: "#FFB020" }}>Set your block start date</a> : null}
 </div>
