@@ -250,8 +250,10 @@ return (
 {ALL_GOALS.map(function (g) {
 const active = picked.indexOf(g.id) !== -1;
 // Gym ready means Vaeon does not plan, so it cannot sit alongside a goal that
-// says it should. Selecting either clears the other.
-const blocked = gym ? g.id !== GYM_READY_ID : (g.id === GYM_READY_ID ? false : picked.length >= 2 && !active);
+// says it should. Selecting either clears the other. The others are deliberately
+// NOT dimmed while Gym ready is on: they still work, they just swap you over, and
+// dimming would imply they are disabled when they are not.
+const blocked = gym ? false : (g.id === GYM_READY_ID ? false : picked.length >= 2 && !active);
 const own = g.id === GYM_READY_ID;
 return (
 <button key={g.id} onClick={function () { toggle(g.id); }}
