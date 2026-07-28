@@ -110,7 +110,7 @@ className={"rounded-2xl border p-4 " + (mine ? "border-white/40 bg-white/15" : "
 {r.screen_name}{mine ? " (you)" : ""}
 </p>
 <p className="text-xs text-gray-400">
-{t ? t.name : "No type yet"} &middot; {r.done} this block &middot; wk {r.weeks}/6
+{t ? t.name : "No type yet"} &middot; {r.done} this block &middot; wk {r.weeks}/{r.block_weeks || 6}
 </p>
 </div>
 <div className="text-right">
@@ -198,9 +198,9 @@ return (
 
 <h1 className="text-2xl font-bold mb-2">This block</h1>
 <p className="text-sm text-gray-300 mb-5">
-Scored on how much of your own pledge you have hit so far this six-week block, not raw
-counts, so someone in week one is compared fairly with someone in week six. Resets when
-your block does.
+Scored on how much of your own pledge you have hit so far this block, not raw counts,
+so someone in week one is compared fairly with someone near the end. Blocks are six
+weeks, or eight if you are following your own plan. Resets when your block does.
 </p>
 
 {/* ---------- Filter ---------- */}
