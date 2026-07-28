@@ -4,6 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GOAL_LIST, SESSION_CHOICES } from "@/lib/training";
+import {
+GYM_READY_GOAL,
+GYM_READY_ID,
+GYM_READY_BLOCK_WEEKS,
+DEFAULT_BLOCK_WEEKS,
+isGymReady,
+toggleGoal,
+} from "@/lib/gymready";
 
 const EQUIPMENT = [
 { id: "gym", icon: "🏋️", name: "I have a gym", blurb: "Barbells, machines, cables, the lot." },
@@ -22,6 +30,9 @@ const WEEKDAYS = [
 { n: 0, short: "Sun" },
 ];
 
+// Gym ready sits at the end of the list, after the twelve Vaeon plans for.
+const ALL_GOALS = GOAL_LIST.concat([GYM_READY_GOAL]);
+
 export default function OnboardingPage() {
 const [step, setStep] = useState("goals");
 const [picked, setPicked] = useState([]);
@@ -33,9 +44,10 @@ const [saving, setSaving] = useState(false);
 const [error, setError] = useState(null);
 const router = useRouter();
 
+const gym = isGymReady(picked);
+
 const toggle = function (id) {
-if (picked.indexOf(id) !== -1) setPicked(picked.filter(function (g) { return g !== id; }));
-else if (picked.length < 2) setPicked(picked.concat([id]));
+setPicked(toggleGoal(picked, id, 2));
 };
 
 const toggleDay = function (n) {
@@ -57,8 +69,18 @@ equipment: equipment,
 fixed_days: fixedDays === null ? true : fixedDays,
 train_days: fixedDays ? trainDays : [],
 }).eq("id", user.id);
+if (e) { setSaving(false); setError(e.message); return; }
+
+// Block length is stored per user so an individual's block can be changed later without
+// touching any logic. Written separately and allowed to fail, because profiles.block_weeks
+// is a later migration: until it exists, blockWeeksFor() derives the same answer from the
+// goal, so nothing breaks either way.
+try {
+await supabase.from("profiles")
+.update({ block_weeks: gym ? GYM_READY_BLOCK_WEEKS : DEFAULT_BLOCK_WEEKS })
+.eq("id", user.id);
+} catch (ignored) {}
 setSaving(false);
-if (e) { setError(e.message); return; }
 router.push("/assessment");
 router.refresh();
 };
@@ -224,19 +246,32 @@ return (
 <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">What is this really for</p>
 <h1 className="text-3xl font-bold mb-2">Pick up to two.</h1>
 <p className="text-sm text-gray-300 mb-8">Your goals decide the sessions Vaeon builds for you.</p>
-<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-{GOAL_LIST.map(function (g) {
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+{ALL_GOALS.map(function (g) {
 const active = picked.indexOf(g.id) !== -1;
-const full = picked.length >= 2 && !active;
+// Gym ready means Vaeon does not plan, so it cannot sit alongside a goal that
+// says it should. Selecting either clears the other.
+const blocked = gym ? g.id !== GYM_READY_ID : (g.id === GYM_READY_ID ? false : picked.length >= 2 && !active);
+const own = g.id === GYM_READY_ID;
 return (
 <button key={g.id} onClick={function () { toggle(g.id); }}
 className={"text-left px-4 py-3 rounded-xl border text-sm font-medium " +
-(active ? "border-white bg-white/20" : full ? "border-white/5 bg-white/5 opacity-40" : "border-white/10 bg-white/5")}>
-{g.name}
+(active ? "border-white bg-white/20" : blocked ? "border-white/5 bg-white/5 opacity-40" : "border-white/10 bg-white/5") +
+(own ? " sm:col-span-2" : "")}>
+<span className="block">{g.name}</span>
+{own ? <span className="block text-xs text-gray-400 mt-1">{g.blurb}</span> : null}
 </button>
 );
 })}
 </div>
+
+{gym ? (
+<p className="text-xs text-gray-400 mb-8">
+Gym ready replaces the other goals, because your coach is setting the plan. Vaeon will
+record your sessions, track your lifts and report back every eight weeks.
+</p>
+) : <div className="mb-8" />}
+
 <button onClick={function () { if (picked.length) setStep("equipment"); }} disabled={picked.length === 0}
 className="w-full px-6 py-4 rounded-full font-bold text-sm"
 style={picked.length ? primaryBtn : dimBtn}>
