@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GOAL_LIST, SESSION_CHOICES } from "@/lib/training";
@@ -42,7 +42,22 @@ const [fixedDays, setFixedDays] = useState(null);
 const [trainDays, setTrainDays] = useState([]);
 const [saving, setSaving] = useState(false);
 const [error, setError] = useState(null);
+const [hasType, setHasType] = useState(false);
 const router = useRouter();
+
+// Your training type is about how you like to be coached, not what you are training for,
+// so changing goals should never send you back through the assessment. We only route
+// people to it if they have genuinely never taken it.
+useEffect(function () {
+const supabase = createClient();
+supabase.auth.getUser().then(function (res) {
+const user = res.data.user;
+if (!user) return;
+supabase.from("assessment_results").select("type_id")
+.eq("user_id", user.id).limit(1).maybeSingle()
+.then(function (r) { if (r.data && r.data.type_id) setHasType(true); });
+});
+}, []);
 
 const gym = isGymReady(picked);
 
@@ -81,7 +96,7 @@ await supabase.from("profiles")
 .eq("id", user.id);
 } catch (ignored) {}
 setSaving(false);
-router.push("/assessment");
+router.push(hasType ? "/dashboard" : "/assessment");
 router.refresh();
 };
 
@@ -218,12 +233,22 @@ className={"py-4 rounded-2xl border text-sm font-bold " + (on ? "border-white bg
 </div>
 ) : null}
 
+{hasType ? (
+<div className="rounded-2xl border p-4 mb-4" style={{ borderColor: "#2DD4BF55", background: "rgba(45,212,191,0.08)" }}>
+<p className="text-sm font-bold mb-1" style={{ color: "#2DD4BF" }}>Your training type stays as it is</p>
+<p className="text-xs text-gray-300">
+Your type is about how you like to be coached, not what you are training for, so there is
+nothing to redo. You can retake the assessment any time from Settings if it stops fitting.
+</p>
+</div>
+) : (
 <div className="rounded-2xl border p-4 mb-4" style={{ borderColor: "#2DD4BF55", background: "rgba(45,212,191,0.08)" }}>
 <p className="text-sm font-bold mb-1" style={{ color: "#2DD4BF" }}>Next: find your training type</p>
 <p className="text-xs text-gray-300">
 A quick two-minute quiz. To build you the best training experience we can, we need to understand how you tick: what actually drives you, how you like to train, and when your body is at its best. That is what finding your type means.
 </p>
 </div>
+)}
 
 {error ? <p className="text-sm text-red-400 mb-3">{error}</p> : null}
 <div className={navRow}>
@@ -231,7 +256,7 @@ A quick two-minute quiz. To build you the best training experience we can, we ne
 <button onClick={save} disabled={saving || blocked}
 className="ml-auto px-6 py-3 rounded-full font-bold text-sm"
 style={blocked ? dimBtn : primaryBtn}>
-{saving ? "Saving..." : needsDays ? "Pick your days" : "Find my type"}
+{saving ? "Saving..." : needsDays ? "Pick your days" : (hasType ? "Save changes" : "Find my type")}
 </button>
 </div>
 </div>
