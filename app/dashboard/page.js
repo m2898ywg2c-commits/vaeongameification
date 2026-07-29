@@ -85,6 +85,8 @@ return (
 <SignOutButton />
 </div>
 
+<InstallPrompt accent={accent} />
+
 {finished ? (
 <a href="/blockend" className="flex items-center gap-3 rounded-2xl border-2 p-4 mb-3" style={{ borderColor: "#3DDC97", background: "rgba(61,220,151,0.10)" }}>
 <span className="text-2xl" aria-hidden="true">{"\u{1F3C1}"}</span>
@@ -189,8 +191,6 @@ return (
 </div>
 
 <AchievementWatcher profile={plain} />
-
-<InstallPrompt />
 
 <div className="grid grid-cols-2 gap-2 mb-5">
 <a href="/log" className="rounded-2xl border border-white/10 bg-white/5 p-4">

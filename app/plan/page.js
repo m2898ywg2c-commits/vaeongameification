@@ -92,7 +92,10 @@ rows.push({
 user_id: user.id, day_key: day.key, exercise: ex.name, set_index: i + 1,
 weight: kind === "weight" && v.weight ? Number(v.weight) : null,
 reps: v.reps ? Number(v.reps) : null,
-time_text: kind === "time" ? (v.secs ? v.secs + " sec" : null) : (kind === "distance" ? (v.text || null) : null),
+// The unit rides along in the field rather than as another argument, because
+// a run is logged in minutes and a plank in seconds. Defaulting to sec keeps
+// older callers and the Gym ready path behaving as they did.
+time_text: kind === "time" ? (v.secs ? v.secs + " " + (v.unit || "sec") : null) : (kind === "distance" ? (v.text || null) : null),
 });
 }
 await supabase.from("exercise_logs").insert(rows);
