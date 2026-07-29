@@ -150,19 +150,19 @@ setStats(next);
 };
 
 const type = typeId ? TYPES[typeId] : null;
-const accent = type ? type.colors[0] : "#2DD4BF";
-const deep = type ? type.colors[1] : "#0F766E";
+const accent = type ? type.colors[0] : "#22D3EE";
+const deep = type ? type.colors[1] : "#3B82F6";
 const week = profile ? currentWeek(profile.block_start) : 1;
 const finished = profile ? blockComplete(profile.block_start) : false;
 const noBaselines = !bench && !squat;
 const dayMismatch = fixedDays && trainDays.length > 0 && trainDays.length !== sessions;
 
 const bigInput = "w-full px-4 py-4 rounded-2xl bg-white/8 border-2 text-xl font-bold text-center";
-const primaryBtn = { background: "linear-gradient(90deg, " + accent + ", " + deep + ")", color: "#0E1224" };
+const primaryBtn = { background: "linear-gradient(90deg, " + accent + ", " + deep + ")", color: "#000000" };
 const card = "rounded-2xl border border-white/10 bg-white/5 p-5 mb-4";
 
 return (
-<main className="min-h-screen text-white px-5 py-8" style={{ background: "#0E1224" }}>
+<main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
 <div className="max-w-md mx-auto">
 <div className="flex items-center justify-between mb-6">
 <Home accent={accent} />

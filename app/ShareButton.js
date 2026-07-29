@@ -5,7 +5,7 @@ import { useState } from "react";
 // Shares the clean public URL. Native share sheet on phones, copy-to-clipboard everywhere else.
 export default function ShareButton({ accent }) {
   const [copied, setCopied] = useState(false);
-  const colour = accent || "#2DD4BF";
+  const colour = accent || "#22D3EE";
   const url = "https://vaeon-fitness.vercel.app";
 
   const share = async function () {

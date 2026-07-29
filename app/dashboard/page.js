@@ -48,15 +48,15 @@ const weekNo = currentWeek(profile.block_start);
 const rule = weeksFor(category)[weekNo - 1] || weeksFor(category)[0];
 const finished = blockComplete(profile.block_start);
 const today = DAYS[new Date().getDay()];
-const accent = type ? type.colors[0] : "#2DD4BF";
-const deep = type ? type.colors[1] : "#0F766E";
+const accent = type ? type.colors[0] : "#22D3EE";
+const deep = type ? type.colors[1] : "#3B82F6";
 const noBaselines = !profile.baseline_bench && !profile.baseline_squat;
 const plain = { sessions_per_week: pledged, block_start: profile.block_start || null };
 
 const tile = "rounded-2xl border border-white/10 bg-white/5 p-3 text-center";
 
 return (
-<main className="min-h-screen text-white px-5 py-8" style={{ background: "#0E1224" }}>
+<main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
 <div className="max-w-md mx-auto">
 
 <div className="flex items-center justify-between mb-5">

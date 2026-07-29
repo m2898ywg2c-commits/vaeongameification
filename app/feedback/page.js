@@ -32,7 +32,7 @@ export default function FeedbackPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0E1224] text-white px-5 py-8">
+    <main className="min-h-screen bg-brand-bg text-white px-5 py-8">
       <div className="max-w-md mx-auto">
         <div className="mb-6"><Home /></div>
         <h1 className="text-2xl font-bold mb-2">Tell us what you think</h1>
@@ -44,7 +44,7 @@ export default function FeedbackPage() {
         {sent ? (
           <div className="rounded-2xl border border-white/15 bg-white/5 p-5">
             <p className="text-sm text-gray-200 mb-3">Got it, thank you. This genuinely helps shape what gets built next.</p>
-            <button onClick={function () { setSent(false); }} className="text-sm underline" style={{ color: "#2DD4BF" }}>
+            <button onClick={function () { setSent(false); }} className="text-sm underline" style={{ color: "#22D3EE" }}>
               Send another
             </button>
           </div>
@@ -55,7 +55,7 @@ export default function FeedbackPage() {
               onChange={function (e) { setMessage(e.target.value); }}
               rows={6}
               placeholder="Your thoughts..."
-              className="w-full rounded-2xl px-4 py-3 bg-white/5 border border-white/10 text-white outline-none focus:border-[#2DD4BF] mb-3 text-sm"
+              className="w-full rounded-2xl px-4 py-3 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE] mb-3 text-sm"
             />
             {error ? <p className="text-sm text-red-400 mb-3">{error}</p> : null}
             <button
@@ -63,8 +63,8 @@ export default function FeedbackPage() {
               disabled={loading || !message.trim()}
               className="w-full py-3 rounded-full font-bold text-sm"
               style={{
-                background: message.trim() ? "linear-gradient(90deg, #2DD4BF, #0F766E)" : "rgba(255,255,255,0.08)",
-                color: message.trim() ? "#0E1224" : "rgba(255,255,255,0.4)",
+                background: message.trim() ? "linear-gradient(90deg, #22D3EE, #3B82F6)" : "rgba(255,255,255,0.08)",
+                color: message.trim() ? "#000000" : "rgba(255,255,255,0.4)",
               }}
             >
               {loading ? "Sending..." : "Send feedback"}

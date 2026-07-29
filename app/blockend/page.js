@@ -119,7 +119,7 @@ router.push("/plan");
 
 if (loading) {
 return (
-<main className="min-h-screen text-white flex items-center justify-center" style={{ background: "#0E1224" }}>
+<main className="min-h-screen text-white flex items-center justify-center" style={{ background: "#000000" }}>
 <p className="text-sm text-gray-400">Adding up your block...</p>
 </main>
 );
@@ -127,8 +127,8 @@ return (
 
 const type = typeId ? TYPES[typeId] : null;
 const tid = typeId || "architect";
-const accent = type ? type.colors[0] : "#2DD4BF";
-const deep = type ? type.colors[1] : "#0F766E";
+const accent = type ? type.colors[0] : "#22D3EE";
+const deep = type ? type.colors[1] : "#3B82F6";
 const blockNo = profile.block_number || 1;
 const complete = blockComplete(profile.block_start);
 const weekNo = currentWeek(profile.block_start);
@@ -146,7 +146,7 @@ const tile = "rounded-2xl border border-white/10 bg-white/5 p-4 text-center";
 const cardCls = "rounded-2xl border border-white/10 bg-white/5 p-5 mb-4";
 
 return (
-<main className="min-h-screen text-white px-5 py-8" style={{ background: "#0E1224" }}>
+<main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
 <div className="max-w-md mx-auto">
 <a href="/dashboard" className="inline-block text-xs text-gray-400 underline mb-6">Back to dashboard</a>
 

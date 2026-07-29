@@ -129,7 +129,7 @@ return next;
 });
 }}
 className="px-5 rounded-xl font-bold text-sm flex-shrink-0"
-style={{ background: isLogged ? "rgba(61,220,151,0.2)" : accent, color: isLogged ? "#3DDC97" : "#0E1224" }}
+style={{ background: isLogged ? "rgba(61,220,151,0.2)" : accent, color: isLogged ? "#3DDC97" : "#000000" }}
 >
 {isLogged ? "Logged" : "Log"}
 </button>

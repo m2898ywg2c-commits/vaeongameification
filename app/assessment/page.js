@@ -22,7 +22,7 @@ import {
   CHRONOTYPE_TIP,
 } from "@/lib/framing";
 
-const GRAD = "linear-gradient(90deg, #2DD4BF, #0F766E)";
+const GRAD = "linear-gradient(90deg, #22D3EE, #3B82F6)";
 
 function Orb({ type, size }) {
   const s = size || 96;
@@ -151,7 +151,7 @@ export default function AssessmentPage() {
     const dim = tieDims[tieIndex];
     const tb = TIEBREAKERS[dim];
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
+      <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
         <div className="w-full max-w-md">
           <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">A dead heat: {tb.label.toLowerCase()}</p>
           <p className="text-xs text-gray-500 mb-2">Tiebreaker {tieIndex + 1} of {tieDims.length}</p>
@@ -193,7 +193,7 @@ export default function AssessmentPage() {
       : "When you are at your best";
 
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
+      <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
         <div className="w-full max-w-md">
           <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{section}</p>
           <p className="text-xs text-gray-500 mb-2">Step {index + 1} of {TOTAL}</p>
@@ -256,7 +256,7 @@ export default function AssessmentPage() {
     const framing = result.framed.framing;
     const chronoValue = result.chrono;
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
+      <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
         <div className="w-full max-w-md text-center">
           <div className="flex justify-center mb-2">
             <Orb type={t} size={140} />
@@ -285,7 +285,7 @@ export default function AssessmentPage() {
           </div>
 
           <div className="flex gap-3 justify-center">
-            <a href="/dashboard" className="px-6 py-2.5 rounded-full font-bold text-sm" style={{ background: GRAD, color: "#0E1224" }}>
+            <a href="/dashboard" className="px-6 py-2.5 rounded-full font-bold text-sm" style={{ background: GRAD, color: "#000000" }}>
               Go to dashboard
             </a>
             <button
@@ -310,7 +310,7 @@ export default function AssessmentPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0E1224] text-white px-6 py-12">
+    <main className="min-h-screen bg-brand-bg text-white px-6 py-12">
       <div className="max-w-3xl mx-auto">
         <a href="/dashboard" className="inline-block text-xs text-gray-400 underline mb-6">Back to dashboard</a>
         <h1 className="text-3xl font-bold mb-2 text-center">Find your training personality</h1>
@@ -356,7 +356,7 @@ export default function AssessmentPage() {
           <button
             onClick={() => setStage("quiz")}
             className="px-8 py-3 rounded-full font-bold text-sm"
-            style={{ background: GRAD, color: "#0E1224" }}
+            style={{ background: GRAD, color: "#000000" }}
           >
             Start the assessment
           </button>

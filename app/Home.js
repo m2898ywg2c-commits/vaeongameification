@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 export default function Home({ accent }) {
-  const colour = accent || "#2DD4BF";
+  const colour = accent || "#22D3EE";
   return (
     <Link
       href="/dashboard"

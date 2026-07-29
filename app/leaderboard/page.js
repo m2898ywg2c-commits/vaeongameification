@@ -62,7 +62,7 @@ export default function LeaderboardPage() {
     load();
   };
 
-  const myTypeColour = myType && TYPES[myType] ? TYPES[myType].colors[0] : "#2DD4BF";
+  const myTypeColour = myType && TYPES[myType] ? TYPES[myType].colors[0] : "#22D3EE";
   // Anyone in the recent-PB feed gets a star on their row.
   const pbUserIds = {};
   pbs.forEach(function (p) { pbUserIds[p.user_id] = true; });
@@ -71,7 +71,7 @@ export default function LeaderboardPage() {
   });
 
   return (
-    <main className="min-h-screen bg-[#0E1224] text-white px-5 py-8">
+    <main className="min-h-screen bg-brand-bg text-white px-5 py-8">
       <div className="max-w-md mx-auto">
         <div className="mb-6"><Home accent={myTypeColour} /></div>
 
@@ -94,7 +94,7 @@ export default function LeaderboardPage() {
                     {t ? <TypeOrb typeId={pb.type_id} size={26} /> : <span className="w-[26px]" />}
                     <p className="text-sm flex-1">
                       <span className="font-bold">{pb.screen_name}</span> hit a {pb.exercise} PB:{" "}
-                      <span className="font-bold" style={{ color: t ? t.colors[0] : "#2DD4BF" }}>{pb.weight}kg</span>
+                      <span className="font-bold" style={{ color: t ? t.colors[0] : "#22D3EE" }}>{pb.weight}kg</span>
                     </p>
                     <span className="text-[11px] text-gray-500">{timeAgo(pb.logged_at)}</span>
                   </div>
@@ -142,7 +142,7 @@ export default function LeaderboardPage() {
               const t = r.type_id ? TYPES[r.type_id] : null;
               const mine = meId && r.user_id === meId;
               const gave = myKudos[r.user_id];
-              const accent = t ? t.colors[0] : "#2DD4BF";
+              const accent = t ? t.colors[0] : "#22D3EE";
               return (
                 <div
                   key={r.user_id}

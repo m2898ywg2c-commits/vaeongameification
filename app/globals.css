@@ -1,27 +1,34 @@
 @import "tailwindcss";
 
+/* Vaeon Fitness brand tokens.
+   Single source of truth for the app chrome: background, surfaces, hairlines and
+   the default accent. Per-type accents are NOT here on purpose. Those live in
+   lib/personality.js because each training type owns its own colour pair, and
+   the accent a user sees is a product feature rather than brand chrome.
+   The JS mirror of these values is lib/brand.js. Change both together. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --brand-bg: #000000;
+  --brand-surface: #0b1220;
+  --brand-line: rgba(255, 255, 255, 0.1);
+  --brand-text: #ffffff;
+  --brand-muted: #9ca3af;
+  --brand-accent: #22d3ee;
+  --brand-accent-deep: #3b82f6;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-brand-bg: var(--brand-bg);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-line: var(--brand-line);
+  --color-brand-text: var(--brand-text);
+  --color-brand-muted: var(--brand-muted);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-deep: var(--brand-accent-deep);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--brand-bg);
+  color: var(--brand-text);
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -33,4 +40,33 @@ body {
    Keep the 34px in sync with BAR_HEIGHT in app/Brand.js. */
 main.min-h-screen {
   min-height: calc(100vh - 34px);
+}
+
+/* Opening splash. Kept in CSS rather than inline so the reduced-motion opt-out
+   is honoured without branching in the component. */
+@keyframes vaeon-splash-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.vaeon-splash {
+  transition: opacity 420ms ease;
+}
+
+.vaeon-splash-content {
+  animation: vaeon-splash-in 620ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vaeon-splash,
+  .vaeon-splash-content {
+    animation: none;
+    transition: none;
+  }
 }

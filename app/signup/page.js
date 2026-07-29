@@ -51,7 +51,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-6">
           <BrandLockup size={30} />
@@ -69,7 +69,7 @@ export default function SignUpPage() {
               value={screenName}
               onChange={(e) => setScreenName(e.target.value)}
               placeholder="e.g. IronOtter"
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#2DD4BF]"
+              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
             />
           </div>
 
@@ -78,10 +78,10 @@ export default function SignUpPage() {
             <select
               value={ageGroup}
               onChange={(e) => setAgeGroup(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#2DD4BF]"
+              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
             >
               {AGE_GROUPS.map((a) => (
-                <option key={a} value={a} className="bg-[#0E1224]">
+                <option key={a} value={a} className="bg-brand-bg">
                   {a}
                 </option>
               ))}
@@ -95,7 +95,7 @@ export default function SignUpPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#2DD4BF]"
+              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
             />
           </div>
 
@@ -107,7 +107,7 @@ export default function SignUpPage() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#2DD4BF]"
+              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
             />
           </div>
 
@@ -117,7 +117,7 @@ export default function SignUpPage() {
             type="submit"
             disabled={loading}
             className="w-full py-3 rounded-full font-bold text-sm"
-            style={{ background: "linear-gradient(90deg, #2DD4BF, #0F766E)", color: "#0E1224" }}
+            style={{ background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }}
           >
             {loading ? "Creating account..." : "Create account"}
           </button>

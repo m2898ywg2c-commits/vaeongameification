@@ -68,12 +68,12 @@ export default function OnboardingPage() {
       (active ? "border-white bg-white/20" : "border-white/10 bg-white/5");
   };
 
-  const primaryBtn = { background: "linear-gradient(90deg, #2DD4BF, #0F766E)", color: "#0E1224" };
+  const primaryBtn = { background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" };
   const dimBtn = { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" };
 
   if (step === "equipment") {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
+      <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
         <div className="w-full max-w-md">
           <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Where will you train</p>
           <h1 className="text-3xl font-bold mb-2">What have you got?</h1>
@@ -106,7 +106,7 @@ export default function OnboardingPage() {
 
   if (step === "sessions") {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
+      <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
         <div className="w-full max-w-md">
           <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Be honest with yourself</p>
           <h1 className="text-3xl font-bold mb-2">How many sessions a week?</h1>
@@ -139,7 +139,7 @@ export default function OnboardingPage() {
     const mismatch = fixedDays === true && trainDays.length > 0 && trainDays.length !== sessions;
 
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
+      <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
         <div className="w-full max-w-md">
           <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Last one</p>
           <h1 className="text-3xl font-bold mb-2">Do you train on set days?</h1>
@@ -192,8 +192,8 @@ export default function OnboardingPage() {
             </div>
           ) : null}
 
-          <div className="rounded-2xl border p-4 mb-4" style={{ borderColor: "#2DD4BF55", background: "rgba(45,212,191,0.08)" }}>
-            <p className="text-sm font-bold mb-1" style={{ color: "#2DD4BF" }}>Next: find your training type</p>
+          <div className="rounded-2xl border p-4 mb-4" style={{ borderColor: "#22D3EE55", background: "rgba(34,211,238,0.08)" }}>
+            <p className="text-sm font-bold mb-1" style={{ color: "#22D3EE" }}>Next: find your training type</p>
             <p className="text-xs text-gray-300">
               A quick two-minute quiz. To build you the best training experience we can, we need to understand how you tick: what actually drives you, how you like to train, and when your body is at its best. That is what finding your type means.
             </p>
@@ -214,7 +214,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
       <div className="w-full max-w-lg">
         <a href="/dashboard" className="inline-block text-xs text-gray-400 underline mb-4">Back to dashboard</a>
         <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">What is this really for</p>

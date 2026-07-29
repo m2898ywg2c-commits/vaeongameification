@@ -207,7 +207,7 @@ export default function ProgressPage() {
   }, [router]);
 
   const type = typeId ? TYPES[typeId] : null;
-  const accent = type ? type.colors[0] : "#2DD4BF";
+  const accent = type ? type.colors[0] : "#22D3EE";
 
   // Bodyweight: one point per entry that actually has a bodyweight.
   const bwPoints = metrics
@@ -254,7 +254,7 @@ export default function ProgressPage() {
   const card = "rounded-2xl border border-white/10 bg-white/5 p-5 mb-4";
 
   return (
-    <main className="min-h-screen text-white px-5 py-8" style={{ background: "#0E1224" }}>
+    <main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
       <div className="max-w-md mx-auto">
         <div className="flex items-center justify-between mb-6">
           <Home accent={accent} />

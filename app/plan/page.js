@@ -153,14 +153,14 @@ setFinished(true);
 
 if (loading) {
 return (
-<main className="min-h-screen text-white flex items-center justify-center" style={{ background: "#0E1224" }}>
+<main className="min-h-screen text-white flex items-center justify-center" style={{ background: "#000000" }}>
 <p className="text-sm text-gray-400">Building your session...</p>
 </main>
 );
 }
 
 return (
-<main className="min-h-screen text-white px-5 py-6" style={{ background: "#0E1224" }}>
+<main className="min-h-screen text-white px-5 py-6" style={{ background: "#000000" }}>
 <div className="max-w-md mx-auto">
 
 {showQuote ? (
@@ -178,7 +178,7 @@ style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", co
 
 {praise ? (
 <div className="fixed left-0 right-0 bottom-8 z-40 flex justify-center pointer-events-none">
-<div className="px-6 py-3 rounded-full font-bold shadow-lg" style={{ background: accent, color: "#0E1224" }}>{praise}</div>
+<div className="px-6 py-3 rounded-full font-bold shadow-lg" style={{ background: accent, color: "#000000" }}>{praise}</div>
 </div>
 ) : null}
 
@@ -220,7 +220,7 @@ setActive(i); setFinished(false); setDone({});
 try { window.localStorage.setItem(TAB_KEY, String(i)); } catch (e) {}
 }}
 className="px-4 py-3 rounded-xl text-sm font-bold flex-shrink-0 border"
-style={on ? { background: accent, color: "#0E1224", borderColor: accent }
+style={on ? { background: accent, color: "#000000", borderColor: accent }
 : { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>
 {profile.fixed_days === false ? "S" + (i + 1) : d.dayLabel}
 </button>

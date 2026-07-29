@@ -165,7 +165,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       <button
         onClick={function () { onComplete(ex, exIdx, fields, total, kind); }}
         className="w-full py-4 rounded-2xl font-bold text-base"
-        style={{ background: accent, color: "#0E1224" }}
+        style={{ background: accent, color: "#000000" }}
       >
         {calibrating ? "Log it" : "Completed as planned"}
       </button>

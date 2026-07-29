@@ -88,7 +88,7 @@ export default function LogPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0E1224] text-white px-6 py-12">
+    <main className="min-h-screen bg-brand-bg text-white px-6 py-12">
       <div className="max-w-md mx-auto">
         <div className="mb-6">
           <Home />
@@ -139,7 +139,7 @@ export default function LogPage() {
           onClick={save}
           disabled={saving}
           className="px-8 py-3 rounded-full font-bold text-sm mb-3"
-          style={{ background: "linear-gradient(90deg, #2DD4BF, #0F766E)", color: "#0E1224" }}
+          style={{ background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }}
         >
           {saving ? "Saving..." : "Save session"}
         </button>

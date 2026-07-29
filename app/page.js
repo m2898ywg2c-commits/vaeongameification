@@ -9,7 +9,7 @@ export default async function Landing() {
   if (res && res.data && res.data.user) redirect("/dashboard");
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 text-center">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 text-center">
       <h1 className="text-4xl font-bold mb-3">Welcome to Vaeon</h1>
       <p className="text-base text-gray-300 mb-10 max-w-md">
         Your bespoke personal trainer and accountability partner.
@@ -19,7 +19,7 @@ export default async function Landing() {
         <a
           href="/signup"
           className="px-6 py-2.5 rounded-full font-bold text-sm"
-          style={{ background: "linear-gradient(90deg, #2DD4BF, #0F766E)", color: "#0E1224" }}
+          style={{ background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }}
         >
           Create account
         </a>

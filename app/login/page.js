@@ -28,7 +28,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-[#0E1224] text-white px-6 py-12">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-7">
           <BrandLockup size={30} />
@@ -45,7 +45,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#2DD4BF]"
+              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
             />
           </div>
           <div>
@@ -55,7 +55,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#2DD4BF]"
+              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
             />
             <div className="text-right mt-1">
               <a href="/forgot-password" className="text-xs text-gray-400 underline">Forgot password?</a>
@@ -66,7 +66,7 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             className="w-full py-3 rounded-full font-bold text-sm"
-            style={{ background: "linear-gradient(90deg, #2DD4BF, #0F766E)", color: "#0E1224" }}
+            style={{ background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }}
           >
             {loading ? "Logging in..." : "Log in"}
           </button>
@@ -86,7 +86,7 @@ export default function LoginPage() {
           <a
             href="/signup"
             className="block w-full py-3 rounded-full font-bold text-sm border-2"
-            style={{ borderColor: "#2DD4BF", color: "#2DD4BF" }}
+            style={{ borderColor: "#22D3EE", color: "#22D3EE" }}
           >
             Create an account
           </a>

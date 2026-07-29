@@ -28,7 +28,7 @@ function Badge({ a, earned, size }) {
         flexShrink: 0,
         fontWeight: 700,
         fontSize: a.icon.length > 2 ? 12 : 14,
-        color: earned ? "#0E1224" : "rgba(255,255,255,0.35)",
+        color: earned ? "#000000" : "rgba(255,255,255,0.35)",
         background: earned
           ? "linear-gradient(145deg, " + colours[0] + ", " + colours[1] + ")"
           : "rgba(255,255,255,0.06)",

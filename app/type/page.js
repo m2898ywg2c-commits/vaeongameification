@@ -85,10 +85,10 @@ const poles = id ? TYPE_POLES[id] : null;
 
 if (!type || !poles) {
 return (
-<main className="min-h-screen bg-[#0E1224] text-white px-6 py-12">
+<main className="min-h-screen bg-brand-bg text-white px-6 py-12">
 <div className="max-w-md mx-auto">
 <p className="text-sm text-gray-300 mb-4">That training type was not found.</p>
-<a href="/dashboard" className="text-sm underline" style={{ color: "#2DD4BF" }}>Back to dashboard</a>
+<a href="/dashboard" className="text-sm underline" style={{ color: "#22D3EE" }}>Back to dashboard</a>
 </div>
 </main>
 );
@@ -100,7 +100,7 @@ const models = modelsFor(id);
 const sources = sourcesFor(id);
 
 return (
-<main className="min-h-screen text-white px-5 py-8" style={{ background: "#0E1224" }}>
+<main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
 <div className="max-w-md mx-auto">
 <a href="/dashboard" className="inline-block text-xs text-gray-400 underline mb-6">Back to dashboard</a>
 
@@ -188,7 +188,7 @@ return (
 
 export default function TypePage() {
 return (
-<Suspense fallback={<main className="min-h-screen bg-[#0E1224]" />}>
+<Suspense fallback={<main className="min-h-screen bg-brand-bg" />}>
 <TypeContent />
 </Suspense>
 );

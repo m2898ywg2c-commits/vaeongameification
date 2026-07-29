@@ -42,7 +42,7 @@ export default function FallbackPage() {
   if (location) {
     const workout = fallbackFor(category, location);
     return (
-      <main className="min-h-screen bg-[#0E1224] text-white px-6 py-10">
+      <main className="min-h-screen bg-brand-bg text-white px-6 py-10">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Home />
@@ -64,7 +64,7 @@ export default function FallbackPage() {
           <button
             onClick={function () { logIt(workout); }}
             className="w-full px-6 py-3 rounded-full font-bold text-sm mb-2"
-            style={{ background: "linear-gradient(90deg, #2DD4BF, #0F766E)", color: "#0E1224" }}
+            style={{ background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }}
           >
             {logged ? "Logged" : "Done, log it"}
           </button>
@@ -75,7 +75,7 @@ export default function FallbackPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0E1224] text-white px-6 py-10">
+    <main className="min-h-screen bg-brand-bg text-white px-6 py-10">
       <div className="max-w-md mx-auto">
         <div className="mb-6">
           <Home />

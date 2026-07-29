@@ -1,16 +1,18 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { BRAND } from "@/lib/brand";
 
 // Vaeon Fitness brand assets.
 //
 // Colour convention follows Home.js: an optional `accent` prop, here defaulting
-// to white so the mark stands on its own rather than borrowing the teal the
-// buttons use. `backdrop` is the navy every page paints on itself, used both
-// for the bar background and for knocking the triangle out of the circle mark.
+// to white so the mark stands on its own rather than borrowing whichever accent
+// the user's training type supplies. `backdrop` is the black every page paints
+// on itself, used both for the bar background and for knocking the triangle out
+// of the circle mark. Both come from lib/brand.js.
 
-const ACCENT = "#FFFFFF";
-const BACKDROP = "#0E1224";
+const ACCENT = BRAND.text;
+const BACKDROP = BRAND.bg;
 
 // Height of the brand bar in pixels. If you change this, change the matching
 // calc() in globals.css or every page gains that many pixels of dead scroll.
