@@ -15,24 +15,23 @@ const [openFlow, setOpenFlow] = useState(false);
 const [stations, setStations] = useState({});
 const [loggedStations, setLoggedStations] = useState({});
 
-const stationCount = day && day.conditioning ? day.conditioning.length : 0;
-const stationMin = Math.min(3, stationCount);
-const stationsDone = Object.keys(loggedStations).length;
-const stationsMet = stationsDone >= stationMin;
-
-// Auto-finish: when every exercise card is collapsed (and the station quota is met,
-// where the day has stations), log the session without making anyone hunt for the
-// button with sweaty hands. Short delay so the last tick lands visually first.
+// Auto-finish: when every exercise card is collapsed, log the session without
+// making anyone hunt for the button with sweaty hands. Short delay so the last
+// tick lands visually first.
+//
+// The finisher deliberately does NOT gate this. It used to: a day with stations
+// would not auto-finish until three of them were logged, which made an optional
+// extra into a compulsory one and quietly punished anyone who ran out of time.
+// It is now the same deal as the stretch flow, worth doing, not scored.
 const allExercisesDone = !!day && day.exercises.length > 0 &&
 day.exercises.every(function (ex, i) { return !!done[i]; });
 
 useEffect(function () {
 if (!allExercisesDone || finished) return;
-if (stationCount > 0 && !stationsMet) return;
 const t = setTimeout(function () { onFinish(); }, 900);
 return function () { clearTimeout(t); };
 // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [allExercisesDone, finished, stationsMet, stationCount]);
+}, [allExercisesDone, finished]);
 
 if (!day) return null;
 const flow = stretchFor(day);
@@ -84,15 +83,13 @@ onComplete={onComplete} onReopen={onReopen} />
 {day.conditioning && day.conditioning.length ? (
 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-3">
 <div className="flex items-center justify-between mb-1">
-<p className="text-xs font-bold uppercase tracking-wide" style={{ color: accent }}>Stations</p>
+<p className="text-xs font-bold uppercase tracking-wide" style={{ color: accent }}>10 minute finisher</p>
 <a href={stationTunes.href} target="_blank" rel="noopener noreferrer"
 className="text-xs font-bold" style={{ color: "#1ED760" }}>Loud tunes</a>
 </div>
 <p className="text-xs text-gray-400 mb-3">
-{stationCount} on the menu. Pick any {stationMin} to finish, more if you fancy it.{" "}
-<span className="font-bold" style={{ color: stationsMet ? "#3DDC97" : accent }}>
-{stationsMet ? "That is " + stationsDone + " logged, you are good to go." : stationsDone + " of " + stationMin + " logged"}
-</span>
+Optional. Does not count towards your score, and the session logs without it.
+Log a number if you do it and you will have something to beat next time.
 </p>
 {day.conditioning.map(function (c, i) {
 const v = stations[i] || "";
