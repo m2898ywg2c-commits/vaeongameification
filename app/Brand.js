@@ -8,8 +8,8 @@ import { BRAND } from "@/lib/brand";
 // Colour convention follows Home.js: an optional `accent` prop, here defaulting
 // to white so the mark stands on its own rather than borrowing whichever accent
 // the user's training type supplies. `backdrop` is the black every page paints
-// on itself, used both for the bar background and for knocking the triangle out
-// of the circle mark. Both come from lib/brand.js.
+// on itself, used for knocking the mark out of the circle variant. Both come
+// from lib/brand.js.
 
 const ACCENT = BRAND.text;
 const BACKDROP = BRAND.bg;
@@ -18,58 +18,85 @@ const BACKDROP = BRAND.bg;
 // calc() in globals.css or every page gains that many pixels of dead scroll.
 export const BAR_HEIGHT = 34;
 
+// The mark is wider than it is tall, so `size` means height and the width
+// follows. Keeping the viewBox tight to the artwork matters: a square box with
+// built-in padding would force the mark to render small to fit a 34px bar, and
+// it would sit visually high against the wordmark.
+//
+// 226 x 188 is the artwork's own pixel box, traced from the logo export, so the
+// path coordinates below are the real ones rather than a redrawing. Both shapes
+// are filled polygons rather than strokes: a stroked V would need its width
+// scaling separately from the mark and the mitre at the point would drift.
+const MARK_RATIO = 226 / 188;
+
+// The outer V band. Traced left-outer edge down to the point, up the right-outer
+// edge, then back down the inner edges to the inner apex at y=148.
+const MARK_OUTER = "M 0 0 L 112.5 188 L 223 0 L 200 0 L 112.5 148 L 24 0 Z";
+
+// The solid chevron nested inside, notched at the top so it reads as an arrowhead.
+const MARK_INNER = "M 47 12 L 112.5 41 L 178 12 L 112.5 123 Z";
+
 // Pages that are already all about the brand, or that should stay uncluttered.
 // The bar hides itself here so the big lockup is not doubled up.
 const HIDE_BAR_ON = ["/", "/login", "/signup", "/forgot-password", "/reset-password"];
 
 /**
- * The triangle on its own.
+ * The V mark on its own: an open outlined V with a solid chevron nested inside.
  *
- * @param {number}  size     Pixel size of the square mark.
- * @param {string}  accent   Triangle colour. Defaults to white.
- * @param {boolean} circle   Knock the triangle out of a filled disc, matching
- *                           the favicon and the icon on your home screen.
+ * @param {number}  size     Rendered height in pixels. Width follows the ratio.
+ * @param {string}  accent   Mark colour. Defaults to white.
+ * @param {boolean} circle   Knock the mark out of a filled disc, for the favicon
+ *                           and the icon on your home screen.
  * @param {string}  backdrop Colour showing through the knockout.
  */
 export function VaeonMark({ size = 18, accent, circle = false, backdrop = BACKDROP }) {
   const colour = accent || ACCENT;
 
   if (circle) {
+    // Square box here on purpose: a disc needs equal sides. The mark is scaled
+    // down and centred inside it rather than filling it.
     return (
-      <svg width={size} height={size} viewBox="0 0 24 24" role="img" aria-label="Vaeon">
+      <svg width={size} height={size} viewBox="0 0 24 24" role="img" aria-label="Vaeon Fitness">
         <circle cx="12" cy="12" r="12" fill={colour} />
-        <path
-          d="M12 6.6 L18 17 L6 17 Z"
-          fill={backdrop}
-          stroke={backdrop}
-          strokeWidth="2.1"
-          strokeLinejoin="round"
-        />
+        {/* Mark scaled to 13 units wide and optically centred in the disc. */}
+        <g transform="translate(5.5 6.6) scale(0.0575)">
+          <path d={MARK_OUTER} fill={backdrop} />
+          <path d={MARK_INNER} fill={backdrop} />
+        </g>
       </svg>
     );
   }
 
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" role="img" aria-label="Vaeon">
-      <path
-        d="M12 4 L20.5 19 L3.5 19 Z"
-        fill={colour}
-        stroke={colour}
-        strokeWidth="2.6"
-        strokeLinejoin="round"
-      />
+    <svg
+      width={Math.round(size * MARK_RATIO)}
+      height={size}
+      viewBox="0 0 226 188"
+      role="img"
+      aria-label="Vaeon Fitness"
+    >
+      <path d={MARK_OUTER} fill={colour} />
+      <path d={MARK_INNER} fill={colour} />
     </svg>
   );
 }
 
 /**
- * Triangle plus wordmark. Use at a larger size on login and signup.
+ * Mark plus wordmark.
  *
- * @param {number}  size    Height of the mark. The wordmark scales from it.
+ * Two shapes on purpose. The compact form is mark plus "Vaeon" and is what the
+ * brand bar uses: at 18px the "FITNESS" line and its rules turn to mush and eat
+ * horizontal space that mid-session belongs to exercise cards. The full form
+ * reproduces the real lockup and is for login, signup and the opening splash,
+ * where there is room to breathe.
+ *
+ * @param {number}  size    Height of the mark. Type scales from it.
+ * @param {boolean} full    Include the rule-flanked FITNESS line.
  * @param {boolean} stacked Mark above wordmark rather than beside it.
  */
-export function BrandLockup({ size = 18, accent, circle = false, stacked = false }) {
+export function BrandLockup({ size = 18, accent, circle = false, stacked = false, full = false }) {
   const colour = accent || ACCENT;
+
   return (
     <span
       className="inline-flex items-center"
@@ -81,9 +108,46 @@ export function BrandLockup({ size = 18, accent, circle = false, stacked = false
       }}
     >
       <VaeonMark size={size} accent={colour} circle={circle} />
-      <span style={{ fontSize: size * 0.72, letterSpacing: "-0.015em", whiteSpace: "nowrap" }}>
-        <span className="font-bold">Vaeon</span>
-        <span style={{ fontWeight: 400, opacity: 0.72, marginLeft: "0.28em" }}>Fitness</span>
+
+      {/* Column stretches to the width of "Vaeon", so the FITNESS row below can
+          size itself against the wordmark rather than against a guessed width. */}
+      <span className="inline-flex flex-col items-stretch" style={{ gap: size * 0.24 }}>
+        <span
+          style={{
+            fontSize: size * 0.95,
+            letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
+            fontWeight: 400,
+          }}
+        >
+          Vaeon
+        </span>
+
+        {full && (
+          // Rules flex equally and the word sits between them, so the row is
+          // symmetrical under "Vaeon" at any size. The artwork itself has
+          // unequal rules (93.75 and 141 units) because tracking leaves a
+          // trailing space after the final S and the gaps were measured off the
+          // text box rather than the ink. Stripping that trailing space with the
+          // negative margin below fixes the cause, so both rules can match.
+          <span className="flex items-center" style={{ gap: size * 0.18 }}>
+            <span style={{ flex: 1, height: 1, background: colour, opacity: 0.75 }} />
+            <span
+              style={{
+                // 0.286 of the wordmark, taken from the cap heights in the
+                // source: 37.83 units against 132.31.
+                fontSize: size * 0.27,
+                letterSpacing: "0.38em",
+                marginRight: "-0.38em",
+                whiteSpace: "nowrap",
+                fontWeight: 400,
+              }}
+            >
+              FITNESS
+            </span>
+            <span style={{ flex: 1, height: 1, background: colour, opacity: 0.75 }} />
+          </span>
+        )}
       </span>
     </span>
   );
@@ -105,7 +169,7 @@ export default function BrandBar({ accent }) {
       className="flex items-center px-4 border-b border-white/10 shrink-0"
       style={{ height: BAR_HEIGHT, background: BACKDROP }}
     >
-      <BrandLockup size={18} accent={accent} />
+      <BrandLockup size={16} accent={accent} />
     </header>
   );
 }

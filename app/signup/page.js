@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BrandLockup } from "../Brand";
+import { DISCLAIMER_SHORT, DISCLAIMER_VERSION } from "../Disclaimer";
 
 const AGE_GROUPS = ["Under 18", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
 
@@ -12,6 +13,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [screenName, setScreenName] = useState("");
   const [ageGroup, setAgeGroup] = useState(AGE_GROUPS[1]);
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -35,6 +37,20 @@ export default function SignUpPage() {
         screen_name: screenName,
         age_group: ageGroup,
       });
+      if (!profileError) {
+        // Written separately and allowed to fail, because supabase/disclaimer.sql is a
+        // later migration: until it is applied the columns do not exist. The tick box
+        // still gates the form, so nobody signs up without agreeing either way. What is
+        // lost before the migration lands is the evidence, not the consent.
+        try {
+          await supabase.from("profiles")
+            .update({
+              disclaimer_accepted_at: new Date().toISOString(),
+              disclaimer_version: DISCLAIMER_VERSION,
+            })
+            .eq("id", data.user.id);
+        } catch (ignored) {}
+      }
       if (profileError) {
         setError(
           profileError.message.includes("duplicate")
@@ -54,7 +70,7 @@ export default function SignUpPage() {
     <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-6">
-          <BrandLockup size={30} />
+          <BrandLockup size={30} full />
         </div>
 
         <h1 className="text-2xl font-bold mb-1">Create your account</h1>
@@ -111,13 +127,36 @@ export default function SignUpPage() {
             />
           </div>
 
+          {/* Required, and deliberately not pre-ticked. A box the user actually clicked is
+              evidence; a box that arrived ticked is not. */}
+          <label className="flex gap-3 items-start rounded-2xl border border-white/10 bg-white/5 p-4 cursor-pointer">
+            <input
+              type="checkbox"
+              required
+              checked={accepted}
+              onChange={(e) => setAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[#22D3EE]"
+            />
+            <span className="text-xs text-gray-300 leading-relaxed">
+              {DISCLAIMER_SHORT}{" "}
+              <a href="/disclaimer" target="_blank" className="text-white underline">
+                Read the full version
+              </a>
+              .
+            </span>
+          </label>
+
           {error && <p className="text-sm text-red-400">{error}</p>}
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !accepted}
             className="w-full py-3 rounded-full font-bold text-sm"
-            style={{ background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }}
+            style={
+              accepted
+                ? { background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }
+                : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }
+            }
           >
             {loading ? "Creating account..." : "Create account"}
           </button>

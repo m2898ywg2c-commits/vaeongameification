@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { blockWeeksFor, currentWeekIn, blockCompleteIn, isGymReady } from "@/lib/gymready";
+import Disclaimer from "../Disclaimer";
 import { WEIGHT_ANCHORS, EFFORT_ANCHORS, STARTER_GUIDE } from "@/lib/exercisedb";
 import { SESSION_CHOICES } from "@/lib/training";
 import { TYPES } from "@/lib/personality";
@@ -491,6 +492,21 @@ className="w-full py-3 rounded-full font-bold text-sm mb-3" style={primaryBtn}>
 <button onClick={startNextBlock} className="w-full py-3 rounded-full font-bold text-sm border border-white/20">
 {finished ? "Start block " + (((profile && profile.block_number) || 1) + 1) : "Restart from today"}
 </button>
+</div>
+
+{/* ---------- Disclaimer ---------- */}
+{/* Last card on purpose. Nobody comes to settings to read it, but it needs to be
+    somewhere findable after signup, and the accepted date is the user's own record
+    of what they agreed to. */}
+<div className={card}>
+<p className="text-base font-bold mb-3">Training and AI disclaimer</p>
+<Disclaimer compact />
+{profile && profile.disclaimer_accepted_at && (
+<p className="text-xs text-gray-500 mt-4">
+Accepted {new Date(profile.disclaimer_accepted_at).toLocaleDateString("en-GB")}
+{profile.disclaimer_version ? " (version " + profile.disclaimer_version + ")" : ""}
+</p>
+)}
 </div>
 </div>
 </main>

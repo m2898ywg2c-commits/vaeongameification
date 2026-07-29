@@ -87,7 +87,7 @@ export default function Splash() {
         <p className="text-sm tracking-[0.28em] uppercase" style={{ color: BRAND.muted }}>
           Welcome to
         </p>
-        <BrandLockup size={40} accent={BRAND.text} />
+        <BrandLockup size={40} accent={BRAND.text} full />
       </div>
     </div>
   );

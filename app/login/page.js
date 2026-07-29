@@ -31,7 +31,7 @@ export default function LoginPage() {
     <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-7">
-          <BrandLockup size={30} />
+          <BrandLockup size={30} full />
         </div>
 
         <h1 className="text-3xl font-bold mb-1">Welcome back</h1>
