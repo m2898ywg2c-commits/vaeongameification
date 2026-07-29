@@ -7,6 +7,7 @@ import { weeksFor } from "@/lib/progression";
 import { isGymReady, blockWeeksFor, currentWeekIn, blockCompleteIn } from "@/lib/gymready";
 import SignOutButton from "./SignOutButton";
 import AchievementWatcher from "./AchievementWatcher";
+import InstallPrompt from "../InstallPrompt";
 import KudosCard from "./KudosCard";
 import TypeOrb from "../TypeOrb";
 import ShareButton from "../ShareButton";
@@ -188,6 +189,8 @@ return (
 </div>
 
 <AchievementWatcher profile={plain} />
+
+<InstallPrompt />
 
 <div className="grid grid-cols-2 gap-2 mb-5">
 <a href="/log" className="rounded-2xl border border-white/10 bg-white/5 p-4">

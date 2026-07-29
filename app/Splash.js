@@ -6,13 +6,27 @@ import { BRAND } from "@/lib/brand";
 
 // Opening card.
 //
-// Shows once per browser session: a black screen, "Welcome to", and the Vaeon
-// lockup beneath it. sessionStorage rather than localStorage is deliberate.
-// localStorage would fire once ever and then never again, which is not an
-// opening card, it is a one-time greeting. sessionStorage gives "each fresh
-// time the app opens" and still keeps quiet as the user moves between pages.
+// Black screen, "Welcome to", and the Vaeon lockup beneath it.
+//
+// Timing is deliberately a stale-timestamp check rather than a session flag.
+// sessionStorage sounds right ("once per session") but is unreliable in the
+// case that matters most: launched from the home screen, iOS discards the web
+// view aggressively when you switch apps, so a session flag can vanish after a
+// thirty second detour and the card fires again on return. Reading the last
+// shown time and comparing it to a threshold does what an app splash actually
+// does. Navigating between pages never re-fires it, because the last shown time
+// is seconds old; coming back tomorrow does.
+//
+// Note the app links with plain <a href>, so every navigation is a full page
+// load. Anything held in React state would be lost each time. It has to be
+// storage.
 
-const SEEN_KEY = "vaeon.splash.seen";
+const SEEN_KEY = "vaeon.splash.lastShown";
+
+// How long the app must have been away before the card earns another showing.
+// Thirty minutes is long enough that a session of logging sets never triggers
+// it, short enough that picking the app up after work feels like opening it.
+const STALE_AFTER_MS = 30 * 60 * 1000;
 
 // How long the card holds before it starts fading, and how long the fade runs.
 // The fade duration must match the transition in .vaeon-splash (globals.css).
@@ -21,28 +35,28 @@ const FADE_MS = 420;
 
 export default function Splash() {
   // null means "not yet decided". Rendering nothing on the first pass keeps the
-  // server and client markup identical; sessionStorage does not exist during
-  // SSR, so reading it inline would hydrate-mismatch on every load.
+  // server and client markup identical; localStorage does not exist during SSR,
+  // so reading it inline would hydrate-mismatch on every load.
   const [phase, setPhase] = useState(null);
 
   useEffect(function () {
-    let seen = null;
+    let last = 0;
     try {
-      seen = window.sessionStorage.getItem(SEEN_KEY);
+      last = parseInt(window.localStorage.getItem(SEEN_KEY), 10) || 0;
     } catch (e) {
       // Private mode and locked-down browsers can throw on storage access.
-      // Failing closed here means the splash simply never shows, which is a
+      // Failing closed here means the card simply never shows, which is a
       // better outcome than an unhandled error on app open.
-      seen = "1";
+      last = Date.now();
     }
 
-    if (seen) {
+    if (Date.now() - last < STALE_AFTER_MS) {
       setPhase("done");
       return;
     }
 
     try {
-      window.sessionStorage.setItem(SEEN_KEY, "1");
+      window.localStorage.setItem(SEEN_KEY, String(Date.now()));
     } catch (e) {
       // Non-fatal. Worst case the card shows again on the next navigation.
     }
