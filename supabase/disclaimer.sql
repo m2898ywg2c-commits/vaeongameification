@@ -1,4 +1,4 @@
--- Disclaimer acceptance. NOT YET APPLIED to the live database.
+-- Disclaimer acceptance. APPLIED to the live database on 2026-07-29.
 --
 -- Records that a user actively agreed to the training and AI disclaimer, when they did it,
 -- and which wording they saw. The version matters more than the flag: copy changes over
@@ -12,8 +12,12 @@
 --
 -- The app tolerates this migration being absent: signup writes acceptance in a separate
 -- failure-tolerant update, exactly as onboarding does for block_weeks. The tick box still
--- blocks the form either way, so nobody gets through without agreeing. What you lose
--- without the migration is the evidence, which is the entire point, so apply it.
+-- blocks the form either way, so nobody gets through without agreeing. What is lost
+-- without the migration is the evidence, which is the entire point.
+--
+-- Verified after applying: both columns present, all existing rows null (no backfill, by
+-- design), and zero acceptances recorded at the time of the migration since no signups had
+-- yet run through the new flow.
 
 -- 1. The columns. Nullable on purpose: existing users signed up before the disclaimer
 --    existed and back-dating a consent they never gave would be worse than having no
