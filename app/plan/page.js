@@ -6,9 +6,11 @@ import { createClient } from "@/lib/supabase/client";
 import { TYPES } from "@/lib/personality";
 import { buildWeek, primaryCategory, defaultSessionType } from "@/lib/training";
 import { currentWeek, weeksFor, BLOCK_WEEKS, estimateMax } from "@/lib/progression";
+import { isGymReady, buildGymWeek, blockWeeksFor, currentWeekIn } from "@/lib/gymready";
 import { quoteFor, sessionIntro, praiseFor } from "@/lib/voice";
 import TypeOrb from "../TypeOrb";
 import DayView from "./DayView";
+import GymDayView from "./GymDayView";
 
 const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const TAB_KEY = "vaeon-plan-tab";
@@ -39,7 +41,11 @@ const { data: a } = await supabase.from("assessment_results").select("*")
 const { data: lm } = await supabase.from("lift_maxes").select("exercise, est_max").eq("user_id", user.id);
 const map = {};
 (lm || []).forEach(function (r) { map[(r.exercise || "").toLowerCase()] = Number(r.est_max); });
-const week = buildWeek(p.goals, p.sessions_per_week || 3);
+// Gym ready users bring their own plan, so the week is empty slots rather than
+// prescribed sessions.
+const week = isGymReady(p.goals)
+? buildGymWeek(p.sessions_per_week || 3)
+: buildWeek(p.goals, p.sessions_per_week || 3);
 let idx = week.findIndex(function (d) { return d.dayLabel === SHORT[new Date().getDay()]; });
 if (idx < 0) idx = 0;
 // Numbered-session users have no natural "today", so put them back on the tab they
@@ -65,12 +71,16 @@ const tid = typeId || "architect";
 const accent = type ? type.colors[0] : "#4CC9F0";
 const deep = type ? type.colors[1] : "#3D2E8C";
 const day = days[active] || null;
-const weekNo = profile ? currentWeek(profile.block_start) : 1;
-const isTestWeek = weekNo === 1;
+const gym = profile ? isGymReady(profile.goals) : false;
+const blockWeeks = profile ? blockWeeksFor(profile) : BLOCK_WEEKS;
+const weekNo = profile ? currentWeekIn(profile.block_start, blockWeeks) : 1;
+// Gym ready has no testing week: Vaeon is not setting the loads, so there is nothing
+// to calibrate and no reason to interrupt someone following their coach's programme.
+const isTestWeek = !gym && weekNo === 1;
 const cat = profile ? primaryCategory(profile.goals) : "general";
 const rule = weeksFor(cat)[weekNo - 1] || weeksFor(cat)[0];
 const homeMode = profile && profile.equipment && profile.equipment !== "gym";
-const noBaselines = profile && !profile.baseline_bench && !profile.baseline_squat;
+const noBaselines = profile && !gym && !profile.baseline_bench && !profile.baseline_squat;
 
 async function completeSet(ex, exIdx, fields, total, kind) {
 const { data: { user } } = await supabase.auth.getUser();
@@ -88,6 +98,8 @@ time_text: kind === "time" ? (v.secs ? v.secs + " sec" : null) : (kind === "dist
 await supabase.from("exercise_logs").insert(rows);
 
 // Learn this lift's max from what was actually done, so the plan builds off real data.
+// Gym ready logs feed this too, which is why block titles are canonicalised: without
+// that, one lift would fragment across several spellings and the trends would be junk.
 if (kind === "weight") {
 let best = 0;
 for (let i = 0; i < total; i++) {
@@ -144,8 +156,9 @@ async function finish() {
 const { data: { user } } = await supabase.auth.getUser();
 if (user && day) {
 await supabase.from("training_sessions").insert({
-user_id: user.id, session_type: defaultSessionType(profile.goals, day.key),
-duration_min: 60, effort: 3, note: day.title,
+user_id: user.id,
+session_type: gym ? "Strength" : defaultSessionType(profile.goals, day.key),
+duration_min: 60, effort: 3, note: gym ? "Own plan" : day.title,
 });
 }
 setFinished(true);
@@ -169,7 +182,7 @@ return (
 <div className="flex justify-center mb-3"><TypeOrb typeId={tid} size={72} /></div>
 <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: accent }}>{type ? type.name : "Your coach"}</p>
 <p className="text-lg font-bold leading-snug mb-4">{quoteFor(tid, active)}</p>
-<p className="text-xs text-gray-400 mb-5">{sessionIntro(tid, rule.label)}</p>
+{!gym ? <p className="text-xs text-gray-400 mb-5">{sessionIntro(tid, rule.label)}</p> : <p className="text-xs text-gray-400 mb-5">Log it as you go.</p>}
 <button onClick={function () { setShowQuote(false); }} className="w-full py-4 rounded-2xl font-bold"
 style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", color: "#fff" }}>Ready</button>
 </div>
@@ -191,7 +204,9 @@ style={{ borderColor: accent + "66", background: "rgba(255,255,255,0.05)", color
 <TypeOrb typeId={tid} size={40} />
 <div>
 <p className="text-sm font-bold leading-tight">{type ? type.name : "Your plan"}</p>
-<p className="text-xs text-gray-400 leading-tight">Week {weekNo}/{BLOCK_WEEKS} &middot; {rule.label}</p>
+<p className="text-xs text-gray-400 leading-tight">
+Week {weekNo}/{blockWeeks}{gym ? "" : " · " + rule.label}
+</p>
 </div>
 </div>
 
@@ -228,9 +243,15 @@ style={on ? { background: accent, color: "#000000", borderColor: accent }
 })}
 </div>
 
+{gym ? (
+<GymDayView day={day} active={active} profile={profile} accent={accent} deep={deep}
+tid={tid} done={done} onComplete={completeSet} onReopen={reopen}
+finished={finished} onFinish={finish} />
+) : (
 <DayView day={day} active={active} profile={profile} rule={rule} accent={accent} deep={deep}
 tid={tid} homeMode={homeMode} done={done} maxes={maxes} isTestWeek={isTestWeek}
 onComplete={completeSet} onReopen={reopen} finished={finished} onFinish={finish} onStation={logStation} />
+)}
 </div>
 </main>
 );

@@ -1,6 +1,6 @@
 "use client";
 
-// End-of-block summary. Six weeks of effort deserves more than a one-line link, so this
+// End-of-block summary. A whole block of effort deserves more than a one-line link, so this
 // pulls the block's sessions, personal bests and lift trends into one honest debrief,
 // then rolls you into the next block with a single tap.
 
@@ -8,7 +8,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TYPES } from "@/lib/personality";
-import { BLOCK_WEEKS, blockComplete, currentWeek, estimateMax, liftTrends, trendSummary } from "@/lib/progression";
+import { estimateMax, liftTrends, trendSummary } from "@/lib/progression";
+import { blockWeeksFor, currentWeekIn, blockCompleteIn, isGymReady } from "@/lib/gymready";
 import TypeOrb from "../TypeOrb";
 
 export default function BlockEndPage() {
@@ -33,7 +34,8 @@ if (!p || !p.block_start) { router.push("/dashboard"); return; }
 
 const start = new Date(p.block_start);
 start.setHours(0, 0, 0, 0);
-const end = new Date(start.getTime() + BLOCK_WEEKS * 7 * 24 * 60 * 60 * 1000);
+const weeks = blockWeeksFor(p);
+const end = new Date(start.getTime() + weeks * 7 * 24 * 60 * 60 * 1000);
 
 const { data: a } = await supabase.from("assessment_results").select("type_id")
 .eq("user_id", user.id).order("completed_at", { ascending: false }).limit(1).maybeSingle();
@@ -130,10 +132,12 @@ const tid = typeId || "architect";
 const accent = type ? type.colors[0] : "#22D3EE";
 const deep = type ? type.colors[1] : "#3B82F6";
 const blockNo = profile.block_number || 1;
-const complete = blockComplete(profile.block_start);
-const weekNo = currentWeek(profile.block_start);
+const blockWeeks = blockWeeksFor(profile);
+const gym = isGymReady(profile.goals);
+const complete = blockCompleteIn(profile.block_start, blockWeeks);
+const weekNo = currentWeekIn(profile.block_start, blockWeeks);
 const pledged = profile.sessions_per_week || 3;
-const target = pledged * BLOCK_WEEKS;
+const target = pledged * blockWeeks;
 const pct = target > 0 ? Math.min(100, Math.round((sessionsDone / target) * 100)) : 0;
 
 let verdict;
@@ -152,8 +156,8 @@ return (
 
 <div className="rounded-2xl p-6 mb-4 text-center" style={{ background: "linear-gradient(135deg, " + accent + "33, transparent)", border: "2px solid " + accent + "55" }}>
 <div className="flex justify-center mb-2"><TypeOrb typeId={tid} size={84} /></div>
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{complete ? "Block " + blockNo + " complete" : "Block " + blockNo + " · week " + weekNo + " of " + BLOCK_WEEKS}</p>
-<h1 className="text-3xl font-bold mb-2">{complete ? "Six weeks, done." : "Mid-block snapshot"}</h1>
+<p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{complete ? "Block " + blockNo + " complete" : "Block " + blockNo + " · week " + weekNo + " of " + blockWeeks}</p>
+<h1 className="text-3xl font-bold mb-2">{complete ? blockWeeks + " weeks, done." : "Mid-block snapshot"}</h1>
 <p className="text-sm text-gray-300">{verdict}</p>
 </div>
 
@@ -234,7 +238,7 @@ Back to this week
 </a>
 )}
 <p className="text-xs text-gray-500 text-center mb-6">
-{complete ? "Week one of the new block is a testing week, so your first job is simply to land on honest numbers." : "Come back when the block wraps and this becomes your full debrief."}
+{complete ? (gym ? "A fresh block starts today. Same routine, clean slate on the numbers." : "Week one of the new block is a testing week, so your first job is simply to land on honest numbers.") : "Come back when the block wraps and this becomes your full debrief."}
 </p>
 </div>
 </main>

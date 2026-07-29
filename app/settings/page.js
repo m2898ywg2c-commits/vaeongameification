@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { currentWeek, blockComplete, BLOCK_WEEKS } from "@/lib/progression";
+import { blockWeeksFor, currentWeekIn, blockCompleteIn, isGymReady } from "@/lib/gymready";
 import { WEIGHT_ANCHORS, EFFORT_ANCHORS, STARTER_GUIDE } from "@/lib/exercisedb";
 import { SESSION_CHOICES } from "@/lib/training";
 import { TYPES } from "@/lib/personality";
@@ -152,9 +152,13 @@ setStats(next);
 const type = typeId ? TYPES[typeId] : null;
 const accent = type ? type.colors[0] : "#22D3EE";
 const deep = type ? type.colors[1] : "#3B82F6";
-const week = profile ? currentWeek(profile.block_start) : 1;
-const finished = profile ? blockComplete(profile.block_start) : false;
-const noBaselines = !bench && !squat;
+const gym = profile ? isGymReady(profile.goals) : false;
+const blockWeeks = profile ? blockWeeksFor(profile) : 6;
+const week = profile ? currentWeekIn(profile.block_start, blockWeeks) : 1;
+const finished = profile ? blockCompleteIn(profile.block_start, blockWeeks) : false;
+// Gym ready loads come from a coach, so the amber "you are missing something" state
+// would be nagging someone about a number Vaeon will never use.
+const noBaselines = !gym && !bench && !squat;
 const dayMismatch = fixedDays && trainDays.length > 0 && trainDays.length !== sessions;
 
 const bigInput = "w-full px-4 py-4 rounded-2xl bg-white/8 border-2 text-xl font-bold text-center";
@@ -477,7 +481,7 @@ background: on ? accent + "22" : "rgba(255,255,255,0.05)",
 
 {/* ---------- Block ---------- */}
 <div className={card}>
-<p className="text-base font-bold mb-3">Block {(profile && profile.block_number) || 1} &middot; week {week} of {BLOCK_WEEKS}</p>
+<p className="text-base font-bold mb-3">Block {(profile && profile.block_number) || 1} &middot; week {week} of {blockWeeks}</p>
 <input type="date" value={blockStart} onChange={function (e) { setBlockStart(e.target.value); }}
 className="w-full px-4 py-4 rounded-2xl bg-white/8 border-2 border-white/15 text-lg mb-3" />
 <button onClick={function () { patch({ block_start: blockStart }, "date"); }}
