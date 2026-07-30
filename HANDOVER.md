@@ -1,0 +1,252 @@
+# Vaeon Fitness — handover
+
+Everything a new session needs to pick up development. Last updated 2026-07-30.
+
+---
+
+## What it is
+
+A training app that records what you actually do and reports whether it is working.
+Solo build by James Hampton. Live, with roughly a dozen real users including family
+testers. Not launched publicly.
+
+The product argument, which shapes most decisions: most training apps hand you a
+workout and never tell you whether it worked. Vaeon profiles you, tests you in week
+one, builds from your own numbers, and scores adherence rather than load.
+
+---
+
+## Stack
+
+- Next.js 16.2.10, App Router, Turbopack. **`AGENTS.md` warns this version differs
+  from model training data. Read `node_modules/next/dist/docs/` before writing
+  anything version-sensitive.**
+- React 19, plain JavaScript, no TypeScript
+- Tailwind v4 (`@theme inline` in `app/globals.css`, not a config file)
+- Supabase: auth plus Postgres 17. Project "Intent", `wctsiafaiogyciqnmvad`, eu-west-1
+
+---
+
+## House style
+
+Match what is there. It is consistent and deliberate.
+
+- `function () {}` expressions, not arrow functions, in most files
+- Inline `style={{ }}` objects wherever colour is involved, because accents are
+  computed per user at runtime and cannot be Tailwind classes
+- Plain `<a href>` for navigation, not `next/link`. **Every navigation is a full page
+  load**, so nothing survives in React state between screens
+- Comments explain *why*, at length, especially where a decision looks odd. This
+  codebase is unusually well commented. Keep that standard up
+- British English, no em dashes
+- **Files are CRLF.** Preserve it
+
+---
+
+## Core concepts
+
+**Eight personality types** (`lib/personality.js`). Three dimensions, twelve
+statements, eight types, each owning a colour pair. **A user's accent colour is their
+type.** This is a product feature, not theming — do not flatten it during a rebrand.
+The no-type fallback is Vaeon cyan.
+
+**Goals** (`lib/training.js`). Thirteen plus `gymready`. `buildWeek(goalIds, sessions)`
+picks days, interleaving a second goal if present.
+
+**Blocks.** Six weeks, eight for Gym ready. Stored per user as `profiles.block_weeks`,
+deliberately not derived from the goal. Week one is a testing week: weighted lifts with
+no known max get no prescribed weight, you find and log your own, and that becomes the
+baseline.
+
+**Gym ready.** The fourteenth goal, for people who already have a PT. Freeform logging,
+eight-week blocks, no prescriptions. Vaeon counts, the coach coaches. `lib/gymready.js`,
+`app/plan/GymDayView.js`, `app/plan/GymBlock.js`.
+
+**Finishers.** Every non-conditioning session ends with one ~10 minute finisher, dealt
+one per day and cycled. HYROX draws from its own stations, everything else from a
+general pool. Optional — does not gate session logging or scoring.
+
+**Leaderboard.** Scores adherence (sessions logged against sessions pledged), not
+weight moved. `get_leaderboard()` in Postgres.
+
+---
+
+## Brand
+
+Black `#000000` background, white text, cyan `#22D3EE` to electric blue `#3B82F6`.
+
+Tokens live in **two mirrored places** — `lib/brand.js` (JS, for inline styles) and
+`app/globals.css` (CSS vars plus Tailwind `@theme`). **Change both together.**
+
+Chrome only. Per-type accents stay in `lib/personality.js`.
+
+Logo is `app/Brand.js`: an outlined V band with a solid notched chevron, traced from
+the real artwork onto a 226×188 box. `BrandLockup` has two shapes — compact (mark plus
+"Vaeon") for the 34px bar, and `full` (adds the rule-flanked FITNESS line) for login,
+signup and splash.
+
+---
+
+## Database
+
+**`supabase/schema-live.sql` is the authoritative snapshot**, read out of `pg_catalog`
+on 2026-07-30. The older hand-written `schema.sql` is incomplete and predates several
+tables.
+
+Ten tables, all cascading off `profiles`, which cascades off `auth.users` — so deleting
+an auth user cleans up everything. `feedback` is `set null` instead, anonymising rather
+than destroying.
+
+RLS is on everywhere and every policy is "your own rows only". All cross-user
+visibility goes through three `SECURITY DEFINER` functions: `get_leaderboard()`,
+`get_my_kudos()`, `record_lift_max()`. `get_recent_pbs()` exists but is dead code.
+
+Migrations are dated files in `supabase/`. Each carries an APPLIED header. Add new ones
+the same way and update the snapshot, or it drifts.
+
+---
+
+## Recent work (session of 2026-07-30, second half)
+
+The trigger was reading the live database rather than the handover. Twelve profiles,
+**four people have ever logged an exercise**, the longest any single user has kept it up
+is three separate days, and the four earliest signups logged nothing at all in ten days.
+Every item below follows from that.
+
+- **Events** (`supabase/events.sql`, `lib/events.js`, `app/Track.js`). Append-only product
+  log. Working out the numbers above took a hand-written four-table join, which is a
+  strange position for an app whose entire argument is that it tells you whether things
+  are working. Instrumented across signup, assessment, onboarding, plan, logging,
+  leaderboard, progress, block end, install and reminders. Type and framing are
+  denormalised onto every row so a later retake cannot rewrite history.
+  **Every function swallows its own errors.** Instrumentation must never break what it
+  measures.
+- **Reminders** (`supabase/reminders.sql`, `lib/reminders.js`, `lib/push.js`,
+  `public/sw.js`, `app/dashboard/ReminderCard.js`, `app/settings/ReminderSettings.js`).
+  Send time defaults from `chronotype`, which had been collected since the assessment
+  shipped and used for nothing. Copy varies by type and by framing.
+  **Two routes, and the in-app one is the important one:** the dashboard card needs no
+  permission, no install and no third party, so it reaches everyone, whereas push reaches
+  only people who accept a prompt and, on iOS, only people who installed the PWA first.
+  The card deliberately stays silent on the "due" occasion and speaks on the recovery
+  occasions, because a missed session is the moment people actually churn.
+  **Nothing in the copy scolds.** Shame after a lapse predicts deleting the app; there are
+  under-18s here; loss framing points at what is worth keeping, never at what was lost.
+- **Personality now changes the product, not just the paint.** `POLES`, `isFreestyle()`
+  and `isSolo()` in `lib/personality.js`.
+  - Freestyle types (Hunter, Gladiator, Wanderer, Spark) get the week as a pool: they land
+    on the next session they have not done rather than on today's weekday, tabs are named
+    by session with a tick on anything completed. Same sessions, same progression, same
+    adherence maths. Only who decides the order changes.
+  - Solo types (Architect, Monk, Hunter, Wanderer) are off the leaderboard by default,
+    `profiles.leaderboard_opt_in` nullable, null meaning the type decides. They keep full
+    read access and can still send kudos: it hides them **from** the board, not the board
+    from them. One tap on the board itself puts them on it.
+- **The type screen stopped lying.** The `plan` strings promised classes, meet-ups,
+  partner workouts, scheduled group sessions and head-to-heads, none of which exist, and
+  promised four types a flexible menu before handing them a fixed rota. Rewritten to
+  describe what ships. "Variety is the plan" is gone: it told the type least inclined to
+  repeat a session that repeating was optional, and overload does not work that way.
+- **Two bugs found while building.** `due_reminders()` originally measured staleness from
+  `exercise_logs` alone, which would have told a Quick log-only user they had lapsed while
+  they were training four times a week (one live user is exactly that). And meeting your
+  weekly pledge now outranks staleness, so front-loading a week no longer reads as
+  drifting.
+
+---
+
+## Recent work (earlier session)
+
+- **Rebrand.** Navy/teal to black/cyan across 25 files, plus the token layer that did
+  not previously exist. Per-type accents preserved; the no-type fallback moved off The
+  Captain's teal
+- **Opening splash** (`app/Splash.js`). Black card, "Welcome to", lockup. Fires on a
+  30-minute stale timestamp in `localStorage`, not a session flag — iOS discards the web
+  view when you switch apps, which made session flags re-fire constantly
+- **PWA.** Manifest, four generated icons, and `app/InstallPrompt.js` — real install
+  button on Android via `beforeinstallprompt`, step-by-step Share instructions on iOS
+  because there is no API there
+- **Disclaimer** (`app/Disclaimer.js`, `/disclaimer`, settings, signup gate). Acceptance
+  is versioned, not boolean. **UK law: you cannot exclude liability for personal injury
+  caused by negligence.** Do not let anyone "strengthen" this into something void
+- **Finishers** reworked from a five-item menu on two days to one per session
+- **Unit fixes.** Runs were prefilling 1200 into a box labelled "seconds". Planks read
+  "3 x 45". Freestyle users were shown "Barbell Back Squat" with a kg box
+- **Leaderboard bug.** `coalesce(block_start, current_date)` meant a null block start
+  moved forward nightly, so those users could never accumulate anything. Backfilled,
+  fallback chain fixed, column defaulted
+
+---
+
+## Open items
+
+**Product**
+- Age gate at signup. There are under-18s on the platform (family, supervised). Needs
+  deciding before the first stranger signs up — Children's Code, and minors cannot be
+  bound by the disclaimer
+- Legal review of the disclaimer
+- Body font is still Arial, and `globals.css` referenced an undefined `--font-geist-sans`
+
+**Reminders, to finish**
+- `supabase/functions/send-reminders/index.ts` is written but **not deployed**. It needs a
+  VAPID key pair set as edge function secrets, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` in Vercel,
+  and a `pg_cron` hourly schedule. Full instructions are in the header of that file.
+  Until then the in-app reminder works for everyone; only push is missing
+- The copy tables are duplicated between `lib/reminders.js` and the edge function, because
+  an edge function cannot import from the Next app. Change one, change both
+
+**Database, before any launch**
+- No secondary indexes on the original ten tables. Five `create index` statements are
+  drafted in the gaps section of `schema-live.sql`. `events` and `push_subscriptions`
+  carry their own already
+- Profiles are created client-side on signup, so an interrupted signup orphans an auth
+  user. A trigger on `auth.users` would close it
+- Drop `get_recent_pbs()` or find it a home
+
+**The six-week test, starting now**
+- The events table exists to answer five questions: where the funnel leaks, whether people
+  come back, **whether type predicts adherence or is decoration**, whether reminders work,
+  and whether freestyle types behave differently now the plan stops pretending. Decide the
+  queries now rather than at week six
+- `type_feedback` has two rows. Ask everyone at block end whether their type still sounds
+  like them. If types do not separate on adherence, the model is decoration and that is
+  worth knowing before more is built on it
+- `assessment_results.goals` is an empty array on all thirteen rows and is written as `[]`
+  by the assessment. Populate it or drop it
+- Nobody has ever seen `app/blockend/page.js`. The earliest block completes 31 August. The
+  risk is not that it breaks, it is that it is empty, because almost nobody logs enough to
+  fill it
+
+**Marketing**
+- Canva explainer deck `DAHQwUUrgIk` is built but waiting on the Vaeon brand kit
+  (`kAHQwFp29_E`) being updated to black plus the cyan/blue accents. Regenerate after
+- A second video covering the community half: kudos, leaderboard, coaching in your
+  voice, block-end report, Gym ready
+- Script: `vaeon-explainer-script.md` (outputs folder, not the repo)
+
+---
+
+## Gotchas
+
+**Do not run `git` from a Linux sandbox against this repo.** It creates
+`.git/index.lock` which the mount will not let you unlink, and GitHub Desktop then
+refuses to commit until the user deletes it by hand.
+
+**Git isn't on the user's PowerShell PATH.** GitHub Desktop bundles its own. Ask him to
+commit in the GUI rather than handing him git commands.
+
+**CRLF.** `git diff` in a Linux sandbox reports all 54 files as changed. Use
+`--ignore-all-space` for the truth.
+
+**`node_modules` is not installed.** To verify a build, copy `app`, `lib`, `public` and
+the config files to `/tmp`, `npm install` there, and run `npx next build`. Do not
+install into the repo.
+
+**Canva's AI rewrites your copy every single time.** It turned "the plan builds itself
+around it" into "achieve optimal results with personalised guidance", invented six
+leaderboard cards that were never briefed, and dropped a whole scene. Always budget a
+repair pass after generating.
+
+**Auto-finish** in `DayView` fires when every exercise card is collapsed. It used to
+also require three stations logged, which quietly made an optional extra compulsory.
+Do not reintroduce that coupling.

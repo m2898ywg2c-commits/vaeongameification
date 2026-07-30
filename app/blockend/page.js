@@ -11,6 +11,7 @@ import { TYPES } from "@/lib/personality";
 import { estimateMax, liftTrends, trendSummary } from "@/lib/progression";
 import { blockWeeksFor, currentWeekIn, blockCompleteIn, isGymReady } from "@/lib/gymready";
 import TypeOrb from "../TypeOrb";
+import { track, rememberIdentity, EVENTS } from "@/lib/events";
 
 export default function BlockEndPage() {
 const router = useRouter();
@@ -101,6 +102,19 @@ setPbs(pbList.slice(0, 5));
 setTrends(liftTrends(blockLogs));
 setWeightDelta(delta);
 setLoading(false);
+
+// The payoff screen. Nobody has ever reached it, because the earliest block in the
+// database started on 20 July and does not complete until 31 August, so this event
+// is the first evidence that the whole "we tell you whether it worked" argument
+// actually lands. Recording how thin the report was matters as much as the view:
+// a block end summary with no PBs and two sessions is a worse outcome than not
+// showing one at all, and this is how that shows up in the numbers.
+rememberIdentity(user.id, a ? a.type_id : null, p.framing);
+track(supabase, EVENTS.BLOCKEND_VIEWED, {
+block: p.block_number || 1, weeks: weeks,
+sessions: (sess || []).length, pledged: (p.sessions_per_week || 3) * weeks,
+pbs: pbList.length, weight_delta: delta,
+});
 }
 load();
 }, [supabase, router]);
@@ -116,6 +130,7 @@ block_number: (profile.block_number || 1) + 1,
 }).eq("id", profile.id);
 setStarting(false);
 if (e) { setError(e.message); return; }
+track(supabase, EVENTS.BLOCK_STARTED, { block: (profile.block_number || 1) + 1 });
 router.push("/plan");
 }
 

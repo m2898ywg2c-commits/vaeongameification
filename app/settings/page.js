@@ -9,6 +9,7 @@ import { WEIGHT_ANCHORS, EFFORT_ANCHORS, STARTER_GUIDE } from "@/lib/exercisedb"
 import { SESSION_CHOICES } from "@/lib/training";
 import { TYPES } from "@/lib/personality";
 import Home from "../Home";
+import ReminderSettings from "./ReminderSettings";
 
 const EQUIPMENT = [
 { id: "gym", icon: "🏋️", name: "Full gym" },
@@ -279,6 +280,9 @@ You have not found your type yet. It shapes your whole plan, so it is worth the 
 {type ? "Retake the assessment" : "Find my type"}
 </a>
 </div>
+
+{/* ---------- Reminders ---------- */}
+<ReminderSettings profile={profile} accent={accent} />
 
 {/* ---------- Schedule ---------- */}
 <div className={card}>

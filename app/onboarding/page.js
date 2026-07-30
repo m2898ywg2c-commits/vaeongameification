@@ -12,6 +12,7 @@ DEFAULT_BLOCK_WEEKS,
 isGymReady,
 toggleGoal,
 } from "@/lib/gymready";
+import { track, EVENTS } from "@/lib/events";
 
 const EQUIPMENT = [
 { id: "gym", icon: "🏋️", name: "I have a gym", blurb: "Barbells, machines, cables, the lot." },
@@ -95,6 +96,16 @@ await supabase.from("profiles")
 .update({ block_weeks: gym ? GYM_READY_BLOCK_WEEKS : DEFAULT_BLOCK_WEEKS })
 .eq("id", user.id);
 } catch (ignored) {}
+
+track(supabase, EVENTS.ONBOARDING_COMPLETED, {
+goals: picked, sessions_per_week: sessions, equipment: equipment,
+fixed_days: fixedDays === null ? true : fixedDays, gym: gym,
+// Whether this was first-run setup or someone changing their mind later. The
+// dashboard links back here to edit goals, so without this flag the funnel would
+// count every edit as a fresh activation.
+had_type: hasType,
+});
+
 setSaving(false);
 router.push(hasType ? "/dashboard" : "/assessment");
 router.refresh();

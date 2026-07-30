@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { BRAND } from "@/lib/brand";
+import { createClient } from "@/lib/supabase/client";
+import { track, EVENTS } from "@/lib/events";
 
 // "Add to home screen" nudge.
 //
@@ -113,9 +115,15 @@ export default function InstallPrompt({ accent = BRAND.accent }) {
   const install = async function () {
     if (!deferred) return;
     deferred.prompt();
-    await deferred.userChoice;
+    const choice = await deferred.userChoice;
     // The event is single use. Whatever the user chose, it cannot be replayed.
     setDeferred(null);
+    // Installing matters more here than on a normal web app: an installed PWA is the
+    // only route to a push reminder on iOS, so this number caps how many people the
+    // reminder can ever reach on that platform.
+    track(createClient(), choice && choice.outcome === "accepted" ? EVENTS.INSTALL_ACCEPTED : EVENTS.INSTALL_PROMPTED, {
+      outcome: choice ? choice.outcome : "unknown",
+    });
     dismiss();
   };
 

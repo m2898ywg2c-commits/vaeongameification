@@ -6,6 +6,7 @@ import { TYPES } from "@/lib/personality";
 import { KUDOS_EMOJI, KUDOS_NOTES, noteText } from "@/lib/kudos";
 import TypeOrb from "../TypeOrb";
 import Home from "../Home";
+import { track, trackOnce, EVENTS } from "@/lib/events";
 
 const TOP_N = 5;
 
@@ -19,6 +20,10 @@ const [pickerFor, setPickerFor] = useState(null);
 const [noteFor, setNoteFor] = useState(null);
 const [expanded, setExpanded] = useState(false);
 const [loading, setLoading] = useState(true);
+// null means they have never been asked, in which case their type decides. See
+// supabase/leaderboard_opt_in.sql.
+const [optIn, setOptIn] = useState(null);
+const [joining, setJoining] = useState(false);
 
 // The recent-PB feed and the PR star both used to live here. Both are gone: in a testing
 // week every logged set is a new max, so the feed buried the board and the star ended up
@@ -33,6 +38,8 @@ setMeId(user.id);
 const a = await supabase.from("assessment_results").select("type_id")
 .eq("user_id", user.id).order("completed_at", { ascending: false }).limit(1).maybeSingle();
 if (a.data) setMyType(a.data.type_id);
+const pr = await supabase.from("profiles").select("leaderboard_opt_in").eq("id", user.id).maybeSingle();
+if (pr.data) setOptIn(pr.data.leaderboard_opt_in);
 const k = await supabase.from("kudos").select("to_user, emoji, note_code").eq("from_user", user.id);
 const map = {};
 (k.data || []).forEach(function (r) { map[r.to_user] = { emoji: r.emoji, note: r.note_code }; });
@@ -41,6 +48,10 @@ setMyKudos(map);
 const lb = await supabase.rpc("get_leaderboard");
 setRows(lb.data || []);
 setLoading(false);
+
+// load() is called again after every kudos, so this is deliberately once per tab.
+// Otherwise sending three kudos would read as four leaderboard visits.
+trackOnce(supabase, EVENTS.LEADERBOARD_VIEWED, { rows: (lb.data || []).length });
 };
 
 useEffect(function () { load(); }, []);
@@ -60,6 +71,10 @@ await supabase.from("kudos").upsert(
 { from_user: meId, to_user: toUser, emoji: emoji, note_code: existing.note || null },
 { onConflict: "from_user,to_user" }
 );
+// Deliberately does not record who it went to. This is a product measure of whether
+// the community half works, not a social graph, and the smallest version of that
+// which answers the question is the one to store.
+track(supabase, EVENTS.KUDOS_SENT, { emoji: emoji, changed: Boolean(existing.emoji) });
 load();
 };
 
@@ -77,6 +92,21 @@ await supabase.from("kudos").upsert(
 { onConflict: "from_user,to_user" }
 );
 load();
+};
+
+// Whether they are actually on the board, read from the board itself rather than
+// recomputed here. get_leaderboard() is the authority on who appears, and a second
+// implementation of that rule on the client is a second thing to get out of step.
+const onBoard = Boolean(meId) && rows.some(function (r) { return r.user_id === meId; });
+
+const setBoardVisibility = async function (next) {
+if (!meId) return;
+setJoining(true);
+const supabase = createClient();
+await supabase.from("profiles").update({ leaderboard_opt_in: next }).eq("id", meId);
+setOptIn(next);
+setJoining(false);
+await load();
 };
 
 const myTypeColour = myType && TYPES[myType] ? TYPES[myType].colors[0] : "#22D3EE";
@@ -202,6 +232,37 @@ Scored on how much of your own pledge you have hit so far this block, not raw co
 so someone in week one is compared fairly with someone near the end. Blocks are six
 weeks, or eight if you are following your own plan. Resets when your block does.
 </p>
+
+{/* ---------- Board visibility ----------
+
+Solo types are off the board by default now, because they told the assessment their
+best sessions happen alone and then got ranked against strangers anyway. Off the
+board still means full access to it: they can see everyone and send kudos, they
+simply are not scored in public. This card is how they find that out and how they
+change their mind, which has to be one tap and has to be here rather than buried in
+settings, because here is where the question occurs to them. */}
+{meId && !onBoard ? (
+<div className="rounded-2xl border-2 p-4 mb-4" style={{ borderColor: myTypeColour + "55", background: myTypeColour + "12" }}>
+<p className="text-sm font-bold mb-1" style={{ color: myTypeColour }}>You are not on the board</p>
+<p className="text-xs text-gray-300 mb-3">
+{myType && TYPES[myType]
+? "The " + TYPES[myType].name.replace("The ", "") + " trains best alone, so we have left you off it. You can still see everyone and send kudos."
+: "You are hidden from the rankings. You can still see everyone and send kudos."}
+</p>
+<button onClick={function () { setBoardVisibility(true); }} disabled={joining}
+className="w-full py-3 rounded-full font-bold text-sm"
+style={{ background: myTypeColour, color: "#000000" }}>
+{joining ? "Joining..." : "Put me on the board"}
+</button>
+</div>
+) : null}
+
+{meId && onBoard ? (
+<button onClick={function () { setBoardVisibility(false); }} disabled={joining}
+className="w-full text-center text-xs text-gray-500 underline mb-4">
+Hide me from the rankings
+</button>
+) : null}
 
 {/* ---------- Filter ---------- */}
 <div className="grid grid-cols-2 gap-2 mb-4">

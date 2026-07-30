@@ -3,17 +3,29 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { TYPES } from "@/lib/personality";
+import { TYPES, isFreestyle } from "@/lib/personality";
 import { buildWeek, primaryCategory, defaultSessionType } from "@/lib/training";
 import { currentWeek, weeksFor, BLOCK_WEEKS, estimateMax } from "@/lib/progression";
 import { isGymReady, buildGymWeek, blockWeeksFor, currentWeekIn } from "@/lib/gymready";
 import { quoteFor, sessionIntro, praiseFor } from "@/lib/voice";
+import { track, rememberIdentity, EVENTS } from "@/lib/events";
 import TypeOrb from "../TypeOrb";
 import DayView from "./DayView";
 import GymDayView from "./GymDayView";
 
 const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const TAB_KEY = "vaeon-plan-tab";
+
+// Monday, local time. Used to work out which of this week's sessions are already done, so
+// a freestyle user can be dropped on the next one they have not touched. Matches the
+// week boundary the dashboard and the leaderboard already use.
+function startOfThisWeek() {
+const d = new Date();
+const day = (d.getDay() + 6) % 7;
+d.setHours(0, 0, 0, 0);
+d.setDate(d.getDate() - day);
+return d.toISOString();
+}
 
 export default function PlanPage() {
 const router = useRouter();
@@ -29,6 +41,8 @@ const [count, setCount] = useState(0);
 const [showQuote, setShowQuote] = useState(true);
 const [finished, setFinished] = useState(false);
 const [maxes, setMaxes] = useState({});
+const [freestyle, setFreestyle] = useState(false);
+const [doneKeys, setDoneKeys] = useState({});
 
 useEffect(function () {
 async function load() {
@@ -46,11 +60,32 @@ const map = {};
 const week = isGymReady(p.goals)
 ? buildGymWeek(p.sessions_per_week || 3)
 : buildWeek(p.goals, p.sessions_per_week || 3);
-let idx = week.findIndex(function (d) { return d.dayLabel === SHORT[new Date().getDay()]; });
+// Freestyle types land on a choice, not on a weekday.
+//
+// A Hunter or a Wanderer opening the app on a Wednesday and being shown "Wednesday"
+// is the app telling them the schedule decides, which is precisely what their type
+// screen promised would not happen. Landing them on the first session they have not
+// logged yet turns the same week into a pool with an obvious next pick, without
+// changing a single exercise, the progression, or how adherence is scored.
+const free = isFreestyle(a ? a.type_id : null);
+const loggedKeys = {};
+(await supabase.from("exercise_logs").select("day_key")
+.eq("user_id", user.id)
+.gte("logged_at", startOfThisWeek())).data?.forEach(function (r) { loggedKeys[r.day_key] = true; });
+
+let idx;
+if (free) {
+idx = week.findIndex(function (d) { return !loggedKeys[d.key]; });
 if (idx < 0) idx = 0;
+} else {
+idx = week.findIndex(function (d) { return d.dayLabel === SHORT[new Date().getDay()]; });
+if (idx < 0) idx = 0;
+}
 // Numbered-session users have no natural "today", so put them back on the tab they
 // last had open. Day-of-week users still land on today, which is the better default.
-if (p.fixed_days === false) {
+// Freestyle types are excluded: their default is "the next one you have not done",
+// which is a better answer than whichever tab they happened to close on.
+if (p.fixed_days === false && !free) {
 try {
 const saved = Number(window.localStorage.getItem(TAB_KEY));
 if (!isNaN(saved) && saved >= 0 && saved < week.length) idx = saved;
@@ -61,7 +96,21 @@ setTypeId(a ? a.type_id : null);
 setMaxes(map);
 setDays(week);
 setActive(idx);
+setFreestyle(free);
+setDoneKeys(loggedKeys);
 setLoading(false);
+
+// Identity first, so the events this page fires carry a type rather than a null.
+rememberIdentity(user.id, a ? a.type_id : null, p.framing);
+track(supabase, EVENTS.PLAN_VIEWED, {
+gym: isGymReady(p.goals),
+sessions_per_week: p.sessions_per_week || 3,
+fixed_days: p.fixed_days !== false,
+// The six-week question: do freestyle types behave differently now that the plan
+// stops pretending they are not freestyle?
+freestyle: free,
+done_this_week: Object.keys(loggedKeys).length,
+});
 }
 load();
 }, [supabase, router]);
@@ -99,6 +148,14 @@ time_text: kind === "time" ? (v.secs ? v.secs + " " + (v.unit || "sec") : null) 
 });
 }
 await supabase.from("exercise_logs").insert(rows);
+
+// One event per exercise, not per set. Sets are a property of the exercise here, and
+// counting them separately would make a five-set squat look like five times the
+// engagement of a one-set deadlift when comparing types.
+track(supabase, EVENTS.EXERCISE_LOGGED, {
+exercise: ex.name, sets: total, kind: kind, day_key: day.key,
+week: weekNo, test_week: isTestWeek,
+});
 
 // Learn this lift's max from what was actually done, so the plan builds off real data.
 // Gym ready logs feed this too, which is why block titles are canonicalised: without
@@ -162,6 +219,10 @@ await supabase.from("training_sessions").insert({
 user_id: user.id,
 session_type: gym ? "Strength" : defaultSessionType(profile.goals, day.key),
 duration_min: 60, effort: 3, note: gym ? "Own plan" : day.title,
+});
+track(supabase, EVENTS.SESSION_LOGGED, {
+gym: gym, day_key: day.key, week: weekNo, block: profile.block_number || 1,
+exercises_logged: count,
 });
 }
 setFinished(true);
@@ -229,18 +290,38 @@ Week one sets your baselines. On the main lifts, work up to a strong set you cou
 </a>
 ) : null}
 
+{freestyle && !gym ? (
+<div className="rounded-2xl border-2 p-4 mb-3" style={{ borderColor: accent + "44", background: accent + "0D" }}>
+<p className="text-sm font-bold" style={{ color: accent }}>Your sessions this week</p>
+<p className="text-xs text-gray-300">
+Pick whichever one you fancy today. They all count the same, the order is yours, and
+anything you have already done is ticked off below.
+</p>
+</div>
+) : null}
+
 <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
 {days.map(function (d, i) {
 const on = i === active;
+// Freestyle types see what is left rather than what day it is. A tick on a
+// completed session turns the strip from a rota into a list to clear, which is
+// the whole difference between being told and choosing.
+const doneAlready = Boolean(doneKeys[d.key]);
+const label = freestyle
+? (doneAlready ? "✓ " : "") + (d.title || d.focus || "Session " + (i + 1)).split(" ")[0]
+: (profile.fixed_days === false ? "S" + (i + 1) : d.dayLabel);
 return (
 <button key={d.key} onClick={function () {
 setActive(i); setFinished(false); setDone({});
 try { window.localStorage.setItem(TAB_KEY, String(i)); } catch (e) {}
+track(supabase, EVENTS.DAY_OPENED, {
+day_key: d.key, index: i, week: weekNo, freestyle: freestyle, already_done: doneAlready,
+});
 }}
 className="px-4 py-3 rounded-xl text-sm font-bold flex-shrink-0 border"
 style={on ? { background: accent, color: "#000000", borderColor: accent }
-: { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>
-{profile.fixed_days === false ? "S" + (i + 1) : d.dayLabel}
+: { background: "rgba(255,255,255,0.05)", color: doneAlready ? "#64748b" : "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>
+{label}
 </button>
 );
 })}

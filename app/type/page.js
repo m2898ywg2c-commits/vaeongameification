@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { TYPES } from "@/lib/personality";
 import { DIMENSIONS, TYPE_POLES, DIM_ORDER, LAYERS, modelsFor, sourcesFor } from "@/lib/typeguide";
 import TypeOrb from "../TypeOrb";
+import { track, EVENTS } from "@/lib/events";
 
 function joinModels(models) {
 if (models.length <= 1) return models.join("");
@@ -82,6 +83,15 @@ const sp = useSearchParams();
 const id = sp.get("id");
 const type = id ? TYPES[id] : null;
 const poles = id ? TYPE_POLES[id] : null;
+
+// This page opens in a new tab from the dashboard, so it gets its own sessionStorage
+// and pays for an identity lookup. Worth it: whether people read about their type is
+// the cheapest available read on whether the personality layer is interesting or
+// merely decorative.
+useEffect(function () {
+if (!id || !TYPES[id]) return;
+track(createClient(), EVENTS.TYPE_VIEWED, { type_id: id });
+}, [id]);
 
 if (!type || !poles) {
 return (

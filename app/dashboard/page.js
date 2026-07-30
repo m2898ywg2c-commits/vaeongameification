@@ -11,6 +11,10 @@ import InstallPrompt from "../InstallPrompt";
 import KudosCard from "./KudosCard";
 import TypeOrb from "../TypeOrb";
 import ShareButton from "../ShareButton";
+import Track from "../Track";
+import ReminderCard from "./ReminderCard";
+import { EVENTS } from "@/lib/events";
+import { occasionFor } from "@/lib/reminders";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -22,7 +26,13 @@ d.setDate(d.getDate() - day);
 return d.toISOString();
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }) {
+// searchParams is a promise in this version of Next. The service worker sends people
+// here with ?r=1 so that a push that gets tapped can be told apart from a normal open,
+// which is the only way to know whether reminders do anything.
+const sp = await searchParams;
+const fromReminder = Boolean(sp && sp.r === "1");
+
 const supabase = await createClient();
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) redirect("/login");
@@ -35,6 +45,13 @@ const { data: assessment } = await supabase.from("assessment_results").select("*
 
 const { data: sessions } = await supabase.from("training_sessions").select("*")
 .eq("user_id", user.id).order("logged_at", { ascending: false }).limit(300);
+
+// Most recent exercise log, for the reminder. Sessions alone are not enough to judge
+// staleness: someone who logs every exercise in the plan but never taps Finish has no
+// training_sessions row at all, and would be told they had lapsed while training. The
+// mirror of this decision lives in due_reminders() in supabase/reminders.sql.
+const { data: lastLog } = await supabase.from("exercise_logs").select("logged_at")
+.eq("user_id", user.id).order("logged_at", { ascending: false }).limit(1).maybeSingle();
 
 // Have they logged body stats this week?
 const { data: thisWeekMetrics } = await supabase.from("body_metrics").select("id")
@@ -66,6 +83,12 @@ const deep = type ? type.colors[1] : "#3B82F6";
 const noBaselines = !gym && !profile.baseline_bench && !profile.baseline_squat;
 const plain = { sessions_per_week: pledged, block_start: profile.block_start || null };
 
+// Latest sign of life from either source, matching greatest() in due_reminders().
+const lastSession = sessions && sessions.length ? sessions[0].logged_at : null;
+const lastExercise = lastLog ? lastLog.logged_at : null;
+const lastActivity = [lastSession, lastExercise].filter(Boolean).sort().pop() || null;
+const occasion = occasionFor(lastActivity, stats.thisWeekCount, pledged);
+
 const tile = "rounded-2xl border border-white/10 bg-white/5 p-3 text-center";
 
 return (
@@ -84,6 +107,14 @@ return (
 </div>
 <SignOutButton />
 </div>
+
+<Track name={EVENTS.APP_OPENED} once userId={user.id} typeId={typeId} framing={profile.framing} props={{ block: profile.block_number || 1, week: weekNo, occasion: occasion }} />
+
+{fromReminder ? (
+<Track name={EVENTS.REMINDER_OPENED} once userId={user.id} typeId={typeId} framing={profile.framing} props={{ occasion: occasion }} />
+) : null}
+
+<ReminderCard occasion={occasion} typeId={typeId} framing={profile.framing} accent={accent} />
 
 <InstallPrompt accent={accent} />
 

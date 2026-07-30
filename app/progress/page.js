@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { liftTrends, trendSummary } from "@/lib/progression";
 import { TYPES } from "@/lib/personality";
 import Home from "../Home";
+import { track, EVENTS } from "@/lib/events";
 
 // Monday-start week key, matching lib/progression.js
 function weekStart(d) {
@@ -203,6 +204,12 @@ export default function ProgressPage() {
       setSessions(s.data || []);
       setLogs(l.data || []);
       setLoading(false);
+
+      track(supabase, EVENTS.PROGRESS_VIEWED, {
+        sessions: (s.data || []).length,
+        metrics: (m.data || []).length,
+        logs: (l.data || []).length,
+      });
     });
   }, [router]);
 

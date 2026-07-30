@@ -1,7 +1,7 @@
 -- ============================================================================
 -- Vaeon Fitness: live database snapshot.
 -- Project "Intent" (wctsiafaiogyciqnmvad), Postgres 17.6, eu-west-1.
--- Captured 2026-07-30.
+-- Captured 2026-07-30. Amended 2026-07-30 (events, reminders, leaderboard opt-in).
 -- ============================================================================
 --
 -- WHAT THIS IS
@@ -349,12 +349,80 @@ grant execute on function public.get_recent_pbs()  to anon, authenticated, servi
 grant execute on function public.record_lift_max(text, numeric) to anon, authenticated, service_role;
 
 -- ============================================================================
+-- ADDED 2026-07-30
+-- ============================================================================
+--
+-- Three migrations landed after this snapshot was first captured. Each has its
+-- own file in this folder with the reasoning in full; this section records only
+-- what now exists so the snapshot stays usable as a rebuild path.
+--
+--   supabase/events.sql             product instrumentation
+--   supabase/reminders.sql          reminder settings, push endpoints, sender
+--   supabase/leaderboard_opt_in.sql who appears on the board
+--
+-- NEW TABLES
+--
+--   events                append-only product event log. user_id is ON DELETE
+--                         SET NULL rather than cascade, the same exception
+--                         feedback makes and for the same reason: it exists to
+--                         explain why people leave, and cascading would delete
+--                         those rows at the moment they became useful. Carries
+--                         type_id and framing denormalised at write time so a
+--                         later retake cannot rewrite history. Insert and select
+--                         policies only, so no client can amend its own trail.
+--                         Indexes: (user_id, created_at desc),
+--                         (name, created_at desc), (type_id, name) partial.
+--
+--   push_subscriptions    one row per device. Cascades off profiles, unlike
+--                         events: a push endpoint has no analytical value once
+--                         the account is gone. Unique on (user_id, endpoint).
+--
+-- NEW COLUMNS ON profiles
+--
+--   reminder_enabled      boolean not null default false
+--   reminder_hour         int, LOCAL hour, 0-23, checked
+--   reminder_minute       int not null default 0, 0-59, checked
+--   reminder_tz           text, IANA zone captured from the browser. Storing the
+--                         zone rather than a UTC time is what keeps 07:00 at
+--                         07:00 across a clock change.
+--   last_reminded_at      timestamptz, the deduplication key. One nudge a day.
+--   leaderboard_opt_in    boolean, NULLABLE on purpose. Null means never asked,
+--                         and the social pole of the personality type decides.
+--                         True or false is an explicit choice and always wins.
+--
+-- NEW FUNCTIONS
+--
+--   due_reminders()       security definer. Returns who to nudge and an
+--                         occasion, never a sentence: the wording lives in
+--                         lib/reminders.js and in the edge function. Granted to
+--                         service_role only, unlike the other definers, because
+--                         nothing in the browser has any business reading a list
+--                         of other people's lapsed training.
+--   mark_reminded(uuid)   security definer, service_role only. Separate from the
+--                         select so a sender that dies mid-batch does not
+--                         silence the users it never reached.
+--   type_is_together(text) immutable. Mirrors POLES in lib/personality.js.
+--
+-- CHANGED
+--
+--   get_leaderboard()     now filters on
+--                         coalesce(leaderboard_opt_in, type_is_together(type)).
+--                         Solo types are off the board unless they say
+--                         otherwise. They keep full read access and can still
+--                         send kudos: this hides them FROM the board, it does
+--                         not hide the board from them.
+
+-- ============================================================================
 -- KNOWN GAPS
 -- ============================================================================
 --
--- 1. NO SECONDARY INDEXES. Every index in this database is a primary key or a
---    unique constraint. Nothing covers the access patterns the app actually
---    uses, all of which are (user_id, timestamp):
+-- 1. NO SECONDARY INDEXES ON THE ORIGINAL TEN TABLES. Still true, and still
+--    fine at current volumes. events and push_subscriptions, added 2026-07-30,
+--    DO carry their own indexes, because events is the one table with a
+--    realistic path to being large: it takes a row every time anybody opens a
+--    screen, not once per session.
+--
+--    The five below remain drafted and unapplied. Add them before a launch:
 --
 --      create index on exercise_logs    (user_id, logged_at desc);
 --      create index on training_sessions (user_id, logged_at desc);

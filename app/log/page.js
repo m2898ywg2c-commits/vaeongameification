@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SESSION_TYPES } from "@/lib/plan";
 import Home from "../Home";
+import { track, EVENTS } from "@/lib/events";
 
 const DURATIONS = [15, 30, 45, 60, 90];
 
@@ -59,6 +60,13 @@ export default function LogPage() {
       setError(insertError.message);
       return;
     }
+    // Same event as finishing a session in the plan, with source telling them apart.
+    // Both mean "a session happened", and adherence should not care which route it
+    // came in by, but which route people actually use is worth knowing.
+    track(supabase, EVENTS.SESSION_LOGGED, {
+      source: "quick_log", session_type: sessionType, duration_min: duration, effort: effort,
+    });
+
     setSaved(true);
     setNote("");
     const r = await supabase

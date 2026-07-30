@@ -21,6 +21,7 @@ import {
   CHRONOTYPE_LABEL,
   CHRONOTYPE_TIP,
 } from "@/lib/framing";
+import { track, rememberIdentity, EVENTS } from "@/lib/events";
 
 const GRAD = "linear-gradient(90deg, #22D3EE, #3B82F6)";
 
@@ -103,11 +104,34 @@ export default function AssessmentPage() {
       setError(profileError.message);
       return;
     }
+    // Identity before the event, so assessment_completed carries the type that was just
+    // decided rather than whatever was cached from before the survey (usually null).
+    rememberIdentity(user.id, typeId, framed.framing);
+    track(supabase, EVENTS.ASSESSMENT_COMPLETED, {
+      type_id: typeId,
+      structure: scored.structure,
+      orientation: scored.orientation,
+      social: scored.social,
+      framing: framed.framing,
+      framing_score: framed.score,
+      chronotype: chronoValue,
+      // Whether any dimension landed dead even and had to go to a forced choice. If this
+      // runs high the twelve statements are not discriminating and the instrument needs
+      // work, which is worth knowing before the model is built on further.
+      tiebreaks: ties ? Object.keys(ties).length : 0,
+    });
+
     setResult({ scored: { ...scored, typeId: typeId }, framed: framed, chrono: chronoValue });
     setStage("result");
   };
 
   const answer = (value) => {
+    // "Started" means answered the first statement, not merely landed on the page. The
+    // gap between arriving and committing to question one is a different problem from
+    // the gap between question one and finishing, and lumping them together hides both.
+    if (index === 0) {
+      track(createClient(), EVENTS.ASSESSMENT_STARTED, { total: TOTAL });
+    }
     const next = values.slice();
     next[index] = value;
     setValues(next);

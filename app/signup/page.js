@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BrandLockup } from "../Brand";
 import { DISCLAIMER_SHORT, DISCLAIMER_VERSION } from "../Disclaimer";
+import { track, EVENTS } from "@/lib/events";
 
 const AGE_GROUPS = ["Under 18", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
 
@@ -61,6 +62,11 @@ export default function SignUpPage() {
         return;
       }
     }
+
+    // Only after the profile row exists. events.user_id is a foreign key to profiles, so
+    // firing this any earlier would fail the constraint and lose the event, which is the
+    // one signup event that has to land.
+    track(supabase, EVENTS.SIGNUP_COMPLETED, { age_group: ageGroup });
 
     router.push("/dashboard");
     router.refresh();
