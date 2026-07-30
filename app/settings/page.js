@@ -10,6 +10,7 @@ import { SESSION_CHOICES } from "@/lib/training";
 import { TYPES } from "@/lib/personality";
 import Home from "../Home";
 import ReminderSettings from "./ReminderSettings";
+import ExportData from "./ExportData";
 
 const EQUIPMENT = [
 { id: "gym", icon: "🏋️", name: "Full gym" },
@@ -497,6 +498,9 @@ className="w-full py-3 rounded-full font-bold text-sm mb-3" style={primaryBtn}>
 {finished ? "Start block " + (((profile && profile.block_number) || 1) + 1) : "Restart from today"}
 </button>
 </div>
+
+{/* ---------- Your data ---------- */}
+<ExportData profile={profile} />
 
 {/* ---------- Disclaimer ---------- */}
 {/* Last card on purpose. Nobody comes to settings to read it, but it needs to be

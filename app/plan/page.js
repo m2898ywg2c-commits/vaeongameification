@@ -43,6 +43,7 @@ const [finished, setFinished] = useState(false);
 const [maxes, setMaxes] = useState({});
 const [freestyle, setFreestyle] = useState(false);
 const [doneKeys, setDoneKeys] = useState({});
+const [lastSets, setLastSets] = useState({});
 
 useEffect(function () {
 async function load() {
@@ -55,6 +56,38 @@ const { data: a } = await supabase.from("assessment_results").select("*")
 const { data: lm } = await supabase.from("lift_maxes").select("exercise, est_max").eq("user_id", user.id);
 const map = {};
 (lm || []).forEach(function (r) { map[(r.exercise || "").toLowerCase()] = Number(r.est_max); });
+
+// What was actually done last time, set by set.
+//
+// The most-praised feature in every workout tracker worth copying, and the one thing
+// this app asked people to do from memory. lift_maxes already holds an ESTIMATED max
+// per lift, which is what the prescription is built from, but an estimate is not the
+// same as "you did 60kg for 8, 8 and 6 on Tuesday and the last one was a grind".
+//
+// Fetched as a flat recent slice and grouped here rather than asked for per exercise.
+// One query beats eight, and at this volume the whole table is smaller than the
+// round trips would be.
+const { data: recentLogs } = await supabase.from("exercise_logs")
+.select("exercise, set_index, weight, reps, time_text, logged_at")
+.eq("user_id", user.id)
+.order("logged_at", { ascending: false })
+.limit(400);
+
+const lastByExercise = {};
+(recentLogs || []).forEach(function (r) {
+const key = (r.exercise || "").toLowerCase();
+if (!key) return;
+const day = String(r.logged_at).slice(0, 10);
+// Rows arrive newest first, so the first day seen for an exercise is the most recent
+// one. Anything older is ignored: "last time" means one session, not a merge of
+// several, or a set you did a fortnight ago could reappear alongside yesterday's.
+if (!lastByExercise[key]) lastByExercise[key] = { day: day, sets: [] };
+if (lastByExercise[key].day !== day) return;
+lastByExercise[key].sets.push(r);
+});
+Object.keys(lastByExercise).forEach(function (k) {
+lastByExercise[k].sets.sort(function (a, b) { return (a.set_index || 0) - (b.set_index || 0); });
+});
 // Gym ready users bring their own plan, so the week is empty slots rather than
 // prescribed sessions.
 const week = isGymReady(p.goals)
@@ -98,6 +131,7 @@ setDays(week);
 setActive(idx);
 setFreestyle(free);
 setDoneKeys(loggedKeys);
+setLastSets(lastByExercise);
 setLoading(false);
 
 // Identity first, so the events this page fires carry a type rather than a null.
@@ -333,7 +367,7 @@ tid={tid} done={done} onComplete={completeSet} onReopen={reopen}
 finished={finished} onFinish={finish} />
 ) : (
 <DayView day={day} active={active} profile={profile} rule={rule} accent={accent} deep={deep}
-tid={tid} homeMode={homeMode} done={done} maxes={maxes} isTestWeek={isTestWeek}
+tid={tid} homeMode={homeMode} done={done} maxes={maxes} isTestWeek={isTestWeek} lastSets={lastSets}
 onComplete={completeSet} onReopen={reopen} finished={finished} onFinish={finish} onStation={logStation} />
 )}
 </div>

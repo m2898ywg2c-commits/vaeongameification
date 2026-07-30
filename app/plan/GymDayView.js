@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { sessionMusic } from "@/lib/music";
 import { BLOCKS_PER_DAY, SETS_PER_BLOCK } from "@/lib/gymready";
 import GymBlock from "./GymBlock";
+import RestTimer from "./RestTimer";
 import TypeOrb from "../TypeOrb";
 import { sessionDone } from "@/lib/voice";
 
@@ -122,6 +123,8 @@ export default function GymDayView({ day, active, profile, accent, deep, tid, do
           Filled in from last time. Type over anything that has changed.
         </p>
       ) : null}
+
+      <RestTimer accent={accent} />
 
       {blocks.map(function (b, i) {
         return (

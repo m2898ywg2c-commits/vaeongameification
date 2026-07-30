@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { TYPES } from "@/lib/personality";
+import { TYPES, isSolo } from "@/lib/personality";
 import { KUDOS_EMOJI, KUDOS_NOTES, noteText } from "@/lib/kudos";
 import TypeOrb from "../TypeOrb";
 import Home from "../Home";
@@ -98,6 +98,12 @@ load();
 // recomputed here. get_leaderboard() is the authority on who appears, and a second
 // implementation of that rule on the client is a second thing to get out of step.
 const onBoard = Boolean(meId) && rows.some(function (r) { return r.user_id === meId; });
+
+// A Solo type who has never been asked. They are on the board, because everybody is, but
+// they are the ones most likely to want off it and least likely to go looking for the
+// setting. Once they have chosen either way, optIn stops being null and this stops
+// nagging them about it.
+const soloUndecided = isSolo(myType) && optIn === null && Boolean(TYPES[myType]);
 
 const setBoardVisibility = async function (next) {
 if (!meId) return;
@@ -235,29 +241,44 @@ weeks, or eight if you are following your own plan. Resets when your block does.
 
 {/* ---------- Board visibility ----------
 
-Solo types are off the board by default now, because they told the assessment their
-best sessions happen alone and then got ranked against strangers anyway. Off the
-board still means full access to it: they can see everyone and send kudos, they
-simply are not scored in public. This card is how they find that out and how they
-change their mind, which has to be one tap and has to be here rather than buried in
-settings, because here is where the question occurs to them. */}
+Everybody is on the board unless they have explicitly stepped off it. An earlier
+version used the social pole of the type to decide the default, which left five of
+twelve people visible and turned the only social surface in the app into a list.
+A type is a description, not a permission slip: "trains best alone" is a reason to
+offer somebody the exit, not a reason to make the decision for them.
+
+So Solo types get told, in their own terms, that stepping off is available. Everyone
+else gets the same option in smaller print. Off the board still means full access to
+it, including sending and receiving kudos. See supabase/leaderboard_opt_in.sql. */}
 {meId && !onBoard ? (
 <div className="rounded-2xl border-2 p-4 mb-4" style={{ borderColor: myTypeColour + "55", background: myTypeColour + "12" }}>
-<p className="text-sm font-bold mb-1" style={{ color: myTypeColour }}>You are not on the board</p>
+<p className="text-sm font-bold mb-1" style={{ color: myTypeColour }}>You are hidden from the rankings</p>
 <p className="text-xs text-gray-300 mb-3">
-{myType && TYPES[myType]
-? "The " + TYPES[myType].name.replace("The ", "") + " trains best alone, so we have left you off it. You can still see everyone and send kudos."
-: "You are hidden from the rankings. You can still see everyone and send kudos."}
+You asked to be left off the board. You can still see everyone and send kudos, and
+you can come back on whenever you like.
 </p>
 <button onClick={function () { setBoardVisibility(true); }} disabled={joining}
 className="w-full py-3 rounded-full font-bold text-sm"
 style={{ background: myTypeColour, color: "#000000" }}>
-{joining ? "Joining..." : "Put me on the board"}
+{joining ? "Joining..." : "Put me back on the board"}
 </button>
 </div>
 ) : null}
 
-{meId && onBoard ? (
+{meId && onBoard && soloUndecided ? (
+<div className="rounded-2xl border p-4 mb-4" style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)" }}>
+<p className="text-xs text-gray-300 mb-2">
+The {TYPES[myType].name.replace("The ", "")} trains best alone, so if being ranked is not
+for you, step off. You keep the board, the kudos and everything else.
+</p>
+<button onClick={function () { setBoardVisibility(false); }} disabled={joining}
+className="text-xs font-bold underline" style={{ color: myTypeColour }}>
+{joining ? "Hiding..." : "Hide me from the rankings"}
+</button>
+</div>
+) : null}
+
+{meId && onBoard && !soloUndecided ? (
 <button onClick={function () { setBoardVisibility(false); }} disabled={joining}
 className="w-full text-center text-xs text-gray-500 underline mb-4">
 Hide me from the rankings

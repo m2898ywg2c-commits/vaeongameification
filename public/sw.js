@@ -52,6 +52,39 @@ self.addEventListener("push", function (event) {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
+// Rest timer.
+//
+// A page can only show a notification while it is open, which is precisely when a rest
+// timer does not need one. Handing the end time to the worker means the alert still
+// arrives with the phone in a pocket.
+//
+// setTimeout inside a service worker is not guaranteed: the browser is free to kill an
+// idle worker, and several do. That is acceptable here. This is a nice-to-have on top of
+// an on-screen timer that is already correct, not the mechanism the timer depends on.
+// The alternative, keeping the worker alive with a waitUntil for three minutes, would
+// drain battery to guarantee a beep.
+self.addEventListener("message", function (event) {
+  const data = event.data || {};
+  if (data.type !== "rest-timer" || !data.at) return;
+
+  const delay = data.at - Date.now();
+  if (delay <= 0 || delay > 15 * 60 * 1000) return;
+
+  setTimeout(function () {
+    self.registration.showNotification("Rest over", {
+      body: "Next set.",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      // Its own tag, so a rest alert never replaces a training reminder or vice versa.
+      tag: "vaeon-rest",
+      // Short and sharp. This one is worth a buzz because the person is mid-session and
+      // waiting for it, which is the opposite of the daily nudge.
+      vibrate: [120, 60, 120],
+      data: { url: "/plan" },
+    });
+  }, delay);
+});
+
 self.addEventListener("notificationclick", function (event) {
   event.notification.close();
   const url = (event.notification.data && event.notification.data.url) || "/dashboard?r=1";

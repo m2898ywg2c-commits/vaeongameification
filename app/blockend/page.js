@@ -127,6 +127,9 @@ const today = new Date().toISOString().slice(0, 10);
 const { error: e } = await supabase.from("profiles").update({
 block_start: today,
 block_number: (profile.block_number || 1) + 1,
+// A fresh grace week with the fresh block. Credits do not accumulate: banking six of
+// them over a year would turn the streak into a participation trophy.
+freeze_credits: 1,
 }).eq("id", profile.id);
 setStarting(false);
 if (e) { setError(e.message); return; }

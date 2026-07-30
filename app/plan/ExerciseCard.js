@@ -67,7 +67,33 @@ function swapTitle(alt) {
   return first.length > 3 && first.length < 60 ? first : "";
 }
 
-export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, onComplete, onReopen }) {
+// How long ago the last attempt was, in words. "3 days ago" is the useful comparison;
+// a date makes you do arithmetic while standing under a bar.
+function agoWords(day) {
+  if (!day) return "";
+  const parts = String(day).slice(0, 10).split("-");
+  const then = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const days = Math.round((now.getTime() - then.getTime()) / 86400000);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 14) return days + " days ago";
+  if (days < 60) return Math.round(days / 7) + " weeks ago";
+  return Math.round(days / 30) + " months ago";
+}
+
+// One set, rendered the way a lifter would say it out loud.
+function describeSet(row) {
+  if (!row) return "";
+  if (row.time_text) return String(row.time_text);
+  const bits = [];
+  if (row.weight) bits.push(Number(row.weight) + "kg");
+  if (row.reps) bits.push(bits.length ? "x " + row.reps : row.reps + " reps");
+  return bits.join(" ");
+}
+
+export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, onComplete, onReopen }) {
   const total = Number(ex.sets) || 1;
   const swap = homeMode && needsGym(ex.name);
   const alt = swap ? homeAlternative(ex.name) : "";
@@ -91,14 +117,36 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
 
   const title = altTitle || ex.name;
 
-  // Prefill every set with what the plan asked for, unless we are calibrating this lift.
+  // Last time, if this lift has been done before. A swapped exercise is a different
+  // movement performed under the same name, so its history is not shown here: telling
+  // somebody doing bodyweight squats in a park that they did 80kg last time is worse
+  // than telling them nothing.
+  const lastSets = !swap && last && last.sets && last.sets.length ? last.sets : null;
+  const lastAgo = lastSets ? agoWords(last.day) : "";
+
+  // Prefill precedence, and the order matters.
+  //
+  //   1. The prescription, where there is one. That is the coaching, built from the
+  //      user's own tested max, and it is the reason to use this app over a notes file.
+  //   2. Otherwise what they did last time. This is where recall actually hurts: the
+  //      testing week, bodyweight reps and timed holds have no prescribed number, and
+  //      those are exactly the fields people were being asked to remember unaided.
+  //   3. Otherwise the plan's own target.
+  //
+  // Last time is SHOWN in every case, even when it is not used to prefill, because the
+  // number to beat is the point.
   const [fields, setFields] = useState(function () {
     const seed = {};
     for (let i = 0; i < total; i++) {
+      const prev = lastSets ? lastSets[i] : null;
+      const prevWeight = prev && prev.weight ? String(Number(prev.weight)) : "";
+      const prevReps = prev && prev.reps ? String(prev.reps) : "";
+      const prevSecs = prev && prev.time_text ? (String(prev.time_text).match(/\d+/) || [""])[0] : "";
+
       seed[i] = {
-        weight: (!calibrating && suggested) ? String(suggested) : "",
-        reps: kind === "weight" || kind === "reps" ? targetNumber(ex.reps) : "",
-        secs: kind === "time" ? targetTime(ex.reps) : "",
+        weight: (!calibrating && suggested) ? String(suggested) : prevWeight,
+        reps: kind === "weight" || kind === "reps" ? (targetNumber(ex.reps) || prevReps) : "",
+        secs: kind === "time" ? (targetTime(ex.reps) || prevSecs) : "",
         // Carried through to completeSet so the log records "20 min" rather
         // than "20 sec". Read there, not passed as another argument.
         unit: unit || "sec",
@@ -177,6 +225,18 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         </div>
       ) : null}
 
+      {/* The number to beat. Deliberately plain and not in the accent colour: this is a
+          fact about the past, not the coach talking, and it should not compete with the
+          prescription directly above it. */}
+      {lastSets ? (
+        <div className="rounded-xl px-3 py-2 mb-3 border border-white/10 bg-white/5">
+          <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-0.5">Last time &middot; {lastAgo}</p>
+          <p className="text-sm font-bold text-gray-200">
+            {lastSets.map(function (r) { return describeSet(r); }).filter(Boolean).join("   ")}
+          </p>
+        </div>
+      ) : null}
+
       <div className="flex gap-2 mb-3">
         <button onClick={function () { setTip(tip === "form" ? null : "form"); }} className={tipBtn}>Form</button>
         <button onClick={function () { setTip(tip === "coach" ? null : "coach"); }} className={tipBtn}>Coach</button>
@@ -193,6 +253,12 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
             <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">
               {setLabel} {i + 1}
               {kind === "time" ? <span className="normal-case"> &middot; in {UNIT_WORD[unit]}</span> : null}
+              {/* Set-level history, so you are comparing like with like. A fifth set that
+                  did not exist last time correctly shows nothing rather than repeating
+                  the fourth. */}
+              {lastSets && lastSets[i] && describeSet(lastSets[i])
+                ? <span className="normal-case text-gray-600"> &middot; last {describeSet(lastSets[i])}</span>
+                : null}
             </p>
             <div className="flex gap-2">
               {kind === "weight" ? (

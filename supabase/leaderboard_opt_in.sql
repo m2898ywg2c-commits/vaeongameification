@@ -1,67 +1,59 @@
--- Leaderboard opt-in, defaulted from the social dimension. APPLIED on 2026-07-30.
+-- Leaderboard visibility. Opt-out for everyone. APPLIED on 2026-07-30.
 --
--- WHY
+-- WHY THE COLUMN EXISTS
 --
 -- Four of the eight types are Solo. The twelve statements they answered included "My best
 -- sessions happen when it is just me and my headphones" and "I find group workouts more
 -- distracting than motivating", they agreed, the app recorded it, and then it put them on
 -- a public chart ranked against strangers and called that the community feature. The most
 -- extreme social score in the live data is a Hunter at -5, which is as solo as the
--- instrument can measure, and he is on the board like everyone else.
+-- instrument can measure.
 --
--- Being ranked is not a neutral default. For somebody who trains alone by preference it is
--- at best noise and at worst the reason they stop opening the app.
+-- WHY IT IS AN OPT-OUT AND NOT AN OPT-IN
+--
+-- The first version of this used the social pole to decide the default, so Solo types were
+-- off the board unless they said otherwise. That was wrong for this product at this size,
+-- for two reasons.
+--
+-- A leaderboard with five of twelve people on it is not a leaderboard, it is a list. The
+-- board is the only social surface Vaeon has, and thinning it to defend a preference
+-- nobody had actually complained about would have damaged the feature for everyone,
+-- including the Together types whose whole type is built around it.
+--
+-- More importantly, a personality type is a description, not a permission slip. Reading
+-- "trains best alone" and concluding "so remove them from the community" is the app making
+-- a decision that belongs to the person. Preference is not consent, in either direction.
+-- The honest version puts everybody on, tells Solo types plainly that they can step off,
+-- and lets them choose. The type gets to inform the offer, not make it.
 --
 -- HOW
 --
--- leaderboard_opt_in is NULLABLE and that is the whole design.
+-- leaderboard_opt_in is NULLABLE.
 --
---   null   no decision made. Fall back to the type default: Together types appear,
---          Solo types do not, and somebody with no type yet appears, which preserves
---          exactly the behaviour they have today.
---   true   they asked to be on it. Always wins, whatever their type says.
---   false  they asked to be off it. Always wins.
+--   null   never asked. Appears on the board, like everybody else.
+--   true   explicitly asked to be on it. Appears.
+--   false  explicitly asked to be off it. Hidden.
 --
--- A non-null default would have meant backfilling twelve existing users with a guess, and
--- a guess written into a column is indistinguishable from a choice a week later. Null
--- means "we have not asked", which is the truth.
+-- The column keeps its name. "opt_in = false" reads slightly oddly for an opt-out model,
+-- and renaming a live column to fix a shade of wording is churn with no user benefit.
 --
 -- WHAT OPTING OUT DOES NOT DO
 --
 -- It hides you FROM the board. It does not hide the board from you, and it does not stop
--- you sending kudos. That distinction is deliberate. A solo preference is about not being
--- ranked, not about being cut off from everyone else, and the crude version of this change
--- would have quietly removed four people from the only social surface in the app while
--- also making it impossible for anyone to send them a kudos.
+-- you sending or receiving kudos. A solo preference is about not being ranked, not about
+-- being cut off, and the crude version of this would have quietly made four people
+-- unreachable on the only social surface in the app.
 
 alter table profiles
   add column if not exists leaderboard_opt_in boolean;
 
 comment on column profiles.leaderboard_opt_in is
-  'Null means undecided, in which case the social pole of the personality type decides. True or false is an explicit user choice and always wins.';
+  'Null means never asked and the user appears on the board. False hides them. True is an explicit choice to appear. Opt-out, not opt-in.';
 
--- Mirrors POLES in lib/personality.js. If a type is ever added or its social pole changed,
--- change it in both places.
-create or replace function type_is_together(p_type text)
-returns boolean
-language sql
-immutable
-set search_path = public
-as $$
-  select case p_type
-    when 'captain' then true
-    when 'anchor' then true
-    when 'gladiator' then true
-    when 'spark' then true
-    when 'architect' then false
-    when 'monk' then false
-    when 'hunter' then false
-    when 'wanderer' then false
-    -- No type yet. Appearing is the current behaviour and there is no evidence either
-    -- way, so nothing changes for them until they take the assessment.
-    else true
-  end;
-$$;
+-- type_is_together() lived here in the first version and drove the default. It is dropped:
+-- nothing calls it now, and this codebase already carries one dead function
+-- (get_recent_pbs) which is one more than it needs.
+drop function if exists type_is_together(text);
 
 create or replace function get_leaderboard()
 returns table (
@@ -95,8 +87,8 @@ as $$
   visible as (
     select b.*
     from base b
-    -- Explicit choice first, type default second.
-    where coalesce(b.leaderboard_opt_in, type_is_together(b.type_id))
+    -- Everybody, unless they have explicitly said no.
+    where coalesce(b.leaderboard_opt_in, true)
   ),
   calc as (
     select v.id, v.screen_name, v.pledged, v.block_start, v.block_weeks, v.type_id,

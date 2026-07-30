@@ -4,12 +4,13 @@ import { useState, useEffect } from "react";
 import { stretchFor } from "@/lib/exercisedb";
 import { sessionMusic, stationMusic } from "@/lib/music";
 import ExerciseCard from "./ExerciseCard";
+import RestTimer from "./RestTimer";
 import TypeOrb from "../TypeOrb";
 import { sessionDone } from "@/lib/voice";
 
 const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export default function DayView({ day, active, profile, rule, accent, deep, tid, homeMode, done, maxes, isTestWeek, onComplete, onReopen, finished, onFinish, onStation }) {
+export default function DayView({ day, active, profile, rule, accent, deep, tid, homeMode, done, maxes, isTestWeek, lastSets, onComplete, onReopen, finished, onFinish, onStation }) {
 const [openWarmup, setOpenWarmup] = useState(false);
 const [openFlow, setOpenFlow] = useState(false);
 const [stations, setStations] = useState({});
@@ -71,11 +72,14 @@ return <p key={i} className="text-sm text-gray-300 mb-1">&middot; {w}</p>;
 </div>
 ) : null}
 
+<RestTimer accent={accent} />
+
 {day.exercises.map(function (ex, i) {
 return (
 <ExerciseCard key={i} ex={ex} exIdx={i} dayKey={day.key} profile={profile}
 weekPct={rule.pct} accent={accent} homeMode={homeMode} done={!!done[i]}
 maxes={maxes} isTestWeek={isTestWeek}
+last={lastSets ? lastSets[(ex.name || "").toLowerCase()] : null}
 onComplete={onComplete} onReopen={onReopen} />
 );
 })}

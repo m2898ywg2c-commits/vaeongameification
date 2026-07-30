@@ -401,16 +401,54 @@ grant execute on function public.record_lift_max(text, numeric) to anon, authent
 --   mark_reminded(uuid)   security definer, service_role only. Separate from the
 --                         select so a sender that dies mid-batch does not
 --                         silence the users it never reached.
---   type_is_together(text) immutable. Mirrors POLES in lib/personality.js.
+-- ADDED LATER THE SAME DAY
+--
+--   supabase/streak_freeze.sql      grace weeks
+--   supabase/challenges.sql         shared goals
+--
+--   streak_freezes        one row per protected week. Monday dates, matching
+--                         weekStart() in lib/plan.js. Unique (user_id,
+--                         week_start), which is what makes settling idempotent
+--                         and double-spending impossible under a tab race.
+--
+--   challenges            a window and a target. Everybody is in; there is no
+--                         membership table, because at twelve users an opt-in
+--                         challenge is a challenge with three people in it.
+--                         Readable by any signed-in user, writable by nobody
+--                         through the API: challenges are set in the SQL editor
+--                         until there is evidence they are worth a UI.
+--
+--   profiles.freeze_credits  int not null default 1. Grace weeks left in the
+--                         current block. Reset to 1 on block start, never
+--                         accumulated: banking six over a year would turn the
+--                         streak into a participation trophy.
+--
+--   settle_streak_freezes()  SECURITY INVOKER, unlike the other functions here,
+--                         because it only ever touches the caller's own rows and
+--                         therefore has no business running elevated. Spends a
+--                         credit on a completed short week that interrupts a
+--                         kept one. Idempotent, safe on every dashboard load.
+--
+--   current_challenge()   SECURITY DEFINER, authenticated only. Honours
+--                         leaderboard_opt_in for the NAMED list while still
+--                         counting hidden users in the collective total:
+--                         somebody who asked not to be ranked in public has not
+--                         agreed to appear in a different public list instead.
 --
 -- CHANGED
 --
---   get_leaderboard()     now filters on
---                         coalesce(leaderboard_opt_in, type_is_together(type)).
---                         Solo types are off the board unless they say
---                         otherwise. They keep full read access and can still
---                         send kudos: this hides them FROM the board, it does
---                         not hide the board from them.
+--   get_leaderboard()     now filters on coalesce(leaderboard_opt_in, true).
+--                         Everybody appears unless they have explicitly stepped
+--                         off. Hiding still hides you FROM the board only: you
+--                         keep full read access and can still send and receive
+--                         kudos.
+--
+--                         An interim version defaulted this from the social pole
+--                         of the personality type, via a type_is_together()
+--                         helper. Both are gone. It left five of twelve people
+--                         visible, which is not a leaderboard, and it treated a
+--                         description of somebody's preference as their
+--                         decision.
 
 -- ============================================================================
 -- KNOWN GAPS

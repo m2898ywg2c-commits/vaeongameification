@@ -13,6 +13,7 @@ import TypeOrb from "../TypeOrb";
 import ShareButton from "../ShareButton";
 import Track from "../Track";
 import ReminderCard from "./ReminderCard";
+import ChallengeCard from "./ChallengeCard";
 import { EVENTS } from "@/lib/events";
 import { occasionFor } from "@/lib/reminders";
 
@@ -46,6 +47,19 @@ const { data: assessment } = await supabase.from("assessment_results").select("*
 const { data: sessions } = await supabase.from("training_sessions").select("*")
 .eq("user_id", user.id).order("logged_at", { ascending: false }).limit(300);
 
+// Spend a grace week if a completed week fell short, before the streak is calculated.
+// Idempotent and safe to call on every load, and it only ever touches the caller's own
+// rows. See supabase/streak_freeze.sql. Allowed to fail: if the migration is not applied
+// the streak simply behaves as it always has.
+let freezeCredits = 0;
+let frozenWeeks = [];
+try {
+const settled = await supabase.rpc("settle_streak_freezes");
+freezeCredits = typeof settled.data === "number" ? settled.data : 0;
+const { data: fz } = await supabase.from("streak_freezes").select("week_start").eq("user_id", user.id);
+frozenWeeks = (fz || []).map(function (r) { return r.week_start; });
+} catch (ignored) {}
+
 // Most recent exercise log, for the reminder. Sessions alone are not enough to judge
 // staleness: someone who logs every exercise in the plan but never taps Finish has no
 // training_sessions row at all, and would be told they had lapsed while training. The
@@ -63,10 +77,18 @@ const { data: thisWeekMetrics } = await supabase.from("body_metrics").select("id
 const { data: kudosIn } = await supabase.rpc("get_my_kudos");
 const myKudos = kudosIn || [];
 
+// The live group challenge, if there is one. Returns no rows when nothing is running,
+// and the card renders nothing, so a quiet week costs an empty query and no layout.
+let challenge = null;
+try {
+const { data: ch } = await supabase.rpc("current_challenge");
+challenge = ch && ch.length ? ch[0] : null;
+} catch (ignored) {}
+
 const pledged = profile.sessions_per_week || 3;
 const typeId = assessment ? assessment.type_id : null;
 const type = typeId ? TYPES[typeId] : null;
-const stats = computeStats(sessions || [], pledged);
+const stats = computeStats(sessions || [], pledged, frozenWeeks);
 const nudge = type ? coachMessage(typeId, stats, profile.framing) : null;
 const gym = isGymReady(profile.goals);
 const names = goalNames(profile.goals);
@@ -151,6 +173,8 @@ return (
 </a>
 ) : null}
 
+<ChallengeCard challenge={challenge} accent={accent} />
+
 <a href="/plan" className="block rounded-2xl p-5 mb-3" style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", color: "#fff" }}>
 <p className="text-xs font-bold uppercase tracking-wide opacity-80">{profile.fixed_days === false ? "Next up" : today}</p>
 <p className="text-2xl font-bold leading-tight">Today&rsquo;s workout</p>
@@ -185,6 +209,30 @@ return (
 <p className="text-[10px] uppercase tracking-wide text-gray-400">Streak</p>
 </div>
 </div>
+
+{/* Grace weeks. Shown whether or not one has been spent, because a safety net nobody
+knows about does not do the job: half the value of a freeze is not being afraid of
+losing the streak in the first place. When one has been used it says so plainly, since
+a streak quietly propped up by a week you did not train would be a lie told kindly. */}
+{profile.block_start ? (
+<div className="rounded-2xl border border-white/10 bg-white/5 p-3 mb-5 flex items-center gap-3">
+<span className="text-lg" aria-hidden="true">{"\u{1F9CA}"}</span>
+<div className="flex-1">
+<p className="text-xs font-bold">
+{stats.frozenInStreak > 0
+? "Grace week used"
+: (freezeCredits > 0 ? "Grace week available" : "No grace week left this block")}
+</p>
+<p className="text-[11px] text-gray-400 leading-snug">
+{stats.frozenInStreak > 0
+? "A week you missed is being held for you, so the streak stands. " + (freezeCredits > 0 ? "You have another in reserve." : "That was your one for this block.")
+: (freezeCredits > 0
+? "Miss a week and your streak survives it. Illness, travel and bad weeks are not failures."
+: "Your next missed week will reset the streak. It refreshes when your next block starts.")}
+</p>
+</div>
+</div>
+) : null}
 
 {type ? (
 <div className="rounded-2xl p-4 mb-3 border" style={{ borderColor: accent + "55", background: "rgba(255,255,255,0.04)" }}>

@@ -138,10 +138,14 @@ Every item below follows from that.
     on the next session they have not done rather than on today's weekday, tabs are named
     by session with a tick on anything completed. Same sessions, same progression, same
     adherence maths. Only who decides the order changes.
-  - Solo types (Architect, Monk, Hunter, Wanderer) are off the leaderboard by default,
-    `profiles.leaderboard_opt_in` nullable, null meaning the type decides. They keep full
-    read access and can still send kudos: it hides them **from** the board, not the board
-    from them. One tap on the board itself puts them on it.
+  - Leaderboard is **opt-out for everyone**. `profiles.leaderboard_opt_in` is nullable;
+    null means never asked and you appear. Solo types (Architect, Monk, Hunter, Wanderer)
+    get a plainly worded offer to step off, in their own type's terms, until they choose
+    either way. Hiding hides you **from** the board, not the board from you: read access
+    and kudos both survive.
+    An interim version had Solo types hidden by default and it was wrong twice. It left
+    five of twelve on the only social surface in the app, and **a type is a description,
+    not a permission slip** — preference is not consent, in either direction.
 - **The type screen stopped lying.** The `plan` strings promised classes, meet-ups,
   partner workouts, scheduled group sessions and head-to-heads, none of which exist, and
   promised four types a flexible menu before handing them a fixed rota. Rewritten to
@@ -152,6 +156,35 @@ Every item below follows from that.
   they were training four times a week (one live user is exactly that). And meeting your
   weekly pledge now outranks staleness, so front-loading a week no longer reads as
   drifting.
+
+- **Streak freeze** (`supabase/streak_freeze.sql`, `lib/plan.js`, dashboard card). One
+  grace week per block. A streak that resets to zero for one bad week punishes illness,
+  travel and ordinary life, and the fear of losing a long run is itself a reason to stop
+  trying. Spent automatically on a completed short week **that interrupts a kept one**, so
+  a credit is never burned on somebody who had no streak to protect. Frozen weeks count
+  toward the streak but **not** toward `perfectWeeks`, because achievements should mean
+  what they say. The card shows the credit whether or not it has been used: half the value
+  is not being afraid of losing the streak in the first place.
+- **Previous-performance autofill** (`app/plan/ExerciseCard.js`). What you actually did
+  last time, per set, with "3 days ago". Precedence is prescription first, last time
+  second, plan target third, so the coaching still leads but the gaps where people were
+  being asked to remember unaided — testing week, bodyweight reps, timed holds — now fill
+  themselves. Swapped exercises show no history on purpose: telling somebody doing park
+  bodyweight squats that they did 80kg last time is worse than telling them nothing.
+- **Rest timer** (`app/plan/RestTimer.js`). **Nothing counts down.** The only state is an
+  end timestamp in `localStorage`, and the display is derived from `end - now`, so a
+  throttled background tab, a locked phone and a full page navigation are all free. This
+  is the loudest complaint lifters have about workout apps and it is worth keeping built
+  this way. The service worker fires a notification at the end where it can.
+- **Group challenge** (`supabase/challenges.sql`, `app/dashboard/ChallengeCard.js`).
+  Collective target, everybody in, no membership table. A ranking says "you are seventh";
+  a challenge says "we are two off, somebody do one", and for a group who are mostly one
+  family the second is what actually gets a text sent. A first one is seeded: eight
+  sessions in a week, set deliberately low because a challenge nobody reaches teaches
+  nothing. Hidden users count toward the total but are not named.
+- **Data export** (`app/settings/ExportData.js`). Every row held about a person, as JSON.
+  Closes the UK GDPR Article 20 portability obligation and a chronic category complaint in
+  one small component.
 
 ---
 
