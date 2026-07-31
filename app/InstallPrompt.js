@@ -20,7 +20,9 @@ import Icon from "./Icon";
 //   actual Share glyph drawn out, because "tap the Share button" means nothing
 //   if you have never noticed which icon that is.
 //
-// Renders nothing once installed, and nothing for a fortnight after dismissal.
+// Renders nothing once installed, and nothing for a fortnight after an explicit
+// dismissal. It does NOT depend on beforeinstallprompt firing: any browser that never
+// sends that event still gets the card, with manual instructions instead of a button.
 
 const DISMISSED_KEY = "vaeon.install.dismissed";
 const DISMISS_FOR_MS = 14 * 24 * 60 * 60 * 1000;
@@ -79,6 +81,16 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
   const [deferred, setDeferred] = useState(null);
   const [open, setOpen] = useState(false);
 
+  // THE OFFER IS DRIVEN BY "NOT INSTALLED", NOT BY "AN EVENT FIRED".
+  //
+  // This used to render nothing at all on desktop and Android unless
+  // beforeinstallprompt happened to arrive after React had mounted. Chrome fires that
+  // event early in page load, so on a site where every navigation is a full page load it
+  // frequently arrived first and was simply lost, and the card appeared at random. Worse,
+  // any browser that never fires it, which is most of them, got no offer ever.
+  //
+  // Now the card shows whenever the app is not already installed. The event only decides
+  // whether we can give a one-tap button or have to give instructions.
   useEffect(function () {
     if (isStandalone()) return;
 
@@ -86,7 +98,8 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
       const at = parseInt(window.localStorage.getItem(DISMISSED_KEY), 10) || 0;
       if (Date.now() - at < DISMISS_FOR_MS) return;
     } catch (e) {
-      return;
+      // No storage is not a reason to hide the offer. Show it and let them dismiss it
+      // again next time, which is the friendlier of the two failure modes.
     }
 
     if (isIOS()) {
@@ -94,18 +107,35 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
       return;
     }
 
-    const onPrompt = function (e) {
-      // Chrome shows its own mini-infobar unless the event is cancelled. We
-      // cancel it and hold the event so the offer appears where it makes sense
-      // rather than over the top of whatever the user was reading.
-      e.preventDefault();
-      setDeferred(e);
+    // Anything the inline script in app/layout.js already caught, before this component
+    // existed.
+    if (typeof window !== "undefined" && window.__vaeonInstall) {
+      setDeferred(window.__vaeonInstall);
       setMode("android");
+    } else {
+      // No captured event yet. Offer manual instructions rather than nothing, and upgrade
+      // to the one-tap button if the event turns up later.
+      setMode("manual");
+    }
+
+    const onCaught = function () {
+      if (window.__vaeonInstall) {
+        setDeferred(window.__vaeonInstall);
+        setMode("android");
+      }
     };
 
-    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("vaeon:installable", onCaught);
+    // Belt and braces: if the inline script is ever removed, this still works on any load
+    // where the event happens to arrive late.
+    window.addEventListener("beforeinstallprompt", function (e) {
+      e.preventDefault();
+      window.__vaeonInstall = e;
+      onCaught();
+    });
+
     return function () {
-      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("vaeon:installable", onCaught);
     };
   }, []);
 
@@ -123,13 +153,26 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
     const choice = await deferred.userChoice;
     // The event is single use. Whatever the user chose, it cannot be replayed.
     setDeferred(null);
+    try { window.__vaeonInstall = null; } catch (e) {}
+    const accepted = choice && choice.outcome === "accepted";
     // Installing matters more here than on a normal web app: an installed PWA is the
     // only route to a push reminder on iOS, so this number caps how many people the
     // reminder can ever reach on that platform.
-    track(createClient(), choice && choice.outcome === "accepted" ? EVENTS.INSTALL_ACCEPTED : EVENTS.INSTALL_PROMPTED, {
+    track(createClient(), accepted ? EVENTS.INSTALL_ACCEPTED : EVENTS.INSTALL_PROMPTED, {
       outcome: choice ? choice.outcome : "unknown",
     });
-    dismiss();
+
+    // Only hide it if they actually installed. This used to dismiss for a fortnight
+    // whatever happened, so backing out of the native sheet by accident cost you the
+    // offer entirely, which is the opposite of what cancelling means.
+    if (accepted) {
+      dismiss();
+    } else {
+      setOpen(false);
+      // The prompt cannot be replayed without a fresh event, so fall back to
+      // instructions rather than leaving a button that would now do nothing.
+      setMode("manual");
+    }
   };
 
   // Reported through an effect rather than during render, because calling a parent's
@@ -182,7 +225,17 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
               your app switcher.
             </p>
 
-            {mode === "android" ? (
+            {mode === "manual" ? (
+              <ol className="space-y-3 mb-5">
+                <Step n="1" accent={accent}>Open your browser menu. It is the three dots or lines, usually top right.</Step>
+                <Step n="2" accent={accent}>
+                  Choose <span className="text-white font-display">Install</span>,{" "}
+                  <span className="text-white font-display">Install app</span> or{" "}
+                  <span className="text-white font-display">Add to Home screen</span>. The wording
+                  depends on the browser.
+                </Step>
+              </ol>
+            ) : mode === "android" ? (
               <>
                 <ol className="space-y-3 mb-5">
                   <Step n="1" accent={accent}>Tap the button below.</Step>

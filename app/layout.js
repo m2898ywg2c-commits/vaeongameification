@@ -61,6 +61,23 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={"h-full antialiased " + display.variable + " " + body.variable}>
+      <head>
+        {/* CATCH beforeinstallprompt BEFORE REACT EXISTS.
+            Chrome fires this event early in page load, frequently before the bundle has
+            parsed and InstallPrompt has attached its listener. Every navigation in this
+            app is a full page load, so that race runs on every single screen, and the
+            symptom is an install offer that appears sometimes and not others.
+
+            An inline script in the head runs during HTML parse, which is comfortably
+            before anything React does. It stashes the event and announces it, so the
+            component can pick it up whenever it happens to mount. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "window.__vaeonInstall=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__vaeonInstall=e;window.dispatchEvent(new Event('vaeon:installable'));});",
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-brand-bg">
         <Splash />
         <BrandBar />
