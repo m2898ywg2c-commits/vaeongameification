@@ -36,7 +36,9 @@ return function () { clearTimeout(t); };
 
 if (!day) return null;
 const flow = stretchFor(day);
-const music = sessionMusic(day, profile.birth_year);
+// active is the session's index in the week, so two sessions on the same day get
+// different suggestions rather than the same one twice.
+const music = sessionMusic(day, profile.birth_year, active);
 const stationTunes = stationMusic(profile.birth_year);
 const label = profile.fixed_days === false
 ? "Session " + (active + 1)
@@ -71,8 +73,6 @@ return <p key={i} className="text-sm text-gray-300 mb-1">&middot; {w}</p>;
 })}
 </div>
 ) : null}
-
-<RestTimer accent={accent} />
 
 {day.exercises.map(function (ex, i) {
 return (
@@ -173,6 +173,11 @@ style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", co
 Finish session
 </button>
 )}
+
+{/* Last in the tree so its spacer lands at the end of the page. The bar itself is
+fixed to the bottom of the viewport, so where it sits here only decides where the
+spacer goes, and the spacer is what stops it covering the Finish button. */}
+<RestTimer accent={accent} />
 </>
 );
 }

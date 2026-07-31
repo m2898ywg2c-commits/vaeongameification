@@ -75,7 +75,7 @@ export default function GymDayView({ day, active, profile, accent, deep, tid, do
 
   if (!day) return null;
 
-  const music = sessionMusic(day, profile.birth_year);
+  const music = sessionMusic(day, profile.birth_year, active);
   const label = profile.fixed_days === false
     ? "Session " + (active + 1)
     : (day.dayLabel === SHORT[new Date().getDay()] ? "Today" : day.dayLabel);
@@ -124,8 +124,6 @@ export default function GymDayView({ day, active, profile, accent, deep, tid, do
         </p>
       ) : null}
 
-      <RestTimer accent={accent} />
-
       {blocks.map(function (b, i) {
         return (
           <GymBlock
@@ -170,6 +168,10 @@ export default function GymDayView({ day, active, profile, accent, deep, tid, do
           </p>
         </>
       )}
+
+      {/* Last in the tree so its spacer lands at the end of the page. Blocks collapse as
+          they are completed, which is exactly why this cannot live inside one. */}
+      <RestTimer accent={accent} />
     </>
   );
 }

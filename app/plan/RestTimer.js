@@ -118,52 +118,78 @@ export default function RestTimer({ accent }) {
   const mm = Math.floor(remaining / 60);
   const ss = remaining % 60;
 
+  // PINNED TO THE BOTTOM, ONE PER SESSION, NEVER INSIDE A CARD.
+  //
+  // The obvious placement is inside the exercise card, under the first set, where the
+  // rest actually happens. It does not work. Cards collapse the moment they are
+  // completed, and Gym ready blocks do the same, so a timer living inside one would
+  // vanish mid-rest exactly when somebody is watching it. Putting one in every card
+  // instead means four timers on screen, three of them wrong.
+  //
+  // A single bar pinned to the bottom of the viewport solves all of it. It is on screen
+  // for every set of every exercise, it survives a card collapsing, it cannot be
+  // duplicated, and it is under your thumb rather than up at the top of a scrolled page.
+  // It is also how every serious lifting app ends up doing this, which is usually a sign.
+  //
+  // Idle it is one slim line. Running it grows a little and shows the count. The spacer
+  // below keeps it from covering the Finish button at the end of a long card list.
   return (
-    <div className="mb-3">
-      {running ? (
-        <div className="flex items-center gap-3 rounded-2xl border-2 p-3" style={{ borderColor: tone, background: tone + "14" }}>
-          <span className="text-2xl font-bold tabular-nums" style={{ color: tone }}>
-            {mm}:{String(ss).padStart(2, "0")}
-          </span>
-          <p className="flex-1 text-xs text-gray-300">Resting. Keeps running if you leave the app.</p>
-          <button onClick={function () { start(length + 30); }} className="text-xs font-bold px-2 py-2 rounded-lg border border-white/20">
-            +30s
-          </button>
-          <button onClick={stop} className="text-xs font-bold px-2 py-2 rounded-lg border border-white/20">
-            Stop
-          </button>
-        </div>
-      ) : (
-        <div>
-          <div className="flex gap-2">
-            <button onClick={function () { start(length); }}
-              className="flex-1 py-3 rounded-2xl font-bold text-sm border-2"
-              style={{ borderColor: tone + "66", background: "rgba(255,255,255,0.05)", color: tone }}>
-              Start {length}s rest
-            </button>
-            <button onClick={function () { setOpen(!open); }}
-              className="px-4 py-3 rounded-2xl font-bold text-sm border-2"
-              style={{ borderColor: "rgba(255,255,255,0.15)", color: "#cbd5e1" }}>
-              Change
-            </button>
-          </div>
-          {open ? (
-            <div className="flex gap-2 mt-2">
-              {PRESETS.map(function (p) {
-                return (
-                  <button key={p} onClick={function () { start(p); }}
-                    className="flex-1 py-2 rounded-xl text-xs font-bold border"
-                    style={p === length
-                      ? { background: tone, color: "#000000", borderColor: tone }
-                      : { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>
-                    {p < 60 ? p + "s" : (p / 60) + "m"}
-                  </button>
-                );
-              })}
+    <>
+      <div className="h-20" aria-hidden="true" />
+      <div className="fixed left-0 right-0 bottom-0 z-30 px-5 pt-2"
+        style={{
+          paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))",
+          background: "linear-gradient(to top, #000000 65%, rgba(0,0,0,0))",
+        }}>
+        <div className="max-w-md mx-auto">
+          {running ? (
+            <div className="flex items-center gap-2 rounded-2xl border-2 p-2.5" style={{ borderColor: tone, background: "#0b0b0b" }}>
+              <span className="text-2xl font-bold tabular-nums pl-1" style={{ color: tone }}>
+                {mm}:{String(ss).padStart(2, "0")}
+              </span>
+              <p className="flex-1 text-[11px] text-gray-400 leading-tight">
+                Resting. Carries on if you lock the phone.
+              </p>
+              <button onClick={function () { start(length + 30); }} className="text-xs font-bold px-3 py-2 rounded-lg border border-white/20">
+                +30s
+              </button>
+              <button onClick={stop} className="text-xs font-bold px-3 py-2 rounded-lg border border-white/20">
+                Stop
+              </button>
             </div>
-          ) : null}
+          ) : (
+            <div className="rounded-2xl border p-2" style={{ borderColor: "rgba(255,255,255,0.12)", background: "#0b0b0b" }}>
+              <div className="flex items-center gap-2">
+                <button onClick={function () { start(length); }}
+                  className="flex-1 py-2.5 rounded-xl font-bold text-sm border-2"
+                  style={{ borderColor: tone + "66", background: "rgba(255,255,255,0.04)", color: tone }}>
+                  Rest between sets &middot; {length}s
+                </button>
+                <button onClick={function () { setOpen(!open); }}
+                  className="px-3 py-2.5 rounded-xl font-bold text-xs border"
+                  style={{ borderColor: "rgba(255,255,255,0.15)", color: "#cbd5e1" }}>
+                  {open ? "Close" : "Change"}
+                </button>
+              </div>
+              {open ? (
+                <div className="flex gap-2 mt-2">
+                  {PRESETS.map(function (p) {
+                    return (
+                      <button key={p} onClick={function () { start(p); }}
+                        className="flex-1 py-2 rounded-xl text-xs font-bold border"
+                        style={p === length
+                          ? { background: tone, color: "#000000", borderColor: tone }
+                          : { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>
+                        {p < 60 ? p + "s" : (p / 60) + "m"}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }

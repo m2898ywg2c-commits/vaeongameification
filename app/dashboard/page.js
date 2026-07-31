@@ -136,7 +136,23 @@ return (
 <Track name={EVENTS.REMINDER_OPENED} once userId={user.id} typeId={typeId} framing={profile.framing} props={{ occasion: occasion }} />
 ) : null}
 
+{/* THE PRIMARY ACTION, FIRST.
+Everything else on this dashboard is context for this one button. It used to sit
+below the banners, the install prompt and the challenge, which meant the single
+thing the app wants somebody to do was the fifth thing they saw and often below
+the fold. Nothing above it now except who they are. */}
+<a href="/plan" className="block rounded-2xl p-5 mb-3" style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", color: "#fff" }}>
+<p className="text-xs font-bold uppercase tracking-wide opacity-80">{profile.fixed_days === false ? "Next up" : today}</p>
+<p className="text-2xl font-bold leading-tight">Today&rsquo;s workout</p>
+<p className="text-sm font-medium opacity-90 mt-1">Tap to open and start logging</p>
+</a>
+
 <ReminderCard occasion={occasion} typeId={typeId} framing={profile.framing} accent={accent} />
+
+{/* Directly under the action and the nudge, ahead of the housekeeping banners. The
+shared goal is the reason to open the app a second time this week, and it was
+sitting below three prompts about baselines and measurements. */}
+<ChallengeCard challenge={challenge} accent={accent} />
 
 <InstallPrompt accent={accent} />
 
@@ -173,13 +189,6 @@ return (
 </a>
 ) : null}
 
-<ChallengeCard challenge={challenge} accent={accent} />
-
-<a href="/plan" className="block rounded-2xl p-5 mb-3" style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", color: "#fff" }}>
-<p className="text-xs font-bold uppercase tracking-wide opacity-80">{profile.fixed_days === false ? "Next up" : today}</p>
-<p className="text-2xl font-bold leading-tight">Today&rsquo;s workout</p>
-<p className="text-sm font-medium opacity-90 mt-1">Tap to open and start logging</p>
-</a>
 
 {!gym ? (
 <a href="/fallback" className="flex items-center gap-3 rounded-2xl border-2 p-4 mb-5" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.08)" }}>

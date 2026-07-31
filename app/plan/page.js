@@ -173,7 +173,12 @@ for (let i = 0; i < total; i++) {
 const v = fields[i] || {};
 rows.push({
 user_id: user.id, day_key: day.key, exercise: ex.name, set_index: i + 1,
-weight: kind === "weight" && v.weight ? Number(v.weight) : null,
+// Any weight the card collected, not only on prescribed lifts. Weighted dips and
+// loaded pull ups are logged as reps but can carry a belt, and dropping that number
+// on the way to the database would make a set with 20kg hanging off you look
+// identical to a bodyweight one. record_lift_max below is still gated on kind, on
+// purpose: belt weight is not a barbell max and should not be treated as one.
+weight: v.weight ? Number(v.weight) : null,
 reps: v.reps ? Number(v.reps) : null,
 // The unit rides along in the field rather than as another argument, because
 // a run is logged in minutes and a plank in seconds. Defaulting to sec keeps

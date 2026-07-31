@@ -31,9 +31,9 @@ export default function ReminderCard({ occasion, typeId, framing, accent }) {
     <div className="rounded-2xl border-2 p-4 mb-3" style={{ borderColor: tone + "55", background: tone + "12" }}>
       <p className="text-sm font-bold mb-1" style={{ color: tone }}>{copy.title}</p>
       <p className="text-xs text-gray-300 leading-relaxed">{copy.body}</p>
-      <a href="/plan" className="inline-block text-xs font-bold underline mt-2" style={{ color: tone }}>
-        Open today&rsquo;s session
-      </a>
+      {/* No link. The Today's workout button now sits directly above this card, so a
+          second route to the same screen two inches below it was noise pretending to be
+          a call to action. The card's job is what it says, not where it sends you. */}
     </div>
   );
 }

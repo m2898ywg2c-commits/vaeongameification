@@ -25,6 +25,21 @@ function loadType(ex) {
   return "weight";
 }
 
+// Bodyweight movements you are being told to load.
+//
+// "Weighted Dips, 3 x 10, add a belt if 10 is easy" was classified as bodyweight, because
+// "dip" is in the list above, and offered nothing but a reps box. So the app asked for a
+// belt and then gave the person nowhere to record what was on it, which makes the
+// instruction pointless and the history wrong: a set of dips with 20kg hanging off you is
+// not the same set as ten bodyweight dips, and logged as reps alone they are identical.
+//
+// The added weight is optional, always. Somebody who did them unloaded leaves the box
+// empty and nothing changes for them.
+function isLoadable(ex) {
+  const text = (String(ex.name || "") + " " + String(ex.note || "")).toLowerCase();
+  return /weighted|belt|plate|added weight|extra weight|hold a dumbbell|weight vest/.test(text);
+}
+
 // Which unit the plan actually asked for. This has to drive the input box, not
 // just the copy. Converting "20 min" into 1200 and labelling the box "seconds"
 // is technically the same duration and completely useless to someone standing
@@ -109,6 +124,8 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   // record_lift_max here because that only fires on kind "weight".
   const kind = swap ? "reps" : loadType(ex);
   const unit = kind === "time" ? timeUnit(ex.reps) : null;
+  // A swapped exercise is being done with whatever is to hand in a park, so no belt.
+  const loadable = !swap && kind === "reps" && isLoadable(ex);
   const suggested = kind === "weight" ? workingWeight(ex.name, profile, weekPct, maxes) : null;
   const hasRealMax = !!(maxes && maxes[(ex.name || "").toLowerCase()]);
   // On the testing week, weighted lifts we have no real number for get no prescribed weight,
@@ -144,6 +161,8 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       const prevSecs = prev && prev.time_text ? (String(prev.time_text).match(/\d+/) || [""])[0] : "";
 
       seed[i] = {
+        // Loadable bodyweight work has no prescription to fall back on, so last time's
+        // belt weight is the only sensible starting number.
         weight: (!calibrating && suggested) ? String(suggested) : prevWeight,
         reps: kind === "weight" || kind === "reps" ? (targetNumber(ex.reps) || prevReps) : "",
         secs: kind === "time" ? (targetTime(ex.reps) || prevSecs) : "",
@@ -216,7 +235,9 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         <p className="text-xs mb-2" style={{ color: accent }}>
           Testing week. No target today, work up to a strong set you could stop with a rep or two left, then log the weight and reps. That becomes your baseline for this lift.
         </p>
-      ) : (HINTS[kind] ? <p className="text-xs mb-2" style={{ color: accent }}>{HINTS[kind]}</p> : null)}
+      ) : (loadable
+        ? <p className="text-xs mb-2" style={{ color: accent }}>Bodyweight, with the option of loading it. Put any added weight in the +kg box and leave it empty if you did these unloaded.</p>
+        : (HINTS[kind] ? <p className="text-xs mb-2" style={{ color: accent }}>{HINTS[kind]}</p> : null))}
 
       {suggested && !calibrating ? (
         <div className="rounded-xl px-3 py-2 mb-3" style={{ background: accent + "1A" }}>
@@ -263,6 +284,10 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
             <div className="flex gap-2">
               {kind === "weight" ? (
                 <input type="number" inputMode="decimal" placeholder="kg"
+                  value={v.weight || ""} onChange={function (e) { setField(i, "weight", e.target.value); }} className={field} />
+              ) : null}
+              {loadable ? (
+                <input type="number" inputMode="decimal" placeholder="+kg"
                   value={v.weight || ""} onChange={function (e) { setField(i, "weight", e.target.value); }} className={field} />
               ) : null}
               {kind === "time" ? (
