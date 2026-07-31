@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { workingWeight, increaseHint } from "@/lib/progression";
 import { formTip, coachTip, homeAlternative, needsGym } from "@/lib/exercisedb";
+import { BRAND } from "@/lib/brand";
+import Icon from "../Icon";
 
 function videoLink(name) {
   return "https://www.youtube.com/results?search_query=" + encodeURIComponent(name + " proper form technique");
@@ -189,18 +191,23 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
     return (
       <button
         onClick={function () { onReopen(exIdx); }}
-        className="w-full flex items-center gap-3 rounded-2xl p-4 mb-3 border text-left"
-        style={{ borderColor: "rgba(61,220,151,0.45)", background: "rgba(61,220,151,0.14)" }}
+        className="w-full flex items-center gap-3 rounded-md p-4 mb-3 border text-left"
+        style={{ borderColor: "rgba(61,220,151,0.35)", background: "rgba(61,220,151,0.08)" }}
       >
-        <span className="text-lg font-bold" style={{ color: "#3DDC97" }}>&#10003;</span>
-        <span className="flex-1 text-sm font-bold" style={{ color: "#3DDC97" }}>{title}</span>
+        <span style={{ color: "#3DDC97" }}><Icon name="check" size={16} /></span>
+        <span className="flex-1 font-display text-sm" style={{ color: "#3DDC97" }}>{title}</span>
         <span className="text-xs text-gray-400">Tap to reopen</span>
       </button>
     );
   }
 
-  const field = "w-full px-3 py-4 rounded-2xl bg-white/10 border-2 border-white/15 text-xl font-bold text-center text-white placeholder-gray-500";
-  const tipBtn = "flex-1 py-2 rounded-xl text-xs font-bold border border-white/15 bg-white/5";
+  // Inputs keep their size, because thumbs in a gym need the target, but lose the pill
+  // radius and the bold. The number is display face and tabular, so a 5 and an 8 occupy
+  // the same width and the row does not twitch as it is typed into.
+  const field = "w-full px-3 py-4 rounded-md text-xl text-center text-white placeholder-gray-600 font-display";
+  const fieldStyle = { background: "rgba(255,255,255,0.06)", border: "1px solid " + BRAND.lineStrong };
+  const tipBtn = "flex-1 py-2 rounded-sm text-[11px] uppercase border";
+  const tipBtnStyle = { borderColor: BRAND.line, color: BRAND.muted, letterSpacing: "0.16em" };
 
   // "3 x 45 sec" reads as three sets of forty five somethings. For a hold, say
   // what it is: "Hold 45 sec, 3 times".
@@ -211,10 +218,14 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   const setLabel = kind === "time" ? "Hold" : "Set";
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-3">
+    <div className="rounded-md border p-4 mb-3" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
       <div className="flex items-start justify-between gap-2 mb-1">
-        <p className="text-base font-bold leading-tight flex-1">{title}</p>
-        <span className="text-xs font-bold px-2 py-1 rounded-lg flex-shrink-0" style={{ background: accent + "26", color: accent }}>
+        {/* The exercise name is the one bold thing on this card. It used to compete with a
+            filled badge, three bold buttons and a bold set count, which meant nothing was
+            actually emphasised. */}
+        <p className="font-display text-base font-normal leading-tight flex-1">{title}</p>
+        <span className="text-[10px] px-2 py-1 rounded-sm border flex-shrink-0"
+          style={{ borderColor: accent + "55", color: accent, letterSpacing: "0.08em" }}>
           {badge}
         </span>
       </div>
@@ -259,9 +270,9 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       ) : null}
 
       <div className="flex gap-2 mb-3">
-        <button onClick={function () { setTip(tip === "form" ? null : "form"); }} className={tipBtn}>Form</button>
-        <button onClick={function () { setTip(tip === "coach" ? null : "coach"); }} className={tipBtn}>Coach</button>
-        <a href={videoLink(title)} target="_blank" rel="noopener noreferrer" className={tipBtn + " text-center block"}>Video</a>
+        <button onClick={function () { setTip(tip === "form" ? null : "form"); }} className={tipBtn} style={tipBtnStyle}>Form</button>
+        <button onClick={function () { setTip(tip === "coach" ? null : "coach"); }} className={tipBtn} style={tipBtnStyle}>Coach</button>
+        <a href={videoLink(title)} target="_blank" rel="noopener noreferrer" className={tipBtn + " text-center block"} style={tipBtnStyle}>Video</a>
       </div>
 
       {tip === "form" ? <p className="text-xs text-gray-300 mb-3 rounded-xl bg-white/5 p-3">{formTip(ex.name)}</p> : null}
@@ -284,23 +295,23 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
             <div className="flex gap-2">
               {kind === "weight" ? (
                 <input type="number" inputMode="decimal" placeholder="kg"
-                  value={v.weight || ""} onChange={function (e) { setField(i, "weight", e.target.value); }} className={field} />
+                  value={v.weight || ""} onChange={function (e) { setField(i, "weight", e.target.value); }} className={field} style={fieldStyle} />
               ) : null}
               {loadable ? (
                 <input type="number" inputMode="decimal" placeholder="+kg"
-                  value={v.weight || ""} onChange={function (e) { setField(i, "weight", e.target.value); }} className={field} />
+                  value={v.weight || ""} onChange={function (e) { setField(i, "weight", e.target.value); }} className={field} style={fieldStyle} />
               ) : null}
               {kind === "time" ? (
                 <input type="number" inputMode="numeric" placeholder={UNIT_WORD[unit]}
-                  value={v.secs || ""} onChange={function (e) { setField(i, "secs", e.target.value); }} className={field} />
+                  value={v.secs || ""} onChange={function (e) { setField(i, "secs", e.target.value); }} className={field} style={fieldStyle} />
               ) : null}
               {kind === "distance" ? (
                 <input type="text" placeholder="time or distance"
-                  value={v.text || ""} onChange={function (e) { setField(i, "text", e.target.value); }} className={field} />
+                  value={v.text || ""} onChange={function (e) { setField(i, "text", e.target.value); }} className={field} style={fieldStyle} />
               ) : null}
               {kind === "weight" || kind === "reps" ? (
                 <input type="number" inputMode="numeric" placeholder="reps"
-                  value={v.reps || ""} onChange={function (e) { setField(i, "reps", e.target.value); }} className={field} />
+                  value={v.reps || ""} onChange={function (e) { setField(i, "reps", e.target.value); }} className={field} style={fieldStyle} />
               ) : null}
             </div>
           </div>
@@ -309,7 +320,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
 
       <button
         onClick={function () { onComplete(ex, exIdx, fields, total, kind); }}
-        className="w-full py-4 rounded-2xl font-bold text-base"
+        className="w-full py-4 rounded-md font-display text-base"
         style={{ background: accent, color: "#000000" }}
       >
         {calibrating ? "Log it" : "Completed as planned"}

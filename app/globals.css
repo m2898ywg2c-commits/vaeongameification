@@ -1,19 +1,41 @@
 @import "tailwindcss";
 
 /* Vaeon Fitness brand tokens.
-   Single source of truth for the app chrome: background, surfaces, hairlines and
+   Single source of truth for the app chrome: background, surfaces, hairlines, type and
    the default accent. Per-type accents are NOT here on purpose. Those live in
    lib/personality.js because each training type owns its own colour pair, and
    the accent a user sees is a product feature rather than brand chrome.
    The JS mirror of these values is lib/brand.js. Change both together. */
 :root {
   --brand-bg: #000000;
-  --brand-surface: #0b1220;
+  /* Lifted off pure black rather than the old #0B1220 navy, which was left over from the
+     pre-rebrand palette and, worse, was not used by anything: every card in the app was
+     painting itself rgba(255,255,255,0.05) by hand. One value, one place, actually used. */
+  --brand-surface: #0a0a0a;
   --brand-line: rgba(255, 255, 255, 0.1);
+  --brand-line-strong: rgba(255, 255, 255, 0.18);
   --brand-text: #ffffff;
   --brand-muted: #9ca3af;
+  --brand-dim: #6b7280;
   --brand-accent: #22d3ee;
   --brand-accent-deep: #3b82f6;
+
+  /* RADIUS.
+     Was a flat 16px (rounded-2xl) on everything, with full pills on the buttons. The mark
+     is built from mitred angles and has no curve in it anywhere, so soft rectangles fought
+     it on every screen. 4px reads as machined rather than rounded; 2px is for anything
+     small enough that 4px would look like a mistake. Nothing in the app should be a pill
+     any more. */
+  --r-sm: 2px;
+  --r-md: 4px;
+  --r-lg: 6px;
+
+  /* TRACKING.
+     Lifted straight off the lockup, where FITNESS sits at 0.38em between two hairlines.
+     Used for section labels, so the compositional idea in the logo repeats through the
+     whole app instead of appearing once on the splash. */
+  --track-label: 0.28em;
+  --track-tight: -0.02em;
 }
 
 @theme inline {
@@ -22,14 +44,65 @@
   --color-brand-line: var(--brand-line);
   --color-brand-text: var(--brand-text);
   --color-brand-muted: var(--brand-muted);
+  --color-brand-dim: var(--brand-dim);
   --color-brand-accent: var(--brand-accent);
   --color-brand-accent-deep: var(--brand-accent-deep);
+
+  --font-display: var(--font-display), "Segoe UI", sans-serif;
+  --font-sans: var(--font-body), "Segoe UI", sans-serif;
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
 }
 
 body {
   background: var(--brand-bg);
   color: var(--brand-text);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Was Arial, with a --font-geist-sans reference that pointed at nothing. */
+  font-family: var(--font-body), "Segoe UI", Roboto, sans-serif;
+  /* The app is almost entirely numbers. Proportional figures make a counting timer and a
+     changing stat tile visibly shuffle their own digits, which reads as jank even when
+     nothing is wrong. Tabular by default is the correct setting for this product, and the
+     handful of places running prose lose nothing by it. */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Headings, the wordmark, big numbers and anything that carries the brand. Applied by
+   class rather than by element, because most of the app's headings are <p> tags carrying
+   a Tailwind size. */
+.font-display {
+  font-family: var(--font-display), "Segoe UI", sans-serif;
+  letter-spacing: var(--track-tight);
+}
+
+/* The lockup's own device: a word in wide tracking between two hairlines. Repeating it as
+   the section label is the cheapest way to make an ordinary screen feel like it came from
+   the same place as the logo. */
+.rule-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display), sans-serif;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--brand-dim);
+}
+
+.rule-label::before,
+.rule-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--brand-line-strong);
+}
+
+/* Left-aligned variant, for a label heading a list rather than centring a section. */
+.rule-label-left::before {
+  display: none;
 }
 
 /* Brand bar.

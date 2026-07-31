@@ -24,6 +24,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { registerWorker } from "@/lib/push";
+import { BRAND, TRACK } from "@/lib/brand";
+import Icon from "../Icon";
 
 const KEY = "vaeon-rest-until";
 const LEN_KEY = "vaeon-rest-length";
@@ -143,31 +145,36 @@ export default function RestTimer({ accent }) {
         }}>
         <div className="max-w-md mx-auto">
           {running ? (
-            <div className="flex items-center gap-2 rounded-2xl border-2 p-2.5" style={{ borderColor: tone, background: "#0b0b0b" }}>
-              <span className="text-2xl font-bold tabular-nums pl-1" style={{ color: tone }}>
+            <div className="flex items-center gap-2.5 rounded-md border p-2.5" style={{ borderColor: tone, background: BRAND.surface }}>
+              <span style={{ color: tone }}><Icon name="clock" size={16} /></span>
+              {/* Display face and tabular figures. A proportional 1 is narrower than a 4,
+                  so a proportional countdown visibly jiggles once a second, which is the
+                  one place in the app where that is impossible not to notice. */}
+              <span className="font-display text-2xl leading-none" style={{ color: tone }}>
                 {mm}:{String(ss).padStart(2, "0")}
               </span>
-              <p className="flex-1 text-[11px] text-gray-400 leading-tight">
-                Resting. Carries on if you lock the phone.
+              <p className="flex-1 text-[10px] leading-tight" style={{ color: BRAND.dim }}>
+                Carries on if you lock the phone
               </p>
-              <button onClick={function () { start(length + 30); }} className="text-xs font-bold px-3 py-2 rounded-lg border border-white/20">
+              <button onClick={function () { start(length + 30); }} className="text-[11px] px-3 py-2 rounded-sm border" style={{ borderColor: BRAND.lineStrong }}>
                 +30s
               </button>
-              <button onClick={stop} className="text-xs font-bold px-3 py-2 rounded-lg border border-white/20">
+              <button onClick={stop} className="text-[11px] px-3 py-2 rounded-sm border" style={{ borderColor: BRAND.lineStrong }}>
                 Stop
               </button>
             </div>
           ) : (
-            <div className="rounded-2xl border p-2" style={{ borderColor: "rgba(255,255,255,0.12)", background: "#0b0b0b" }}>
+            <div className="rounded-md border p-2" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
               <div className="flex items-center gap-2">
                 <button onClick={function () { start(length); }}
-                  className="flex-1 py-2.5 rounded-xl font-bold text-sm border-2"
-                  style={{ borderColor: tone + "66", background: "rgba(255,255,255,0.04)", color: tone }}>
-                  Rest between sets &middot; {length}s
+                  className="flex-1 py-2.5 rounded-sm text-xs uppercase border flex items-center justify-center gap-2"
+                  style={{ borderColor: tone + "55", color: tone, letterSpacing: TRACK.label }}>
+                  <Icon name="clock" size={14} />
+                  Rest {length}s
                 </button>
                 <button onClick={function () { setOpen(!open); }}
-                  className="px-3 py-2.5 rounded-xl font-bold text-xs border"
-                  style={{ borderColor: "rgba(255,255,255,0.15)", color: "#cbd5e1" }}>
+                  className="px-3 py-2.5 rounded-sm text-[11px] uppercase border"
+                  style={{ borderColor: BRAND.line, color: BRAND.muted, letterSpacing: "0.16em" }}>
                   {open ? "Close" : "Change"}
                 </button>
               </div>
@@ -176,7 +183,7 @@ export default function RestTimer({ accent }) {
                   {PRESETS.map(function (p) {
                     return (
                       <button key={p} onClick={function () { start(p); }}
-                        className="flex-1 py-2 rounded-xl text-xs font-bold border"
+                        className="flex-1 py-2 rounded-sm text-xs font-display border"
                         style={p === length
                           ? { background: tone, color: "#000000", borderColor: tone }
                           : { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>

@@ -14,6 +14,8 @@ import ShareButton from "../ShareButton";
 import Track from "../Track";
 import ReminderCard from "./ReminderCard";
 import ChallengeCard from "./ChallengeCard";
+import Icon from "../Icon";
+import { BRAND, TRACK } from "@/lib/brand";
 import { EVENTS } from "@/lib/events";
 import { occasionFor } from "@/lib/reminders";
 
@@ -111,7 +113,10 @@ const lastExercise = lastLog ? lastLog.logged_at : null;
 const lastActivity = [lastSession, lastExercise].filter(Boolean).sort().pop() || null;
 const occasion = occasionFor(lastActivity, stats.thisWeekCount, pledged);
 
-const tile = "rounded-2xl border border-white/10 bg-white/5 p-3 text-center";
+// Shared card. One radius, one border, one surface, all from the token layer rather than
+// a bg-white/5 written out by hand on twenty elements.
+const card = "rounded-md border p-4 mb-3";
+const cardStyle = { borderColor: BRAND.line, background: BRAND.surface };
 
 return (
 <main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
@@ -121,8 +126,8 @@ return (
 <div className="flex items-center gap-3">
 {type ? <TypeOrb typeId={typeId} size={46} /> : null}
 <div>
-<p className="text-lg font-bold leading-tight">{profile.screen_name}</p>
-<p className="text-xs leading-tight" style={{ color: accent }}>
+<p className="font-display text-lg font-normal leading-tight">{profile.screen_name}</p>
+<p className="text-[10px] leading-tight uppercase" style={{ color: accent, letterSpacing: TRACK.label }}>
 {type ? type.name : (gym ? "Gym ready" : names.join(" + "))}
 </p>
 </div>
@@ -141,10 +146,20 @@ Everything else on this dashboard is context for this one button. It used to sit
 below the banners, the install prompt and the challenge, which meant the single
 thing the app wants somebody to do was the fifth thing they saw and often below
 the fold. Nothing above it now except who they are. */}
-<a href="/plan" className="block rounded-2xl p-5 mb-3" style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", color: "#fff" }}>
-<p className="text-xs font-bold uppercase tracking-wide opacity-80">{profile.fixed_days === false ? "Next up" : today}</p>
-<p className="text-2xl font-bold leading-tight">Today&rsquo;s workout</p>
-<p className="text-sm font-medium opacity-90 mt-1">Tap to open and start logging</p>
+<p className="rule-label mb-2">{profile.fixed_days === false ? "Next up" : today}</p>
+
+{/* The gradient slab is gone. A saturated fill with white text on it was the loudest
+thing on the screen and it belonged to a different brand: the mark is a thin outline,
+so the primary action is now a thin outline too. It still reads first because it is
+the only accent-bordered element above the fold, which is a quieter way of being
+loud. */}
+<a href="/plan" className="flex items-center gap-3 rounded-md p-4 mb-4 border"
+style={{ borderColor: accent, background: accent + "0F" }}>
+<div className="flex-1">
+<p className="font-display text-xl font-normal leading-tight text-white">Today&rsquo;s workout</p>
+<p className="text-xs mt-0.5" style={{ color: BRAND.muted }}>Open and start logging</p>
+</div>
+<span style={{ color: accent }}><Icon name="arrow" size={20} /></span>
 </a>
 
 <ReminderCard occasion={occasion} typeId={typeId} framing={profile.framing} accent={accent} />
@@ -157,10 +172,10 @@ sitting below three prompts about baselines and measurements. */}
 <InstallPrompt accent={accent} />
 
 {finished ? (
-<a href="/blockend" className="flex items-center gap-3 rounded-2xl border-2 p-4 mb-3" style={{ borderColor: "#3DDC97", background: "rgba(61,220,151,0.10)" }}>
-<span className="text-2xl" aria-hidden="true">{"\u{1F3C1}"}</span>
+<a href="/blockend" className="flex items-center gap-3 rounded-md border p-4 mb-3" style={{ borderColor: "#3DDC97", background: "rgba(61,220,151,0.08)" }}>
+<span style={{ color: "#3DDC97" }}><Icon name="flag" size={20} /></span>
 <div className="flex-1">
-<p className="text-sm font-bold" style={{ color: "#3DDC97" }}>Block {profile.block_number || 1} complete</p>
+<p className="font-display text-sm" style={{ color: "#3DDC97" }}>Block {profile.block_number || 1} complete</p>
 <p className="text-xs text-gray-300">See your {blockWeeks}-week summary and roll straight into the next one.</p>
 </div>
 <span style={{ color: "#3DDC97" }}>&rsaquo;</span>
@@ -168,10 +183,10 @@ sitting below three prompts about baselines and measurements. */}
 ) : null}
 
 {noBaselines ? (
-<a href="/settings" className="flex items-center gap-3 rounded-2xl border-2 p-4 mb-3" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.10)" }}>
-<span className="text-2xl" aria-hidden="true">{"⚠️"}</span>
+<a href="/settings" className="flex items-center gap-3 rounded-md border p-4 mb-3" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.08)" }}>
+<span style={{ color: "#FFB020" }}><Icon name="alert" size={20} /></span>
 <div className="flex-1">
-<p className="text-sm font-bold" style={{ color: "#FFB020" }}>Set your starting weights</p>
+<p className="font-display text-sm" style={{ color: "#FFB020" }}>Set your starting weights</p>
 <p className="text-xs text-gray-300">Takes a minute. No idea what they are? We will help.</p>
 </div>
 <span style={{ color: "#FFB020" }}>&rsaquo;</span>
@@ -179,10 +194,10 @@ sitting below three prompts about baselines and measurements. */}
 ) : null}
 
 {!thisWeekMetrics ? (
-<a href="/settings" className="flex items-center gap-3 rounded-2xl border-2 p-4 mb-3" style={{ borderColor: accent, background: accent + "1A" }}>
-<span className="text-2xl" aria-hidden="true">{"\u{1F4CF}"}</span>
+<a href="/settings" className="flex items-center gap-3 rounded-md border p-4 mb-3" style={{ borderColor: accent, background: accent + "0F" }}>
+<span style={{ color: accent }}><Icon name="ruler" size={20} /></span>
 <div className="flex-1">
-<p className="text-sm font-bold" style={{ color: accent }}>Log this week&rsquo;s stats</p>
+<p className="font-display text-sm" style={{ color: accent }}>Log this week&rsquo;s stats</p>
 <p className="text-xs text-gray-300">Weight and measurements. Takes twenty seconds and makes your charts worth reading.</p>
 </div>
 <span style={{ color: accent }}>&rsaquo;</span>
@@ -191,32 +206,37 @@ sitting below three prompts about baselines and measurements. */}
 
 
 {!gym ? (
-<a href="/fallback" className="flex items-center gap-3 rounded-2xl border-2 p-4 mb-5" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.08)" }}>
-<span className="text-2xl" aria-hidden="true">{"\u{1F3E0}"}</span>
+<a href="/fallback" className="flex items-center gap-3 rounded-md border p-4 mb-5" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.06)" }}>
+<span style={{ color: "#FFB020" }}><Icon name="home" size={20} /></span>
 <div className="flex-1">
-<p className="text-sm font-bold" style={{ color: "#FFB020" }}>Can&rsquo;t get to the gym today?</p>
+<p className="font-display text-sm" style={{ color: "#FFB020" }}>Can&rsquo;t get to the gym today?</p>
 <p className="text-xs text-gray-300">Desk, hotel or home. Keeps your streak alive.</p>
 </div>
 <span className="text-lg" style={{ color: "#FFB020" }}>&rsaquo;</span>
 </a>
 ) : <div className="mb-5" />}
 
-<div className="grid grid-cols-3 gap-2 mb-5">
-<div className={tile}>
-<p className="text-xl" aria-hidden="true">{"⚡"}</p>
-<p className="text-xl font-bold leading-tight">{stats.level}</p>
-<p className="text-[10px] uppercase tracking-wide text-gray-400">Level</p>
+{/* ONE INSTRUMENT PANEL, NOT THREE BOXES.
+Three separately rounded cards each carrying a coloured emoji meant the decoration
+outweighed the data on a screen whose entire job is the data. Now it is a single
+hairline grid: the number is the largest thing, the label is a tracked micro-caption
+above it, and the borders are drawn by the gaps rather than by three sets of corners.
+Tabular figures come from globals.css, so nothing shuffles when a digit changes. */}
+<div className="grid grid-cols-3 gap-px mb-4 rounded-md overflow-hidden border"
+style={{ borderColor: BRAND.line, background: BRAND.line }}>
+{[
+{ label: "Level", value: String(stats.level), on: false },
+{ label: "This week", value: stats.thisWeekCount + "/" + pledged, on: stats.thisWeekCount >= pledged },
+{ label: "Streak", value: String(stats.weekStreak), on: stats.weekStreak > 0 },
+].map(function (t) {
+return (
+<div key={t.label} className="px-3 py-3" style={{ background: BRAND.bg }}>
+<p className="text-[9px] uppercase" style={{ color: BRAND.dim, letterSpacing: TRACK.label }}>{t.label}</p>
+<p className="font-display text-2xl font-normal leading-none mt-1.5"
+style={{ color: t.on ? accent : BRAND.text }}>{t.value}</p>
 </div>
-<div className={tile}>
-<p className="text-xl" aria-hidden="true">{"\u{1F3AF}"}</p>
-<p className="text-xl font-bold leading-tight">{stats.thisWeekCount}/{pledged}</p>
-<p className="text-[10px] uppercase tracking-wide text-gray-400">This week</p>
-</div>
-<div className={tile}>
-<p className="text-xl" aria-hidden="true">{"\u{1F525}"}</p>
-<p className="text-xl font-bold leading-tight">{stats.weekStreak}</p>
-<p className="text-[10px] uppercase tracking-wide text-gray-400">Streak</p>
-</div>
+);
+})}
 </div>
 
 {/* Grace weeks. Shown whether or not one has been spent, because a safety net nobody
@@ -224,10 +244,10 @@ knows about does not do the job: half the value of a freeze is not being afraid 
 losing the streak in the first place. When one has been used it says so plainly, since
 a streak quietly propped up by a week you did not train would be a lie told kindly. */}
 {profile.block_start ? (
-<div className="rounded-2xl border border-white/10 bg-white/5 p-3 mb-5 flex items-center gap-3">
-<span className="text-lg" aria-hidden="true">{"\u{1F9CA}"}</span>
+<div className="rounded-md border p-3 mb-5 flex items-center gap-3" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
+<span style={{ color: BRAND.muted }}><Icon name="shield" size={18} /></span>
 <div className="flex-1">
-<p className="text-xs font-bold">
+<p className="font-display text-xs">
 {stats.frozenInStreak > 0
 ? "Grace week used"
 : (freezeCredits > 0 ? "Grace week available" : "No grace week left this block")}
@@ -244,17 +264,17 @@ a streak quietly propped up by a week you did not train would be a lie told kind
 ) : null}
 
 {type ? (
-<div className="rounded-2xl p-4 mb-3 border" style={{ borderColor: accent + "55", background: "rgba(255,255,255,0.04)" }}>
+<div className="rounded-md p-4 mb-3 border" style={{ borderColor: accent + "44", background: BRAND.surface }}>
 <a href={"/type?id=" + typeId} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 mb-2">
-<TypeOrb typeId={typeId} size={26} />
-<p className="text-xs font-bold uppercase tracking-wide flex-1" style={{ color: accent }}>About the {type.name.replace("The ", "")} training style</p>
-<span className="text-sm" style={{ color: accent }} aria-hidden="true">{"↗"}</span>
+<TypeOrb typeId={typeId} size={24} />
+<p className="text-[9px] uppercase flex-1" style={{ color: accent, letterSpacing: TRACK.label }}>The {type.name.replace("The ", "")} style</p>
+<span style={{ color: accent }}><Icon name="arrow" size={14} /></span>
 </a>
-<p className="text-sm">{nudge}</p>
+<p className="text-sm leading-relaxed" style={{ color: "#d1d5db" }}>{nudge}</p>
 </div>
 ) : (
-<a href="/assessment" className="block rounded-2xl border border-white/15 bg-white/5 p-4 mb-3">
-<p className="text-sm font-bold mb-1">Find your training personality</p>
+<a href="/assessment" className="block rounded-md border p-4 mb-3" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
+<p className="font-display text-sm mb-1">Find your training personality</p>
 <p className="text-xs text-gray-400">Two minutes. It decides how you get coached.</p>
 </a>
 )}
@@ -262,14 +282,17 @@ a streak quietly propped up by a week you did not train would be a lie told kind
 {/* ---------- Kudos received ---------- */}
 <KudosCard kudos={myKudos} accent={accent} />
 
-<div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-5">
-<div className="flex items-center justify-between mb-1">
-<p className="text-sm font-bold">Block {profile.block_number || 1} &middot; Week {weekNo}/{blockWeeks}</p>
+<div className="rounded-md border p-4 mb-5" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
+<div className="flex items-center justify-between mb-1.5">
+<p className="font-display text-sm">Block {profile.block_number || 1} &middot; Week {weekNo}/{blockWeeks}</p>
+{/* Was a full pill. Nothing in this app is a pill any more: the mark has no curve in
+it anywhere and a lozenge next to it always looked borrowed. */}
 {!gym ? (
-<span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: accent + "33", color: accent }}>{rule.label}</span>
+<span className="text-[9px] uppercase px-2 py-1 rounded-sm border"
+style={{ borderColor: accent + "55", color: accent, letterSpacing: TRACK.label }}>{rule.label}</span>
 ) : null}
 </div>
-<p className="text-xs text-gray-300">
+<p className="text-xs leading-relaxed" style={{ color: BRAND.muted }}>
 {gym
 ? "Your coach sets the training. Vaeon counts the sessions and reports back at the end of the block."
 : rule.increase}
@@ -280,23 +303,26 @@ a streak quietly propped up by a week you did not train would be a lie told kind
 
 <AchievementWatcher profile={plain} />
 
-<div className="grid grid-cols-2 gap-2 mb-5">
-<a href="/log" className="rounded-2xl border border-white/10 bg-white/5 p-4">
-<p className="text-xl mb-1" aria-hidden="true">{"✏️"}</p>
-<p className="text-sm font-bold">Quick log</p>
+<p className="rule-label mb-3">Elsewhere</p>
+
+{/* A hairline grid rather than four rounded cards, matching the stat panel above. The
+icons are outlines in currentColor, so they take the accent and sit with the mark
+instead of importing four more palettes from the emoji font. */}
+<div className="grid grid-cols-2 gap-px mb-5 rounded-md overflow-hidden border"
+style={{ borderColor: BRAND.line, background: BRAND.line }}>
+{[
+{ href: "/log", icon: "pencil", label: "Quick log" },
+{ href: "/leaderboard", icon: "board", label: "Leaderboard" },
+{ href: "/progress", icon: "chart", label: "Progress" },
+{ href: "/settings", icon: "sliders", label: "Stats and settings" },
+].map(function (t) {
+return (
+<a key={t.href} href={t.href} className="flex items-center gap-2.5 px-3 py-4" style={{ background: BRAND.bg }}>
+<span style={{ color: accent }}><Icon name={t.icon} size={18} /></span>
+<span className="text-sm">{t.label}</span>
 </a>
-<a href="/leaderboard" className="rounded-2xl border border-white/10 bg-white/5 p-4">
-<p className="text-xl mb-1" aria-hidden="true">{"\u{1F3C6}"}</p>
-<p className="text-sm font-bold">Leaderboard</p>
-</a>
-<a href="/progress" className="rounded-2xl border border-white/10 bg-white/5 p-4">
-<p className="text-xl mb-1" aria-hidden="true">{"\u{1F4C8}"}</p>
-<p className="text-sm font-bold">Progress</p>
-</a>
-<a href="/settings" className="rounded-2xl border border-white/10 bg-white/5 p-4">
-<p className="text-xl mb-1" aria-hidden="true">{"⚙️"}</p>
-<p className="text-sm font-bold">Log stats and settings</p>
-</a>
+);
+})}
 </div>
 
 <div className="mb-4"><ShareButton accent={accent} /></div>

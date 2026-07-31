@@ -75,15 +75,50 @@ weight moved. `get_leaderboard()` in Postgres.
 
 Black `#000000` background, white text, cyan `#22D3EE` to electric blue `#3B82F6`.
 
+**Type.** Space Grotesk for display, the wordmark and all numbers; Inter for body. Both via
+`next/font/google` in `app/layout.js`, exposed as `--font-display` and `--font-body`. The
+body font was Arial, and because the wordmark in `Brand.js` is live text rather than a
+traced path, **the logo itself was rendering in Arial**. That was most of why the app never
+looked like its own mark. `font-variant-numeric: tabular-nums` is set on `body`: this app is
+mostly numbers, and proportional figures make the rest timer and the stat tiles visibly
+shuffle their own digits.
+
+**Radius.** `--r-sm` 2px, `--r-md` 4px, `--r-lg` 6px. Was a flat 16px everywhere with full
+pills on buttons. The mark is built from mitred angles with no curve in it anywhere, so soft
+rectangles fought it on every screen. **Nothing is a pill any more.** Do not reintroduce one.
+
+**Weight.** One bold element per card, and hierarchy comes from tracking, size and colour
+rather than weight, which is what the lockup does. Space Grotesk is loaded at 300/400/500
+only; there is deliberately no bold available for the display face.
+
+**The rule label.** `.rule-label` in `globals.css` is the lockup's own device, a tracked word
+between two hairlines, reused as the section heading. It is the cheapest way to make an
+ordinary screen feel like it came from the same place as the logo.
+
+**Icons.** `app/Icon.js`. Roughly eighteen outline SVGs on a 24 unit grid, 1.5 stroke,
+`strokeLinejoin: miter`, inheriting `currentColor` so they take the user's type accent. They
+replaced emoji, which rendered differently on every platform (so the brand looked like a
+different product on Android), imported a dozen unchosen colours into a two-colour app, and
+were round and soft next to a mark made of thin mitred bands.
+
 Tokens live in **two mirrored places** — `lib/brand.js` (JS, for inline styles) and
 `app/globals.css` (CSS vars plus Tailwind `@theme`). **Change both together.**
 
 Chrome only. Per-type accents stay in `lib/personality.js`.
 
 Logo is `app/Brand.js`: an outlined V band with a solid notched chevron, traced from
-the real artwork onto a 226×188 box. `BrandLockup` has two shapes — compact (mark plus
+the real artwork onto a 226x188 box. `BrandLockup` has two shapes — compact (mark plus
 "Vaeon") for the 34px bar, and `full` (adds the rule-flanked FITNESS line) for login,
 signup and splash.
+
+**Restyle status.** Foundations plus the dashboard and the plan screen are done. Still on the
+old styling: leaderboard, progress, settings, onboarding, assessment, log, blockend, type,
+feedback, fallback. `app/InstallPrompt.js` and `app/ShareButton.js` each still carry one
+emoji.
+
+**Verifying a build locally will fail on fonts.** This sandbox has no route to Google Fonts,
+so `next/font` cannot fetch at build time here. Vercel can. To check a build, stub the two
+font calls in a throwaway copy; do not change them in the repo.
 
 ---
 
