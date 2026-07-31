@@ -105,17 +105,17 @@ export default function GymDayView({ day, active, profile, accent, deep, tid, do
 
   return (
     <>
-      <div className="rounded-2xl p-5 mb-4" style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")" }}>
-        <p className="text-xs font-bold uppercase tracking-wide opacity-80">{label}</p>
-        <p className="text-2xl font-bold leading-tight">Your session</p>
+      <div className="rounded-md p-5 mb-4" style={{ background: accent, color: "#000000" }}>
+        <p className="font-display text-xs uppercase tracking-wide opacity-80">{label}</p>
+        <p className="font-display text-2xl font-normal leading-tight">Your session</p>
         <p className="text-sm opacity-90 mt-1">Log what your coach set you.</p>
       </div>
 
       <a href={music.href} target="_blank" rel="noopener noreferrer"
-        className="flex items-center justify-between rounded-2xl border p-4 mb-3"
+        className="flex items-center justify-between rounded-md border p-4 mb-3"
         style={{ borderColor: "rgba(30,215,96,0.4)", background: "rgba(30,215,96,0.08)" }}>
         <span className="text-sm font-medium text-gray-200">{music.label}</span>
-        <span className="text-xs font-bold flex-shrink-0 ml-3" style={{ color: "#1ED760" }}>Open Spotify</span>
+        <span className="font-display text-xs flex-shrink-0 ml-3" style={{ color: "#1ED760" }}>Open Spotify</span>
       </a>
 
       {prefilled ? (
@@ -142,16 +142,16 @@ export default function GymDayView({ day, active, profile, accent, deep, tid, do
 
       <button
         onClick={addBlock}
-        className="w-full py-3 rounded-2xl font-bold text-sm mb-4 border"
+        className="w-full py-3 rounded-md font-display text-sm mb-4 border"
         style={{ borderColor: accent + "55", color: accent, background: accent + "12" }}
       >
         ＋ Add another block
       </button>
 
       {finished ? (
-        <div className="rounded-2xl p-5 mb-6 text-center border-2" style={{ borderColor: accent, background: "rgba(255,255,255,0.04)" }}>
+        <div className="rounded-md p-5 mb-6 text-center border" style={{ borderColor: accent, background: "rgba(255,255,255,0.04)" }}>
           <div className="flex justify-center mb-2"><TypeOrb typeId={tid} size={54} /></div>
-          <p className="text-base font-bold">{sessionDone(tid)}</p>
+          <p className="font-display text-base font-normal">{sessionDone(tid)}</p>
           <p className="text-xs text-gray-400 mt-1">Session logged.</p>
           <a href="/dashboard" className="inline-block mt-4 text-sm underline" style={{ color: accent }}>Back to dashboard</a>
         </div>
@@ -159,8 +159,8 @@ export default function GymDayView({ day, active, profile, accent, deep, tid, do
         <>
           {/* No auto-finish here. Blocks can be added at any point, so "everything is
               collapsed" is not a reliable signal that the session is over. */}
-          <button onClick={onFinish} className="w-full py-5 rounded-2xl font-bold text-lg mb-2"
-            style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", color: "#fff" }}>
+          <button onClick={onFinish} className="w-full py-5 rounded-md font-display text-lg mb-2"
+            style={{ background: accent, color: "#000000" }}>
             Finish session
           </button>
           <p className="text-xs text-gray-500 text-center mb-6">

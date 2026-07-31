@@ -40,9 +40,9 @@ const shown = items.slice(0, SHOWN);
 const extra = items.length - shown.length;
 
 return (
-<div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-3">
+<div className="rounded-md border border-brand-line bg-brand-surface p-4 mb-3">
 <div className="flex items-center justify-between mb-3">
-<p className="text-xs font-bold uppercase tracking-wide text-gray-400">Your kudos</p>
+<p className="font-display text-xs uppercase tracking-wide text-gray-400">Your kudos</p>
 <button onClick={clear} className="text-xs underline text-gray-400">Clear</button>
 </div>
 
@@ -54,7 +54,7 @@ return (
 {k.from_type_id ? <TypeOrb typeId={k.from_type_id} size={26} /> : <span className="w-[26px] flex-shrink-0" />}
 <div className="flex-1 min-w-0">
 <p className="text-sm">
-<span className="font-bold">{k.from_screen_name}</span> sent you {k.emoji}
+<span className="font-display">{k.from_screen_name}</span> sent you {k.emoji}
 </p>
 {line ? <p className="text-xs text-gray-300 italic mt-0.5">&ldquo;{line}&rdquo;</p> : null}
 </div>

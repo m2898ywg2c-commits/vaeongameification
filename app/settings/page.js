@@ -164,9 +164,9 @@ const finished = profile ? blockCompleteIn(profile.block_start, blockWeeks) : fa
 const noBaselines = !gym && !bench && !squat;
 const dayMismatch = fixedDays && trainDays.length > 0 && trainDays.length !== sessions;
 
-const bigInput = "w-full px-4 py-4 rounded-2xl bg-white/8 border-2 text-xl font-bold text-center";
+const bigInput = "w-full px-4 py-4 rounded-md bg-white/8 border font-display text-xl font-normal text-center";
 const primaryBtn = { background: "linear-gradient(90deg, " + accent + ", " + deep + ")", color: "#000000" };
-const card = "rounded-2xl border border-white/10 bg-white/5 p-5 mb-4";
+const card = "rounded-md border border-brand-line bg-brand-surface p-5 mb-4";
 
 return (
 <main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
@@ -176,11 +176,11 @@ return (
 <a href="/dashboard" className="text-xs text-gray-400 underline">Back</a>
 </div>
 
-<h1 className="text-2xl font-bold mb-6">Log stats and settings</h1>
+<h1 className="font-display text-2xl font-normal mb-6">Log stats and settings</h1>
 
 {/* ---------- Body stats ---------- */}
 <div className={card}>
-<p className="text-base font-bold mb-1">Log your body stats</p>
+<p className="font-display text-base font-normal mb-1">Log your body stats</p>
 <p className="text-sm text-gray-300 mb-4">
 Your last numbers stay filled in. Type over whatever has changed, bodyweight alone is enough to draw a trend.
 </p>
@@ -217,21 +217,21 @@ Start from last time
 
 {statsMsg ? <p className="text-sm text-gray-300 mb-3">{statsMsg}</p> : null}
 
-<button onClick={saveStats} className="w-full py-4 rounded-full font-bold text-sm" style={primaryBtn}>
+<button onClick={saveStats} className="w-full py-4 rounded-sm font-display text-sm" style={primaryBtn}>
 Log today&apos;s stats
 </button>
 </div>
 
 {/* ---------- You ---------- */}
 <div className={card}>
-<p className="text-base font-bold mb-4">You</p>
+<p className="font-display text-base font-normal mb-4">You</p>
 
 <label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">Screen name</label>
 <input
 value={screenName}
 onChange={function (e) { setScreenName(e.target.value); }}
 placeholder="What the leaderboard calls you"
-className="w-full px-4 py-4 rounded-2xl bg-white/8 border-2 text-lg font-bold mb-4"
+className="w-full px-4 py-4 rounded-md bg-white/8 border font-display text-lg font-normal mb-4"
 style={{ borderColor: accent + "44" }}
 />
 
@@ -257,7 +257,7 @@ screen_name: screenName ? screenName.trim() : null,
 birth_year: valid ? y : null,
 }, "you");
 }}
-className="w-full py-4 rounded-full font-bold text-sm"
+className="w-full py-4 rounded-sm font-display text-sm"
 style={primaryBtn}
 >
 {savedWhat === "you" ? "✓ Saved" : "Save"}
@@ -266,10 +266,10 @@ style={primaryBtn}
 
 {/* ---------- Training type ---------- */}
 <div className={card}>
-<p className="text-base font-bold mb-1">Your training type</p>
+<p className="font-display text-base font-normal mb-1">Your training type</p>
 {type ? (
 <p className="text-sm text-gray-300 mb-4">
-You are <a href={"/type?id=" + typeId} className="underline font-bold" style={{ color: accent }}>{type.name}</a>.
+You are <a href={"/type?id=" + typeId} className="underline font-display" style={{ color: accent }}>{type.name}</a>.
 If it has never quite fitted, retake the assessment. Three minutes, and your plan and coaching voice rebuild around the result.
 </p>
 ) : (
@@ -277,7 +277,7 @@ If it has never quite fitted, retake the assessment. Three minutes, and your pla
 You have not found your type yet. It shapes your whole plan, so it is worth the three minutes.
 </p>
 )}
-<a href="/assessment" className="block w-full py-4 rounded-full font-bold text-sm text-center border border-white/20">
+<a href="/assessment" className="block w-full py-4 rounded-sm font-display text-sm text-center border border-brand-line">
 {type ? "Retake the assessment" : "Find my type"}
 </a>
 </div>
@@ -287,7 +287,7 @@ You have not found your type yet. It shapes your whole plan, so it is worth the 
 
 {/* ---------- Schedule ---------- */}
 <div className={card}>
-<p className="text-base font-bold mb-1">Your week</p>
+<p className="font-display text-base font-normal mb-1">Your week</p>
 <p className="text-sm text-gray-300 mb-4">
 Sessions per week is your pledge. It is what the leaderboard scores you against.
 </p>
@@ -300,7 +300,7 @@ return (
 <button
 key={n}
 onClick={function () { setSessions(n); }}
-className="py-4 rounded-2xl border text-lg font-bold"
+className="py-4 rounded-md border font-display text-lg font-normal"
 style={{
 borderColor: on ? accent : "rgba(255,255,255,0.1)",
 background: on ? accent + "22" : "rgba(255,255,255,0.05)",
@@ -316,7 +316,7 @@ background: on ? accent + "22" : "rgba(255,255,255,0.05)",
 <div className="grid grid-cols-2 gap-2 mb-5">
 <button
 onClick={function () { setFixedDays(true); }}
-className="py-4 rounded-2xl border text-center"
+className="py-4 rounded-md border text-center"
 style={{
 borderColor: fixedDays ? accent : "rgba(255,255,255,0.1)",
 background: fixedDays ? accent + "22" : "rgba(255,255,255,0.05)",
@@ -327,7 +327,7 @@ background: fixedDays ? accent + "22" : "rgba(255,255,255,0.05)",
 </button>
 <button
 onClick={function () { setFixedDays(false); }}
-className="py-4 rounded-2xl border text-center"
+className="py-4 rounded-md border text-center"
 style={{
 borderColor: !fixedDays ? accent : "rgba(255,255,255,0.1)",
 background: !fixedDays ? accent + "22" : "rgba(255,255,255,0.05)",
@@ -350,7 +350,7 @@ return (
 <button
 key={d.n}
 onClick={function () { toggleDay(d.n); }}
-className="py-4 rounded-2xl border text-sm font-bold"
+className="py-4 rounded-md border font-display text-sm"
 style={{
 borderColor: on ? accent : "rgba(255,255,255,0.1)",
 background: on ? accent + "22" : "rgba(255,255,255,0.05)",
@@ -369,14 +369,14 @@ You have picked {trainDays.length} day{trainDays.length === 1 ? "" : "s"} but pl
 </div>
 ) : null}
 
-<button onClick={saveSchedule} className="w-full py-4 rounded-full font-bold text-sm" style={primaryBtn}>
+<button onClick={saveSchedule} className="w-full py-4 rounded-sm font-display text-sm" style={primaryBtn}>
 {savedWhat === "schedule" ? "✓ Saved" : "Save my week"}
 </button>
 </div>
 
 {/* ---------- Baselines ---------- */}
 <div
-className="rounded-2xl border-2 p-5 mb-4"
+className="rounded-md border p-5 mb-4"
 style={{
 borderColor: noBaselines ? "#FFB020" : accent + "55",
 background: noBaselines ? "rgba(255,176,32,0.10)" : "rgba(255,255,255,0.04)",
@@ -384,7 +384,7 @@ background: noBaselines ? "rgba(255,176,32,0.10)" : "rgba(255,255,255,0.04)",
 >
 <div className="flex items-center gap-2 mb-1">
 <span className="text-xl" aria-hidden="true">{noBaselines ? "⚠️" : "🏋️"}</span>
-<p className="text-base font-bold" style={{ color: noBaselines ? "#FFB020" : "#fff" }}>
+<p className="font-display text-base font-normal" style={{ color: noBaselines ? "#FFB020" : "#fff" }}>
 {noBaselines ? "Set your starting weights" : "Your starting weights"}
 </p>
 </div>
@@ -415,8 +415,8 @@ className={bigInput} style={{ borderColor: accent + "66" }} />
 </button>
 
 {showHelp ? (
-<div className="rounded-xl bg-black/25 p-4 mb-3">
-<p className="text-sm font-bold mb-2">Start here, honestly</p>
+<div className="rounded-md bg-black/25 p-4 mb-3">
+<p className="font-display text-sm mb-2">Start here, honestly</p>
 <p className="text-sm text-gray-200 mb-1">{STARTER_GUIDE.bench.line}</p>
 <p className="text-xs text-gray-400 mb-4">{STARTER_GUIDE.bench.detail}</p>
 <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">What weight actually feels like</p>
@@ -424,7 +424,7 @@ className={bigInput} style={{ borderColor: accent + "66" }} />
 {WEIGHT_ANCHORS.map(function (a) {
 return (
 <div key={a.kg} className="flex items-center gap-3 text-sm">
-<span className="font-bold w-12" style={{ color: accent }}>{a.kg}kg</span>
+<span className="font-display w-12" style={{ color: accent }}>{a.kg}kg</span>
 <span className="text-gray-300">{a.thing}</span>
 </div>
 );
@@ -435,7 +435,7 @@ return (
 {EFFORT_ANCHORS.map(function (a) {
 return (
 <div key={a.level} className="flex items-start gap-3 text-sm">
-<span className="font-bold w-6" style={{ color: accent }}>{a.level}</span>
+<span className="font-display w-6" style={{ color: accent }}>{a.level}</span>
 <span className="text-gray-300">{a.thing}</span>
 </div>
 );
@@ -454,7 +454,7 @@ baseline_bench: bench ? Number(bench) : null,
 baseline_squat: squat ? Number(squat) : null,
 }, "lifts");
 }}
-className="w-full py-4 rounded-full font-bold text-sm"
+className="w-full py-4 rounded-sm font-display text-sm"
 style={primaryBtn}
 >
 {savedWhat === "lifts" ? "✓ Saved" : "Save starting weights"}
@@ -463,7 +463,7 @@ style={primaryBtn}
 
 {/* ---------- Equipment ---------- */}
 <div className={card}>
-<p className="text-base font-bold mb-3">Where you train</p>
+<p className="font-display text-base font-normal mb-3">Where you train</p>
 <div className="grid grid-cols-3 gap-2">
 {EQUIPMENT.map(function (o) {
 const on = equipment === o.id;
@@ -471,7 +471,7 @@ return (
 <button
 key={o.id}
 onClick={function () { setEquipment(o.id); patch({ equipment: o.id }, "kit"); }}
-className="py-4 rounded-2xl border text-center"
+className="py-4 rounded-md border text-center"
 style={{
 borderColor: on ? accent : "rgba(255,255,255,0.1)",
 background: on ? accent + "22" : "rgba(255,255,255,0.05)",
@@ -487,14 +487,14 @@ background: on ? accent + "22" : "rgba(255,255,255,0.05)",
 
 {/* ---------- Block ---------- */}
 <div className={card}>
-<p className="text-base font-bold mb-3">Block {(profile && profile.block_number) || 1} &middot; week {week} of {blockWeeks}</p>
+<p className="font-display text-base font-normal mb-3">Block {(profile && profile.block_number) || 1} &middot; week {week} of {blockWeeks}</p>
 <input type="date" value={blockStart} onChange={function (e) { setBlockStart(e.target.value); }}
-className="w-full px-4 py-4 rounded-2xl bg-white/8 border-2 border-white/15 text-lg mb-3" />
+className="w-full px-4 py-4 rounded-md bg-white/8 border border-brand-line text-lg mb-3" />
 <button onClick={function () { patch({ block_start: blockStart }, "date"); }}
-className="w-full py-3 rounded-full font-bold text-sm mb-3" style={primaryBtn}>
+className="w-full py-3 rounded-sm font-display text-sm mb-3" style={primaryBtn}>
 {savedWhat === "date" ? "✓ Saved" : "Save start date"}
 </button>
-<button onClick={startNextBlock} className="w-full py-3 rounded-full font-bold text-sm border border-white/20">
+<button onClick={startNextBlock} className="w-full py-3 rounded-sm font-display text-sm border border-brand-line">
 {finished ? "Start block " + (((profile && profile.block_number) || 1) + 1) : "Restart from today"}
 </button>
 </div>
@@ -507,7 +507,7 @@ className="w-full py-3 rounded-full font-bold text-sm mb-3" style={primaryBtn}>
     somewhere findable after signup, and the accepted date is the user's own record
     of what they agreed to. */}
 <div className={card}>
-<p className="text-base font-bold mb-3">Training and AI disclaimer</p>
+<p className="font-display text-base font-normal mb-3">Training and AI disclaimer</p>
 <Disclaimer compact />
 {profile && profile.disclaimer_accepted_at && (
 <p className="text-xs text-gray-500 mt-4">

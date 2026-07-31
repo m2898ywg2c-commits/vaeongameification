@@ -164,32 +164,32 @@ else if (pct >= 60) verdict = "A solid block. Not every week landed, but the pat
 else if (sessionsDone > 0) verdict = "The block got away from you a bit. No drama, it happens. The next one starts from zero and owes nothing to this one.";
 else verdict = "Nothing logged this block. If life got in the way, fair enough. Start the next one small and honest.";
 
-const tile = "rounded-2xl border border-white/10 bg-white/5 p-4 text-center";
-const cardCls = "rounded-2xl border border-white/10 bg-white/5 p-5 mb-4";
+const tile = "rounded-md border border-brand-line bg-brand-surface p-4 text-center";
+const cardCls = "rounded-md border border-brand-line bg-brand-surface p-5 mb-4";
 
 return (
 <main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
 <div className="max-w-md mx-auto">
 <a href="/dashboard" className="inline-block text-xs text-gray-400 underline mb-6">Back to dashboard</a>
 
-<div className="rounded-2xl p-6 mb-4 text-center" style={{ background: "linear-gradient(135deg, " + accent + "33, transparent)", border: "2px solid " + accent + "55" }}>
+<div className="rounded-md p-6 mb-4 text-center" style={{ background: accent + "12", border: "1px solid " + accent + "55" }}>
 <div className="flex justify-center mb-2"><TypeOrb typeId={tid} size={84} /></div>
 <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{complete ? "Block " + blockNo + " complete" : "Block " + blockNo + " · week " + weekNo + " of " + blockWeeks}</p>
-<h1 className="text-3xl font-bold mb-2">{complete ? blockWeeks + " weeks, done." : "Mid-block snapshot"}</h1>
+<h1 className="font-display text-3xl font-normal mb-2">{complete ? blockWeeks + " weeks, done." : "Mid-block snapshot"}</h1>
 <p className="text-sm text-gray-300">{verdict}</p>
 </div>
 
 <div className="grid grid-cols-3 gap-2 mb-4">
 <div className={tile}>
-<p className="text-2xl font-bold leading-tight">{sessionsDone}</p>
+<p className="font-display text-2xl font-normal leading-tight">{sessionsDone}</p>
 <p className="text-[10px] uppercase tracking-wide text-gray-400">Sessions</p>
 </div>
 <div className={tile}>
-<p className="text-2xl font-bold leading-tight" style={{ color: accent }}>{pct}%</p>
+<p className="font-display text-2xl font-normal leading-tight" style={{ color: accent }}>{pct}%</p>
 <p className="text-[10px] uppercase tracking-wide text-gray-400">Of your pledge</p>
 </div>
 <div className={tile}>
-<p className="text-2xl font-bold leading-tight">{pbs.length}</p>
+<p className="font-display text-2xl font-normal leading-tight">{pbs.length}</p>
 <p className="text-[10px] uppercase tracking-wide text-gray-400">New bests</p>
 </div>
 </div>
@@ -199,12 +199,12 @@ return (
 <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">Personal bests this block</p>
 {pbs.map(function (pb, i) {
 return (
-<div key={i} className={"flex items-center justify-between" + (i > 0 ? " mt-3 pt-3 border-t border-white/10" : "")}>
+<div key={i} className={"flex items-center justify-between" + (i > 0 ? " mt-3 pt-3 border-t border-brand-line" : "")}>
 <div>
-<p className="text-sm font-bold">{pb.name}</p>
+<p className="font-display text-sm">{pb.name}</p>
 <p className="text-xs text-gray-400">Estimated max {pb.est}kg</p>
 </div>
-<span className="text-sm font-bold" style={{ color: "#3DDC97" }}>
+<span className="font-display text-sm" style={{ color: "#3DDC97" }}>
 {pb.gain ? "+" + pb.gain + "kg" : "First max set"}
 </span>
 </div>
@@ -223,8 +223,8 @@ return (
 <p className="text-sm text-gray-200 mb-3">{trendSummary(trends)}</p>
 {trends.slice(0, 4).map(function (t, i) {
 return (
-<div key={i} className={i > 0 ? "mt-3 pt-3 border-t border-white/10" : ""}>
-<p className="text-sm font-bold">{t.name}</p>
+<div key={i} className={i > 0 ? "mt-3 pt-3 border-t border-brand-line" : ""}>
+<p className="font-display text-sm">{t.name}</p>
 <p className="text-xs text-gray-400">{t.message}</p>
 </div>
 );
@@ -245,13 +245,13 @@ Whether that is good news depends entirely on what you were aiming for.
 
 {complete ? (
 <button onClick={startNextBlock} disabled={starting}
-className="w-full py-5 rounded-2xl font-bold text-lg mb-3"
-style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", color: "#fff" }}>
+className="w-full py-5 rounded-md font-display text-lg mb-3"
+style={{ background: accent, color: "#000000" }}>
 {starting ? "Setting up..." : "Start block " + (blockNo + 1) + " today"}
 </button>
 ) : (
-<a href="/plan" className="block w-full py-5 rounded-2xl font-bold text-lg mb-3 text-center"
-style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", color: "#fff" }}>
+<a href="/plan" className="block w-full py-5 rounded-md font-display text-lg mb-3 text-center"
+style={{ background: accent, color: "#000000" }}>
 Back to this week
 </a>
 )}

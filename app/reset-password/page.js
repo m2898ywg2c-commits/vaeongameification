@@ -43,15 +43,15 @@ export default function ResetPasswordPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
       <div className="w-full max-w-sm">
-        <h1 className="text-3xl font-bold mb-1">Set a new password</h1>
+        <h1 className="font-display text-3xl font-normal mb-1">Set a new password</h1>
         <p className="text-sm text-gray-400 mb-8">Pick something you will remember this time.</p>
 
         {done ? (
-          <div className="rounded-2xl border border-white/15 bg-white/5 p-5">
+          <div className="rounded-md border border-brand-line bg-brand-surface p-5">
             <p className="text-sm text-gray-200">Done. Taking you to your dashboard.</p>
           </div>
         ) : !ready ? (
-          <div className="rounded-2xl border border-white/15 bg-white/5 p-5">
+          <div className="rounded-md border border-brand-line bg-brand-surface p-5">
             <p className="text-sm text-gray-200 mb-2">This link looks incomplete or expired.</p>
             <a href="/forgot-password" className="text-sm underline" style={{ color: "#22D3EE" }}>Request a fresh link</a>
           </div>
@@ -64,7 +64,7 @@ export default function ResetPasswordPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
+                className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
               />
             </div>
             <div>
@@ -74,15 +74,15 @@ export default function ResetPasswordPage() {
                 required
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
+                className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
               />
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-full font-bold text-sm"
-              style={{ background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }}
+              className="w-full py-3 rounded-sm font-display text-sm"
+              style={{ background: "#22D3EE", color: "#000000" }}
             >
               {loading ? "Saving..." : "Save new password"}
             </button>

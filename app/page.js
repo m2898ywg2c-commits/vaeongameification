@@ -10,7 +10,7 @@ export default async function Landing() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 text-center">
-      <h1 className="text-4xl font-bold mb-3">Welcome to Vaeon</h1>
+      <h1 className="text-4xl font-display mb-3">Welcome to Vaeon</h1>
       <p className="text-base text-gray-300 mb-10 max-w-md">
         Your bespoke personal trainer and accountability partner.
       </p>
@@ -18,12 +18,12 @@ export default async function Landing() {
       <div className="flex gap-3">
         <a
           href="/signup"
-          className="px-6 py-2.5 rounded-full font-bold text-sm"
-          style={{ background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }}
+          className="px-6 py-2.5 rounded-sm font-display text-sm"
+          style={{ background: "#22D3EE", color: "#000000" }}
         >
           Create account
         </a>
-        <a href="/login" className="px-6 py-2.5 rounded-full font-bold text-sm border border-white/20">
+        <a href="/login" className="px-6 py-2.5 rounded-sm font-display text-sm border border-brand-line">
           Log in
         </a>
       </div>

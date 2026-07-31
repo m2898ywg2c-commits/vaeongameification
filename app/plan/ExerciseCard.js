@@ -237,7 +237,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       {ex.note ? <p className="text-xs text-gray-400 mb-1">{ex.note}</p> : null}
 
       {swap ? (
-        <div className="rounded-xl px-3 py-3 mb-3 border" style={{ borderColor: accent + "55", background: accent + "14" }}>
+        <div className="rounded-md px-3 py-3 mb-3 border" style={{ borderColor: accent + "55", background: accent + "14" }}>
           <p className="text-xs text-gray-200">{alt}</p>
         </div>
       ) : null}
@@ -251,8 +251,8 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         : (HINTS[kind] ? <p className="text-xs mb-2" style={{ color: accent }}>{HINTS[kind]}</p> : null))}
 
       {suggested && !calibrating ? (
-        <div className="rounded-xl px-3 py-2 mb-3" style={{ background: accent + "1A" }}>
-          <p className="text-sm font-bold" style={{ color: accent }}>Today: {suggested}kg</p>
+        <div className="rounded-md px-3 py-2 mb-3" style={{ background: accent + "1A" }}>
+          <p className="font-display text-sm" style={{ color: accent }}>Today: {suggested}kg</p>
           <p className="text-[11px] text-gray-400">{hasRealMax ? "From your logged max. " : ""}{increaseHint(ex.name)}</p>
         </div>
       ) : null}
@@ -261,9 +261,9 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
           fact about the past, not the coach talking, and it should not compete with the
           prescription directly above it. */}
       {lastSets ? (
-        <div className="rounded-xl px-3 py-2 mb-3 border border-white/10 bg-white/5">
+        <div className="rounded-md px-3 py-2 mb-3 border border-brand-line bg-brand-surface">
           <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-0.5">Last time &middot; {lastAgo}</p>
-          <p className="text-sm font-bold text-gray-200">
+          <p className="font-display text-sm text-gray-200">
             {lastSets.map(function (r) { return describeSet(r); }).filter(Boolean).join("   ")}
           </p>
         </div>
@@ -275,8 +275,8 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         <a href={videoLink(title)} target="_blank" rel="noopener noreferrer" className={tipBtn + " text-center block"} style={tipBtnStyle}>Video</a>
       </div>
 
-      {tip === "form" ? <p className="text-xs text-gray-300 mb-3 rounded-xl bg-white/5 p-3">{formTip(ex.name)}</p> : null}
-      {tip === "coach" ? <p className="text-xs text-gray-300 mb-3 rounded-xl bg-white/5 p-3">{coachTip(ex.name)}</p> : null}
+      {tip === "form" ? <p className="text-xs text-gray-300 mb-3 rounded-md bg-brand-surface p-3">{formTip(ex.name)}</p> : null}
+      {tip === "coach" ? <p className="text-xs text-gray-300 mb-3 rounded-md bg-brand-surface p-3">{coachTip(ex.name)}</p> : null}
 
       {Array.from({ length: total }).map(function (_, i) {
         const v = fields[i] || {};

@@ -35,14 +35,14 @@ export default function FeedbackPage() {
     <main className="min-h-screen bg-brand-bg text-white px-5 py-8">
       <div className="max-w-md mx-auto">
         <div className="mb-6"><Home /></div>
-        <h1 className="text-2xl font-bold mb-2">Tell us what you think</h1>
+        <h1 className="font-display text-2xl font-normal mb-2">Tell us what you think</h1>
         <p className="text-sm text-gray-300 mb-6">
           Anything at all. What works, what does not, what is missing, what would make you use this more.
           It goes straight to the team.
         </p>
 
         {sent ? (
-          <div className="rounded-2xl border border-white/15 bg-white/5 p-5">
+          <div className="rounded-md border border-brand-line bg-brand-surface p-5">
             <p className="text-sm text-gray-200 mb-3">Got it, thank you. This genuinely helps shape what gets built next.</p>
             <button onClick={function () { setSent(false); }} className="text-sm underline" style={{ color: "#22D3EE" }}>
               Send another
@@ -55,15 +55,15 @@ export default function FeedbackPage() {
               onChange={function (e) { setMessage(e.target.value); }}
               rows={6}
               placeholder="Your thoughts..."
-              className="w-full rounded-2xl px-4 py-3 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE] mb-3 text-sm"
+              className="w-full rounded-md px-4 py-3 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE] mb-3 text-sm"
             />
             {error ? <p className="text-sm text-red-400 mb-3">{error}</p> : null}
             <button
               type="submit"
               disabled={loading || !message.trim()}
-              className="w-full py-3 rounded-full font-bold text-sm"
+              className="w-full py-3 rounded-sm font-display text-sm"
               style={{
-                background: message.trim() ? "linear-gradient(90deg, #22D3EE, #3B82F6)" : "rgba(255,255,255,0.08)",
+                background: message.trim() ? "#22D3EE" : "rgba(255,255,255,0.08)",
                 color: message.trim() ? "#000000" : "rgba(255,255,255,0.4)",
               }}
             >

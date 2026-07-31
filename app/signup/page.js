@@ -79,7 +79,7 @@ export default function SignUpPage() {
           <BrandLockup size={30} full />
         </div>
 
-        <h1 className="text-2xl font-bold mb-1">Create your account</h1>
+        <h1 className="font-display text-2xl font-normal mb-1">Create your account</h1>
         <p className="text-sm text-gray-400 mb-6">Your screen name is what other people see, never your real name.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -91,7 +91,7 @@ export default function SignUpPage() {
               value={screenName}
               onChange={(e) => setScreenName(e.target.value)}
               placeholder="e.g. IronOtter"
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
+              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
             />
           </div>
 
@@ -100,7 +100,7 @@ export default function SignUpPage() {
             <select
               value={ageGroup}
               onChange={(e) => setAgeGroup(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
+              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
             >
               {AGE_GROUPS.map((a) => (
                 <option key={a} value={a} className="bg-brand-bg">
@@ -117,7 +117,7 @@ export default function SignUpPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
+              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
             />
           </div>
 
@@ -129,13 +129,13 @@ export default function SignUpPage() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
+              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
             />
           </div>
 
           {/* Required, and deliberately not pre-ticked. A box the user actually clicked is
               evidence; a box that arrived ticked is not. */}
-          <label className="flex gap-3 items-start rounded-2xl border border-white/10 bg-white/5 p-4 cursor-pointer">
+          <label className="flex gap-3 items-start rounded-md border border-brand-line bg-brand-surface p-4 cursor-pointer">
             <input
               type="checkbox"
               required
@@ -157,10 +157,10 @@ export default function SignUpPage() {
           <button
             type="submit"
             disabled={loading || !accepted}
-            className="w-full py-3 rounded-full font-bold text-sm"
+            className="w-full py-3 rounded-sm font-display text-sm"
             style={
               accepted
-                ? { background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }
+                ? { background: "#22D3EE", color: "#000000" }
                 : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }
             }
           >

@@ -50,10 +50,10 @@ export default function FallbackPage() {
               Pick a different place
             </button>
           </div>
-          <h1 className="text-2xl font-bold mb-1">{workout.title}</h1>
+          <h1 className="font-display text-2xl font-normal mb-1">{workout.title}</h1>
           <p className="text-xs uppercase tracking-wide text-gray-400 mb-5">{workout.minutes} minutes</p>
 
-          <div className="rounded-xl border border-white/10 bg-white/5 p-5 mb-5">
+          <div className="rounded-md border border-brand-line bg-brand-surface p-5 mb-5">
             <ol className="text-sm space-y-2 list-decimal list-inside text-gray-100">
               {workout.items.map(function (item, i) { return <li key={i}>{item}</li>; })}
             </ol>
@@ -63,8 +63,8 @@ export default function FallbackPage() {
 
           <button
             onClick={function () { logIt(workout); }}
-            className="w-full px-6 py-3 rounded-full font-bold text-sm mb-2"
-            style={{ background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }}
+            className="w-full px-6 py-3 rounded-sm font-display text-sm mb-2"
+            style={{ background: "#22D3EE", color: "#000000" }}
           >
             {logged ? "Logged" : "Done, log it"}
           </button>
@@ -80,7 +80,7 @@ export default function FallbackPage() {
         <div className="mb-6">
           <Home />
         </div>
-        <h1 className="text-2xl font-bold mb-2">Cannot get to the gym?</h1>
+        <h1 className="font-display text-2xl font-normal mb-2">Cannot get to the gym?</h1>
         <p className="text-sm text-gray-300 mb-8">
           Missing a session is how streaks die. Pick where you actually are and do something
           smaller instead. It still counts.
@@ -92,9 +92,9 @@ export default function FallbackPage() {
               <button
                 key={loc.id}
                 onClick={function () { setLocation(loc.id); }}
-                className="w-full text-left rounded-xl border border-white/10 bg-white/5 p-4"
+                className="w-full text-left rounded-md border border-brand-line bg-brand-surface p-4"
               >
-                <p className="font-bold text-sm">{loc.name}</p>
+                <p className="font-display text-sm">{loc.name}</p>
                 <p className="text-xs text-gray-400 mt-1">{loc.blurb}</p>
               </button>
             );

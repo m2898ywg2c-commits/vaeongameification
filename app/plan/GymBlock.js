@@ -55,22 +55,22 @@ export default function GymBlock({ block, blockIdx, accent, done, onComplete, on
     return (
       <button
         onClick={function () { onReopen(blockIdx); }}
-        className="w-full flex items-center gap-3 rounded-2xl p-4 mb-3 border text-left"
+        className="w-full flex items-center gap-3 rounded-md p-4 mb-3 border text-left"
         style={{ borderColor: "rgba(61,220,151,0.45)", background: "rgba(61,220,151,0.14)" }}
       >
-        <span className="text-lg font-bold" style={{ color: "#3DDC97" }}>&#10003;</span>
-        <span className="flex-1 text-sm font-bold" style={{ color: "#3DDC97" }}>{title || "Block " + (blockIdx + 1)}</span>
+        <span className="font-display text-lg font-normal" style={{ color: "#3DDC97" }}>&#10003;</span>
+        <span className="flex-1 font-display text-sm" style={{ color: "#3DDC97" }}>{title || "Block " + (blockIdx + 1)}</span>
         <span className="text-xs text-gray-400">Tap to reopen</span>
       </button>
     );
   }
 
-  const field = "w-full px-3 py-4 rounded-2xl bg-white/10 border-2 border-white/15 text-xl font-bold text-center text-white placeholder-gray-500";
-  const lockBtn = "flex-1 py-2 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-gray-500";
+  const field = "w-full px-3 py-4 rounded-md bg-white/10 border border-brand-line font-display text-xl font-normal text-center text-white placeholder-gray-500";
+  const lockBtn = "flex-1 py-2 rounded-md font-display text-xs border border-brand-line bg-brand-surface text-gray-500";
   const ready = canonicalName(title).length > 0;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-3">
+    <div className="rounded-md border border-brand-line bg-brand-surface p-4 mb-3">
       <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">Block {blockIdx + 1}</p>
 
       <div className="relative mb-3">
@@ -80,11 +80,11 @@ export default function GymBlock({ block, blockIdx, accent, done, onComplete, on
           placeholder="What are you doing? e.g. Back Squat"
           onChange={function (e) { onTitleChange(blockIdx, e.target.value); setShowSuggest(true); }}
           onFocus={function () { setShowSuggest(true); }}
-          className="w-full px-3 py-3 rounded-2xl bg-white/10 border-2 text-base font-bold text-white placeholder-gray-500"
+          className="w-full px-3 py-3 rounded-md bg-white/10 border font-display text-base font-normal text-white placeholder-gray-500"
           style={{ borderColor: ready ? accent + "66" : "rgba(255,255,255,0.15)" }}
         />
         {suggestions.length ? (
-          <div className="mt-1 rounded-xl border border-white/10 bg-[#151A2E] overflow-hidden">
+          <div className="mt-1 rounded-md border border-brand-line bg-[#151A2E] overflow-hidden">
             {suggestions.map(function (s) {
               return (
                 <button
@@ -110,7 +110,7 @@ export default function GymBlock({ block, blockIdx, accent, done, onComplete, on
             <button
               key={m.id}
               onClick={function () { setTouchedMode(m.id); }}
-              className="flex-1 py-2 rounded-xl text-xs font-bold border"
+              className="flex-1 py-2 rounded-md font-display text-xs border"
               style={{
                 borderColor: on ? accent : "rgba(255,255,255,0.12)",
                 background: on ? accent + "22" : "rgba(255,255,255,0.04)",
@@ -129,7 +129,7 @@ export default function GymBlock({ block, blockIdx, accent, done, onComplete, on
         <button onClick={function () { setLocked(!locked); }} className={lockBtn}>Video</button>
       </div>
       {locked ? (
-        <p className="text-xs text-gray-300 mb-3 rounded-xl bg-white/5 p-3">{LOCKED}</p>
+        <p className="text-xs text-gray-300 mb-3 rounded-md bg-brand-surface p-3">{LOCKED}</p>
       ) : null}
 
       {Array.from({ length: total }).map(function (_, i) {
@@ -165,7 +165,7 @@ export default function GymBlock({ block, blockIdx, accent, done, onComplete, on
           onComplete({ name: canonicalName(title) }, blockIdx, fields, total, mode === "reps" ? "reps" : mode);
         }}
         disabled={!ready}
-        className="w-full py-4 rounded-2xl font-bold text-base"
+        className="w-full py-4 rounded-md font-display text-base font-normal"
         style={ready ? { background: accent, color: "#000000" } : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }}
       >
         {ready ? "Log it" : "Name this block first"}

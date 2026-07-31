@@ -44,8 +44,8 @@ setTimeout(function () { setSaved(false); }, 2000);
 };
 
 return (
-<div className="rounded-2xl border p-5 mb-4" style={{ borderColor: accent + "55", background: "rgba(255,255,255,0.04)" }}>
-<p className="text-sm font-bold mb-1">How well does this fit you?</p>
+<div className="rounded-md border p-5 mb-4" style={{ borderColor: accent + "55", background: "rgba(255,255,255,0.04)" }}>
+<p className="font-display text-sm mb-1">How well does this fit you?</p>
 <p className="text-xs text-gray-400 mb-3">1 is nothing like me, 5 is that is me exactly. It helps us tune the types.</p>
 <div className="grid grid-cols-5 gap-2">
 {[1, 2, 3, 4, 5].map(function (v) {
@@ -54,7 +54,7 @@ return (
 <button
 key={v}
 onClick={function () { rate(v); }}
-className="py-3 rounded-2xl border text-lg font-bold"
+className="py-3 rounded-md border font-display text-lg font-normal"
 style={{
 borderColor: on ? accent : "rgba(255,255,255,0.12)",
 background: on ? accent + "22" : "rgba(255,255,255,0.05)",
@@ -114,18 +114,18 @@ return (
 <div className="max-w-md mx-auto">
 <a href="/dashboard" className="inline-block text-xs text-gray-400 underline mb-6">Back to dashboard</a>
 
-<div className="rounded-2xl p-6 mb-6 text-center" style={{ background: "linear-gradient(135deg, " + accent + "22, transparent)" }}>
+<div className="rounded-md p-6 mb-6 text-center" style={{ background: "linear-gradient(135deg, " + accent + "22, transparent)" }}>
 <div className="flex justify-center mb-2"><TypeOrb typeId={id} size={120} /></div>
 <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{type.code}</p>
-<h1 className="text-3xl font-bold mb-1">About the {type.name.replace("The ", "")} training style</h1>
+<h1 className="font-display text-3xl font-normal mb-1">About the {type.name.replace("The ", "")} training style</h1>
 <p className="text-sm text-gray-300">{type.tagline}</p>
 </div>
 
 {/* ---------- Grounding intro ---------- */}
-<div className="rounded-2xl border p-5 mb-4" style={{ borderColor: accent + "55", background: "rgba(255,255,255,0.04)" }}>
+<div className="rounded-md border p-5 mb-4" style={{ borderColor: accent + "55", background: "rgba(255,255,255,0.04)" }}>
 <p className="text-sm text-gray-100">
 The {type.name.replace("The ", "")} sits where three strands of motivation science meet:{" "}
-<span className="font-bold">{joinModels(models)}</span>. None of this is horoscope. Each dial below
+<span className="font-display">{joinModels(models)}</span>. None of this is horoscope. Each dial below
 is drawn from research on why people actually stick with training, and what makes them quit.
 </p>
 </div>
@@ -134,10 +134,10 @@ is drawn from research on why people actually stick with training, and what make
 {DIM_ORDER.map(function (dim) {
 const pole = DIMENSIONS[dim][poles[dim]];
 return (
-<div key={dim} className="rounded-2xl border border-white/10 bg-white/5 p-5 mb-4">
+<div key={dim} className="rounded-md border border-brand-line bg-brand-surface p-5 mb-4">
 <div className="flex items-center justify-between mb-2">
 <p className="text-xs uppercase tracking-wide text-gray-400">{DIMENSIONS[dim].label}</p>
-<span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: accent + "22", color: accent }}>{pole.pole}</span>
+<span className="text-[11px] font-display px-2 py-0.5 rounded-sm" style={{ background: accent + "22", color: accent }}>{pole.pole}</span>
 </div>
 <p className="text-xs mb-2" style={{ color: accent }}>Grounded in {pole.model}</p>
 <p className="text-sm text-gray-200 mb-3">{pole.body}</p>
@@ -149,7 +149,7 @@ return (
 })}
 
 {/* ---------- What it means in the app ---------- */}
-<div className="rounded-2xl border p-5 mb-4" style={{ borderColor: accent + "40", background: "linear-gradient(135deg, " + deep + "22, transparent)" }}>
+<div className="rounded-md border p-5 mb-4" style={{ borderColor: accent + "40", background: "linear-gradient(135deg, " + deep + "22, transparent)" }}>
 <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">How Vaeon builds your plan</p>
 <p className="text-sm text-gray-100 mb-4">{type.plan}</p>
 <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Your coaching voice</p>
@@ -157,12 +157,12 @@ return (
 </div>
 
 {/* ---------- The two personal layers ---------- */}
-<div className="rounded-2xl border border-white/10 bg-white/5 p-5 mb-4">
+<div className="rounded-md border border-brand-line bg-brand-surface p-5 mb-4">
 <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">On top of your type</p>
 {LAYERS.map(function (l, i) {
 return (
-<div key={i} className={i > 0 ? "mt-4 pt-4 border-t border-white/10" : ""}>
-<p className="text-sm font-bold mb-1">{l.name}</p>
+<div key={i} className={i > 0 ? "mt-4 pt-4 border-t border-brand-line" : ""}>
+<p className="font-display text-sm mb-1">{l.name}</p>
 <p className="text-xs mb-2" style={{ color: accent }}>{l.model}</p>
 <p className="text-sm text-gray-200 mb-2">{l.body}</p>
 <a href={l.source.url} target="_blank" rel="noopener noreferrer" className="text-xs underline text-gray-400">
@@ -177,7 +177,7 @@ return (
 <TypeFeedback typeId={id} accent={accent} />
 
 {/* ---------- Sources ---------- */}
-<div className="rounded-2xl border border-white/10 bg-white/5 p-5 mb-4">
+<div className="rounded-md border border-brand-line bg-brand-surface p-5 mb-4">
 <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">Sources</p>
 <ol className="space-y-2 list-decimal list-inside">
 {sources.map(function (s, i) {

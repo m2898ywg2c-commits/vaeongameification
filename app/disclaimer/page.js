@@ -17,12 +17,12 @@ export default function DisclaimerPage() {
           <BrandLockup size={26} full />
         </div>
 
-        <h1 className="text-3xl font-bold mb-2">Training and AI disclaimer</h1>
+        <h1 className="font-display text-3xl font-normal mb-2">Training and AI disclaimer</h1>
         <p className="text-xs text-gray-500 mb-8">Version {DISCLAIMER_VERSION}</p>
 
         <Disclaimer />
 
-        <div className="mt-10 pt-6 border-t border-white/10">
+        <div className="mt-10 pt-6 border-t border-brand-line">
           <a href="/dashboard" className="text-sm underline" style={{ color: "#22D3EE" }}>
             Back to dashboard
           </a>

@@ -90,8 +90,8 @@ export default function LogPage() {
 
   const pill = function (active) {
     return (
-      "px-4 py-2 rounded-full text-sm font-medium border " +
-      (active ? "border-white bg-white/20" : "border-white/15 bg-white/5")
+      "px-4 py-2 rounded-sm text-sm font-medium border " +
+      (active ? "border-white bg-white/20" : "border-brand-line bg-brand-surface")
     );
   };
 
@@ -101,7 +101,7 @@ export default function LogPage() {
         <div className="mb-6">
           <Home />
         </div>
-        <h1 className="text-2xl font-bold mb-6">Log a session</h1>
+        <h1 className="font-display text-2xl font-normal mb-6">Log a session</h1>
 
         <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">What was it?</p>
         <div className="flex flex-wrap gap-2 mb-6">
@@ -140,14 +140,14 @@ export default function LogPage() {
           value={note}
           onChange={function (e) { setNote(e.target.value); }}
           placeholder="Optional note"
-          className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-sm mb-6 placeholder-gray-500"
+          className="w-full px-4 py-3 rounded-md border border-brand-line bg-brand-surface text-sm mb-6 placeholder-gray-500"
         />
 
         <button
           onClick={save}
           disabled={saving}
-          className="px-8 py-3 rounded-full font-bold text-sm mb-3"
-          style={{ background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }}
+          className="px-8 py-3 rounded-sm font-display text-sm mb-3"
+          style={{ background: "#22D3EE", color: "#000000" }}
         >
           {saving ? "Saving..." : "Save session"}
         </button>
@@ -164,7 +164,7 @@ export default function LogPage() {
                 return (
                   <div
                     key={s.id}
-                    className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+                    className="flex items-center gap-3 rounded-md border border-brand-line bg-brand-surface px-4 py-3"
                   >
                     <div className="flex-1">
                       <p className="text-sm">

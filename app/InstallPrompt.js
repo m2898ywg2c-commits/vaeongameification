@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { BRAND } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/client";
 import { track, EVENTS } from "@/lib/events";
+import Icon from "./Icon";
 
 // "Add to home screen" nudge.
 //
@@ -59,7 +60,7 @@ function Step({ n, children, accent }) {
   return (
     <li className="flex gap-3 items-start">
       <span
-        className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+        className="flex-shrink-0 w-6 h-6 rounded-sm flex items-center justify-center font-display text-xs"
         style={{ background: accent, color: BRAND.bg }}
       >
         {n}
@@ -143,12 +144,12 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
     <>
       <button
         onClick={function () { setOpen(true); }}
-        className="w-full flex items-center gap-3 rounded-2xl border-2 p-4 mb-3 text-left"
+        className="w-full flex items-center gap-3 rounded-md border p-4 mb-3 text-left"
         style={{ borderColor: accent, background: accent + "1A" }}
       >
-        <span className="text-2xl" aria-hidden="true">{"\u{1F4F2}"}</span>
+        <span style={{ color: accent }}><Icon name="install" size={20} /></span>
         <span className="flex-1">
-          <span className="block text-sm font-bold" style={{ color: accent }}>Put Vaeon on your home screen</span>
+          <span className="block font-display text-sm" style={{ color: accent }}>Put Vaeon on your home screen</span>
           <span className="block text-xs text-gray-300">
             Opens full screen with no browser bar. Takes about fifteen seconds.
           </span>
@@ -163,7 +164,7 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
           onClick={function () { setOpen(false); }}
         >
           <div
-            className="w-full max-w-sm rounded-3xl border border-white/15 p-5"
+            className="w-full max-w-sm rounded-lg border border-brand-line p-5"
             style={{ background: BRAND.surface }}
             onClick={function (e) { e.stopPropagation(); }}
             role="dialog"
@@ -171,7 +172,7 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
             aria-label="Add Vaeon to your home screen"
           >
             <div className="flex items-start justify-between gap-3 mb-1">
-              <p className="text-lg font-bold">Add Vaeon to your home screen</p>
+              <p className="font-display text-lg font-normal">Add Vaeon to your home screen</p>
               <button onClick={function () { setOpen(false); }} aria-label="Close" className="text-gray-500 text-2xl leading-none">
                 &times;
               </button>
@@ -185,11 +186,11 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
               <>
                 <ol className="space-y-3 mb-5">
                   <Step n="1" accent={accent}>Tap the button below.</Step>
-                  <Step n="2" accent={accent}>Confirm <span className="text-white font-bold">Install</span> when your phone asks.</Step>
+                  <Step n="2" accent={accent}>Confirm <span className="text-white font-display">Install</span> when your phone asks.</Step>
                 </ol>
                 <button
                   onClick={install}
-                  className="w-full py-4 rounded-2xl font-bold text-base mb-2"
+                  className="w-full py-4 rounded-md font-display text-base font-normal mb-2"
                   style={{ background: accent, color: BRAND.bg }}
                 >
                   Add to home screen
@@ -201,7 +202,7 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
                   <span className="inline-flex items-center gap-2 flex-wrap">
                     <span>Tap the Share button at the bottom of Safari. It is the square with an arrow coming out of the top:</span>
                     <span
-                      className="inline-flex items-center justify-center rounded-lg px-2 py-1"
+                      className="inline-flex items-center justify-center rounded-sm px-2 py-1"
                       style={{ background: "rgba(255,255,255,0.08)" }}
                     >
                       <ShareGlyph size={18} colour={accent} />
@@ -212,15 +213,15 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
                   Scroll down the list that slides up. It is a fair way down, past the sharing options.
                 </Step>
                 <Step n="3" accent={accent}>
-                  Tap <span className="text-white font-bold">Add to Home Screen</span>.
+                  Tap <span className="text-white font-display">Add to Home Screen</span>.
                 </Step>
                 <Step n="4" accent={accent}>
-                  Tap <span className="text-white font-bold">Add</span> in the top right. Vaeon appears on your home screen.
+                  Tap <span className="text-white font-display">Add</span> in the top right. Vaeon appears on your home screen.
                 </Step>
               </ol>
             )}
 
-            <button onClick={dismiss} className="w-full py-3 rounded-2xl text-xs text-gray-400 border border-white/10">
+            <button onClick={dismiss} className="w-full py-3 rounded-md text-xs text-gray-400 border border-brand-line">
               Not now, stop asking
             </button>
           </div>

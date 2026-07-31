@@ -113,7 +113,7 @@ const lastActivity = [lastSession, lastExercise].filter(Boolean).sort().pop() ||
 const occasion = occasionFor(lastActivity, stats.thisWeekCount, pledged);
 
 // Shared card. One radius, one border, one surface, all from the token layer rather than
-// a bg-white/5 written out by hand on twenty elements.
+// a bg-brand-surface written out by hand on twenty elements.
 const card = "rounded-md border p-4 mb-3";
 const cardStyle = { borderColor: BRAND.line, background: BRAND.surface };
 

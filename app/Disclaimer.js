@@ -43,7 +43,7 @@ export default function Disclaimer({ compact = false }) {
   return (
     <div className={body + " " + gap} style={{ color: "rgba(255,255,255,0.72)" }}>
       <div>
-        <h2 className="font-bold mb-1" style={{ color: BRAND.text }}>
+        <h2 className="font-display mb-1" style={{ color: BRAND.text }}>
           Before you train
         </h2>
         <p>
@@ -54,7 +54,7 @@ export default function Disclaimer({ compact = false }) {
       </div>
 
       <div>
-        <h2 className="font-bold mb-1" style={{ color: BRAND.text }}>
+        <h2 className="font-display mb-1" style={{ color: BRAND.text }}>
           Train within your limits
         </h2>
         <p>
@@ -66,7 +66,7 @@ export default function Disclaimer({ compact = false }) {
       </div>
 
       <div>
-        <h2 className="font-bold mb-1" style={{ color: BRAND.text }}>
+        <h2 className="font-display mb-1" style={{ color: BRAND.text }}>
           Get checked if you are unsure
         </h2>
         <p>
@@ -79,7 +79,7 @@ export default function Disclaimer({ compact = false }) {
       </div>
 
       <div>
-        <h2 className="font-bold mb-1" style={{ color: BRAND.text }}>
+        <h2 className="font-display mb-1" style={{ color: BRAND.text }}>
           The guidance is AI-generated
         </h2>
         <p>
@@ -92,7 +92,7 @@ export default function Disclaimer({ compact = false }) {
       </div>
 
       <div>
-        <h2 className="font-bold mb-1" style={{ color: BRAND.text }}>
+        <h2 className="font-display mb-1" style={{ color: BRAND.text }}>
           Where you already have a coach
         </h2>
         <p>

@@ -1,6 +1,30 @@
 import { TYPES } from "@/lib/personality";
 
-// Shared so the persons type shows up everywhere, not just on the assessment result.
+// The type orb.
+//
+// DELIBERATELY THREE-DIMENSIONAL, AND EXEMPT FROM THE FLAT RULE.
+//
+// Everything else in this app was flattened on purpose. Gradients came off every button,
+// every session header and every progress bar, because a gradient is two colours
+// pretending to be a brand and the mark is one flat weight of ink. That rule stops here.
+//
+// The orb is not chrome, it is the product. It is the single object that carries a user's
+// type: a physical thing with a light source, a specular highlight and a contact shadow,
+// in a colour pair nobody else on the leaderboard has. Flattening it to a coloured disc
+// would turn the one piece of the interface that belongs to a person into a status dot,
+// and the eight types are the whole argument for this app existing.
+//
+// It also does not fight the logo the way the old button gradients did. The mark is white
+// on black and never coloured; the orb is coloured and never white. They occupy different
+// registers on purpose, which is why one can be dimensional while the other stays graphic.
+//
+// So: keep the radial gradient, keep the highlight, keep the shadow. If a future pass
+// tries to "make the orbs consistent with the flat system", it has misread which of the
+// two things is the system.
+//
+// Shared so the person's type shows up everywhere, not just on the assessment result. The
+// assessment used to carry its own near-identical copy of this, which is precisely how one
+// of them ends up flattened and the other does not.
 export default function TypeOrb({ typeId, size }) {
   const t = TYPES[typeId];
   if (!t) return null;
@@ -33,7 +57,7 @@ export function TypeHeader({ typeId, subtitle }) {
     <div className="flex items-center gap-3">
       <TypeOrb typeId={typeId} size={44} />
       <div>
-        <p className="text-sm font-bold leading-tight">{t.name}</p>
+        <p className="font-display text-sm leading-tight">{t.name}</p>
         <p className="text-xs text-gray-400 leading-tight">{subtitle || t.tagline}</p>
       </div>
     </div>

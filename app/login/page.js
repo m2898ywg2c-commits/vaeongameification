@@ -34,7 +34,7 @@ export default function LoginPage() {
           <BrandLockup size={30} full />
         </div>
 
-        <h1 className="text-3xl font-bold mb-1">Welcome back</h1>
+        <h1 className="font-display text-3xl font-normal mb-1">Welcome back</h1>
         <p className="text-sm text-gray-400 mb-8">Log in to pick up where you left off.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -45,7 +45,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
+              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
             />
           </div>
           <div>
@@ -55,7 +55,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white outline-none focus:border-[#22D3EE]"
+              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
             />
             <div className="text-right mt-1">
               <a href="/forgot-password" className="text-xs text-gray-400 underline">Forgot password?</a>
@@ -65,8 +65,8 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-full font-bold text-sm"
-            style={{ background: "linear-gradient(90deg, #22D3EE, #3B82F6)", color: "#000000" }}
+            className="w-full py-3 rounded-sm font-display text-sm"
+            style={{ background: "#22D3EE", color: "#000000" }}
           >
             {loading ? "Logging in..." : "Log in"}
           </button>
@@ -78,14 +78,14 @@ export default function LoginPage() {
           <div className="flex-1 h-px bg-white/10" />
         </div>
 
-        <div className="rounded-2xl border border-white/15 bg-white/5 p-5 text-center">
-          <p className="text-lg font-bold mb-1">New here?</p>
+        <div className="rounded-md border border-brand-line bg-brand-surface p-5 text-center">
+          <p className="font-display text-lg font-normal mb-1">New here?</p>
           <p className="text-sm text-gray-300 mb-4">
             It takes about a minute. Tell us what you are training for and we will build the plan.
           </p>
           <a
             href="/signup"
-            className="block w-full py-3 rounded-full font-bold text-sm border-2"
+            className="block w-full py-3 rounded-sm font-display text-sm border"
             style={{ borderColor: "#22D3EE", color: "#22D3EE" }}
           >
             Create an account

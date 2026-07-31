@@ -44,30 +44,30 @@ const label = profile.fixed_days === false
 ? "Session " + (active + 1)
 : (day.dayLabel === SHORT[new Date().getDay()] ? "Today" : day.dayLabel);
 
-const panel = "w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 mb-3 text-left";
-const field = "w-full px-3 py-3 rounded-xl bg-white/10 border-2 border-white/15 text-base font-bold text-center text-white placeholder-gray-500";
+const panel = "w-full flex items-center justify-between rounded-md border border-brand-line bg-brand-surface p-4 mb-3 text-left";
+const field = "w-full px-3 py-3 rounded-md bg-white/10 border border-brand-line font-display text-base font-normal text-center text-white placeholder-gray-500";
 
 return (
 <>
-<div className="rounded-2xl p-5 mb-4" style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")" }}>
-<p className="text-xs font-bold uppercase tracking-wide opacity-80">{label}</p>
-<p className="text-2xl font-bold leading-tight">{day.title}</p>
+<div className="rounded-md p-5 mb-4" style={{ background: accent, color: "#000000" }}>
+<p className="font-display text-xs uppercase tracking-wide opacity-80">{label}</p>
+<p className="font-display text-2xl font-normal leading-tight">{day.title}</p>
 <p className="text-sm opacity-90 mt-1">{day.focus} &middot; {rule.focus}</p>
 </div>
 
 <a href={music.href} target="_blank" rel="noopener noreferrer"
-className="flex items-center justify-between rounded-2xl border p-4 mb-3"
+className="flex items-center justify-between rounded-md border p-4 mb-3"
 style={{ borderColor: "rgba(30,215,96,0.4)", background: "rgba(30,215,96,0.08)" }}>
 <span className="text-sm font-medium text-gray-200">{music.label}</span>
-<span className="text-xs font-bold flex-shrink-0 ml-3" style={{ color: "#1ED760" }}>Open Spotify</span>
+<span className="font-display text-xs flex-shrink-0 ml-3" style={{ color: "#1ED760" }}>Open Spotify</span>
 </a>
 
 <button onClick={function () { setOpenWarmup(!openWarmup); }} className={panel}>
-<span className="text-sm font-bold">Warm up</span>
+<span className="font-display text-sm">Warm up</span>
 <span className="text-xs text-gray-400">{openWarmup ? "Hide" : "Show"}</span>
 </button>
 {openWarmup ? (
-<div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-3">
+<div className="rounded-md border border-brand-line bg-brand-surface p-4 mb-3">
 {day.warmup.map(function (w, i) {
 return <p key={i} className="text-sm text-gray-300 mb-1">&middot; {w}</p>;
 })}
@@ -85,11 +85,11 @@ onComplete={onComplete} onReopen={onReopen} />
 })}
 
 {day.conditioning && day.conditioning.length ? (
-<div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-3">
+<div className="rounded-md border border-brand-line bg-brand-surface p-4 mb-3">
 <div className="flex items-center justify-between mb-1">
-<p className="text-xs font-bold uppercase tracking-wide" style={{ color: accent }}>10 minute finisher</p>
+<p className="font-display text-xs uppercase tracking-wide" style={{ color: accent }}>10 minute finisher</p>
 <a href={stationTunes.href} target="_blank" rel="noopener noreferrer"
-className="text-xs font-bold" style={{ color: "#1ED760" }}>Loud tunes</a>
+className="font-display text-xs" style={{ color: "#1ED760" }}>Loud tunes</a>
 </div>
 <p className="text-xs text-gray-400 mb-3">
 Optional. Does not count towards your score, and the session logs without it.
@@ -102,7 +102,7 @@ return (
 <div key={i} className="mb-4">
 <div className="flex items-center gap-2">
 {isLogged ? <span className="text-sm" style={{ color: "#3DDC97" }} aria-hidden="true">&#10003;</span> : null}
-<p className="text-sm font-bold">{c.name}</p>
+<p className="font-display text-sm">{c.name}</p>
 </div>
 <p className="text-xs text-gray-400 mb-2">{c.target} &middot; {c.note}</p>
 <div className="flex gap-2">
@@ -129,7 +129,7 @@ next[i] = true;
 return next;
 });
 }}
-className="px-5 rounded-xl font-bold text-sm flex-shrink-0"
+className="px-5 rounded-md font-display text-sm flex-shrink-0"
 style={{ background: isLogged ? "rgba(61,220,151,0.2)" : accent, color: isLogged ? "#3DDC97" : "#000000" }}
 >
 {isLogged ? "Logged" : "Log"}
@@ -145,13 +145,13 @@ style={{ background: isLogged ? "rgba(61,220,151,0.2)" : accent, color: isLogged
 <>
 <button onClick={function () { setOpenFlow(!openFlow); }} className={panel}>
 <span>
-<span className="text-sm font-bold block">{flow.name}</span>
+<span className="font-display text-sm block">{flow.name}</span>
 <span className="text-xs text-gray-400">Optional. Does not count towards your score.</span>
 </span>
 <span className="text-xs text-gray-400">{openFlow ? "Hide" : "Show"}</span>
 </button>
 {openFlow ? (
-<div className="rounded-2xl p-4 mb-3 border" style={{ borderColor: "rgba(61,220,151,0.35)", background: "rgba(61,220,151,0.08)" }}>
+<div className="rounded-md p-4 mb-3 border" style={{ borderColor: "rgba(61,220,151,0.35)", background: "rgba(61,220,151,0.08)" }}>
 {flow.moves.map(function (m, i) {
 return <p key={i} className="text-sm text-gray-300 mb-1">&middot; {m}</p>;
 })}
@@ -161,15 +161,15 @@ return <p key={i} className="text-sm text-gray-300 mb-1">&middot; {m}</p>;
 ) : null}
 
 {finished ? (
-<div className="rounded-2xl p-5 mb-6 text-center border-2" style={{ borderColor: accent, background: "rgba(255,255,255,0.04)" }}>
+<div className="rounded-md p-5 mb-6 text-center border" style={{ borderColor: accent, background: "rgba(255,255,255,0.04)" }}>
 <div className="flex justify-center mb-2"><TypeOrb typeId={tid} size={54} /></div>
-<p className="text-base font-bold">{sessionDone(tid)}</p>
+<p className="font-display text-base font-normal">{sessionDone(tid)}</p>
 <p className="text-xs text-gray-400 mt-1">Session logged.</p>
 <a href="/dashboard" className="inline-block mt-4 text-sm underline" style={{ color: accent }}>Back to dashboard</a>
 </div>
 ) : (
-<button onClick={onFinish} className="w-full py-5 rounded-2xl font-bold text-lg mb-6"
-style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", color: "#fff" }}>
+<button onClick={onFinish} className="w-full py-5 rounded-md font-display text-lg mb-6"
+style={{ background: accent, color: "#000000" }}>
 Finish session
 </button>
 )}

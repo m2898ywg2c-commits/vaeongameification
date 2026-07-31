@@ -124,10 +124,36 @@ no action. The copy engine behind it is untouched: `lib/reminders.js` still driv
 notification and the sender, so the miss response moved off the dashboard rather than being
 lost.
 
-**Restyle status.** Foundations plus the dashboard and the plan screen are done. Still on the
-old styling: leaderboard, progress, settings, onboarding, assessment, log, blockend, type,
-feedback, fallback. `app/InstallPrompt.js` and `app/ShareButton.js` each still carry one
-emoji.
+**Restyle status: complete.** Every screen is on the new system. The mechanical rules, so
+a new screen matches without anyone having to guess:
+
+- **Radius** `rounded-md` for cards and buttons, `rounded-sm` for chips and small controls,
+  `rounded-lg` only for a full-bleed panel. **No `rounded-full` except one**, the placeholder
+  standing in for a missing TypeOrb on the leaderboard, which has to be a circle because the
+  real orbs are.
+- **Borders** hairline `border` with `border-brand-line`. `border-2` no longer appears
+  anywhere; emphasis comes from colour, not from thickness.
+- **Surfaces** `bg-brand-surface`, not `bg-white/5` written out by hand.
+- **Weight** `font-bold` appears nowhere in `app/`. Headings and buttons take `font-display`,
+  which is Space Grotesk at 400. This is not only taste: the display face is loaded at
+  300/400/500 only, so a `font-bold` on one makes the browser synthesise a fake bold and it
+  looks smeared.
+- **Gradients are gone.** Every primary button, session header and progress bar was a
+  cyan-to-blue sweep. A gradient is two colours pretending to be a brand and the mark is one
+  flat weight of ink. `brandGradient()` in `lib/brand.js` is now unused and marked
+  deprecated rather than deleted, so a call site added from memory gets read instead of
+  quietly reintroducing it.
+- **Emoji: zero.** Audited across every file.
+- **The type orbs are exempt and stay three-dimensional.** Radial gradient, specular
+  highlight, contact shadow. They are not chrome, they are the product: the one object that
+  belongs to a person, in a colour pair nobody else on the board has. Flattening them to
+  coloured discs would turn the whole argument for this app into a status dot. They do not
+  fight the logo either, because the mark is white on black and never coloured while the orb
+  is coloured and never white. `app/TypeOrb.js` carries this in a comment, since the obvious
+  reading of "no gradients" is to flatten them next time.
+  The assessment screen used to carry its own near-identical copy of the orb, which is
+  exactly how one of two implementations ends up flattened and the other does not. It is
+  deduped: there is now one component.
 
 **Verifying a build locally will fail on fonts.** This sandbox has no route to Google Fonts,
 so `next/font` cannot fetch at build time here. Vercel can. To check a build, stub the two

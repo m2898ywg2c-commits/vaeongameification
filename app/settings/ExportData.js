@@ -103,15 +103,15 @@ export default function ExportData({ profile }) {
   if (!profile) return null;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 mb-4">
-      <p className="text-base font-bold mb-1">Your data</p>
+    <div className="rounded-md border border-brand-line bg-brand-surface p-5 mb-4">
+      <p className="font-display text-base font-normal mb-1">Your data</p>
       <p className="text-sm text-gray-300 mb-4">
         Everything Vaeon holds about you, in one file. Your profile, every session, every set,
         your measurements, your type and your kudos. It is yours and you can take it whenever
         you like.
       </p>
       <button onClick={run} disabled={busy}
-        className="block w-full py-4 rounded-full font-bold text-sm text-center border border-white/20">
+        className="block w-full py-4 rounded-sm font-display text-sm text-center border border-brand-line">
         {busy ? "Building your file..." : "Download my data"}
       </button>
       {error ? <p className="text-xs mt-2" style={{ color: "#FF6B57" }}>{error}</p> : null}

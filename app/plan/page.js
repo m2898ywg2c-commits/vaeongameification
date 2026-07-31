@@ -281,24 +281,24 @@ return (
 
 {showQuote ? (
 <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ background: "rgba(6,8,18,0.94)" }}>
-<div className="w-full max-w-sm rounded-3xl p-6 text-center border-2" style={{ borderColor: accent + "66", background: "#141A2E" }}>
+<div className="w-full max-w-sm rounded-lg p-6 text-center border" style={{ borderColor: accent + "66", background: "#141A2E" }}>
 <div className="flex justify-center mb-3"><TypeOrb typeId={tid} size={72} /></div>
-<p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: accent }}>{type ? type.name : "Your coach"}</p>
-<p className="text-lg font-bold leading-snug mb-4">{quoteFor(tid, active)}</p>
+<p className="font-display text-xs uppercase tracking-wide mb-3" style={{ color: accent }}>{type ? type.name : "Your coach"}</p>
+<p className="font-display text-lg font-normal leading-snug mb-4">{quoteFor(tid, active)}</p>
 {!gym ? <p className="text-xs text-gray-400 mb-5">{sessionIntro(tid, rule.label)}</p> : <p className="text-xs text-gray-400 mb-5">Log it as you go.</p>}
-<button onClick={function () { setShowQuote(false); }} className="w-full py-4 rounded-2xl font-bold"
-style={{ background: "linear-gradient(135deg, " + accent + ", " + deep + ")", color: "#fff" }}>Ready</button>
+<button onClick={function () { setShowQuote(false); }} className="w-full py-4 rounded-md font-display"
+style={{ background: accent, color: "#000000" }}>Ready</button>
 </div>
 </div>
 ) : null}
 
 {praise ? (
 <div className="fixed left-0 right-0 bottom-8 z-40 flex justify-center pointer-events-none">
-<div className="px-6 py-3 rounded-full font-bold shadow-lg" style={{ background: accent, color: "#000000" }}>{praise}</div>
+<div className="px-6 py-3 rounded-sm font-display shadow-lg" style={{ background: accent, color: "#000000" }}>{praise}</div>
 </div>
 ) : null}
 
-<a href="/dashboard" className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-bold text-base mb-4 border-2"
+<a href="/dashboard" className="flex items-center justify-center gap-2 w-full py-4 rounded-md font-display text-base font-normal mb-4 border"
 style={{ borderColor: accent + "66", background: "rgba(255,255,255,0.05)", color: accent }}>
 &#8592; Back to dashboard
 </a>
@@ -306,7 +306,7 @@ style={{ borderColor: accent + "66", background: "rgba(255,255,255,0.05)", color
 <div className="flex items-center gap-3 mb-4">
 <TypeOrb typeId={tid} size={40} />
 <div>
-<p className="text-sm font-bold leading-tight">{type ? type.name : "Your plan"}</p>
+<p className="font-display text-sm leading-tight">{type ? type.name : "Your plan"}</p>
 <p className="text-xs text-gray-400 leading-tight">
 Week {weekNo}/{blockWeeks}{gym ? "" : " · " + rule.label}
 </p>
@@ -314,8 +314,8 @@ Week {weekNo}/{blockWeeks}{gym ? "" : " · " + rule.label}
 </div>
 
 {isTestWeek ? (
-<div className="rounded-2xl border-2 p-4 mb-3" style={{ borderColor: accent + "66", background: accent + "12" }}>
-<p className="text-sm font-bold" style={{ color: accent }}>Testing week</p>
+<div className="rounded-md border p-4 mb-3" style={{ borderColor: accent + "66", background: accent + "12" }}>
+<p className="font-display text-sm" style={{ color: accent }}>Testing week</p>
 <p className="text-xs text-gray-300">
 Week one sets your baselines. On the main lifts, work up to a strong set you could stop with a rep or two left, and log what you used. Every block after this builds off those real numbers.
 </p>
@@ -323,15 +323,15 @@ Week one sets your baselines. On the main lifts, work up to a strong set you cou
 ) : null}
 
 {noBaselines && !isTestWeek ? (
-<a href="/settings" className="block rounded-2xl border-2 p-4 mb-3" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.10)" }}>
-<p className="text-sm font-bold" style={{ color: "#FFB020" }}>Enter your starting weights first</p>
+<a href="/settings" className="block rounded-md border p-4 mb-3" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.10)" }}>
+<p className="font-display text-sm" style={{ color: "#FFB020" }}>Enter your starting weights first</p>
 <p className="text-xs text-gray-300">No idea what they are? We explain it in bags of sugar.</p>
 </a>
 ) : null}
 
 {freestyle && !gym ? (
-<div className="rounded-2xl border-2 p-4 mb-3" style={{ borderColor: accent + "44", background: accent + "0D" }}>
-<p className="text-sm font-bold" style={{ color: accent }}>Your sessions this week</p>
+<div className="rounded-md border p-4 mb-3" style={{ borderColor: accent + "44", background: accent + "0D" }}>
+<p className="font-display text-sm" style={{ color: accent }}>Your sessions this week</p>
 <p className="text-xs text-gray-300">
 Pick whichever one you fancy today. They all count the same, the order is yours, and
 anything you have already done is ticked off below.
@@ -357,7 +357,7 @@ track(supabase, EVENTS.DAY_OPENED, {
 day_key: d.key, index: i, week: weekNo, freestyle: freestyle, already_done: doneAlready,
 });
 }}
-className="px-4 py-3 rounded-xl text-sm font-bold flex-shrink-0 border"
+className="px-4 py-3 rounded-md font-display text-sm flex-shrink-0 border"
 style={on ? { background: accent, color: "#000000", borderColor: accent }
 : { background: "rgba(255,255,255,0.05)", color: doneAlready ? "#64748b" : "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>
 {label}

@@ -130,11 +130,11 @@ export default function AchievementWatcher({ profile }) {
             margin: "0 auto",
           }}
         >
-          <div className="rounded-2xl border border-white/15 bg-[#161B33] p-4 flex items-center gap-4 shadow-2xl">
+          <div className="rounded-md border border-brand-line bg-[#161B33] p-4 flex items-center gap-4 shadow-2xl">
             <Badge a={current} earned={true} size={52} />
             <div className="flex-1">
               <p className="text-[10px] uppercase tracking-wide text-gray-400">Achievement unlocked</p>
-              <p className="text-sm font-bold">{current.name}</p>
+              <p className="font-display text-sm">{current.name}</p>
               <p className="text-xs text-gray-400">{current.blurb}</p>
             </div>
             <button
@@ -147,7 +147,7 @@ export default function AchievementWatcher({ profile }) {
         </div>
       ) : null}
 
-      <div className="rounded-xl border border-white/10 bg-white/5 p-5 mb-4">
+      <div className="rounded-md border border-brand-line bg-brand-surface p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs uppercase tracking-wide text-gray-400">
             Achievements {ready ? earned.length + " of " + ACHIEVEMENTS.length : ""}
@@ -170,7 +170,7 @@ export default function AchievementWatcher({ profile }) {
                 <div key={a.code} className="flex items-center gap-3">
                   <Badge a={a} earned={has} />
                   <div className="flex-1">
-                    <p className={has ? "text-sm font-bold" : "text-sm font-bold text-gray-500"}>
+                    <p className={has ? "font-display text-sm" : "font-display text-sm text-gray-500"}>
                       {a.name}
                     </p>
                     <p className="text-xs text-gray-500">{has ? a.blurb : a.hint}</p>
@@ -202,7 +202,7 @@ export default function AchievementWatcher({ profile }) {
                     <div key={a.code} className="flex items-center gap-3 mb-2">
                       <Badge a={a} earned={false} size={32} />
                       <div>
-                        <p className="text-xs font-bold text-gray-300">{a.name}</p>
+                        <p className="font-display text-xs text-gray-300">{a.name}</p>
                         <p className="text-xs text-gray-500">{a.hint}</p>
                       </div>
                     </div>

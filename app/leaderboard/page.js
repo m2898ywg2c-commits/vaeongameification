@@ -136,13 +136,13 @@ const accent = t ? t.colors[0] : "#22D3EE";
 return (
 <div
 key={r.user_id}
-className={"rounded-2xl border p-4 " + (mine ? "border-white/40 bg-white/15" : "border-white/10 bg-white/5")}
+className={"rounded-md border p-4 " + (mine ? "border-white/40 bg-white/15" : "border-brand-line bg-brand-surface")}
 >
 <div className="flex items-center gap-3">
-<span className="text-sm font-bold w-5 text-gray-400">{rankIndex + 1}</span>
+<span className="font-display text-sm w-5 text-gray-400">{rankIndex + 1}</span>
 {t ? <TypeOrb typeId={r.type_id} size={38} /> : <span className="w-[38px] h-[38px] rounded-full bg-white/10 inline-block" />}
 <div className="flex-1 min-w-0">
-<p className="text-sm font-bold truncate">
+<p className="font-display text-sm truncate">
 {r.screen_name}{mine ? " (you)" : ""}
 </p>
 <p className="text-xs text-gray-400">
@@ -150,7 +150,7 @@ className={"rounded-2xl border p-4 " + (mine ? "border-white/40 bg-white/15" : "
 </p>
 </div>
 <div className="text-right">
-<p className="text-lg font-bold leading-none">{r.score}</p>
+<p className="font-display text-lg font-normal leading-none">{r.score}</p>
 {r.kudos_count > 0 ? <p className="text-[11px] text-gray-400 mt-1">👏 {r.kudos_count}</p> : null}
 </div>
 </div>
@@ -164,7 +164,7 @@ return (
 <button
 key={em}
 onClick={function () { sendKudos(r.user_id, em); }}
-className="text-xl w-9 h-9 rounded-full border border-white/15 bg-white/5"
+className="text-xl w-9 h-9 rounded-sm border border-brand-line bg-brand-surface"
 style={gave && gave.emoji === em ? { borderColor: accent, background: accent + "22" } : null}
 >
 {em}
@@ -185,7 +185,7 @@ return (
 <button
 key={n.code}
 onClick={function () { sendNote(r.user_id, n.code); }}
-className="w-full text-left text-xs px-3 py-2.5 rounded-xl border"
+className="w-full text-left text-xs px-3 py-2.5 rounded-md border"
 style={{
 borderColor: on ? accent : "rgba(255,255,255,0.12)",
 background: on ? accent + "22" : "rgba(255,255,255,0.04)",
@@ -204,7 +204,7 @@ No thanks, just the emoji
 <div>
 <button
 onClick={function () { setPickerFor(r.user_id); }}
-className="text-xs font-bold px-3 py-1.5 rounded-full border"
+className="font-display text-xs px-3 py-1.5 rounded-sm border"
 style={{ borderColor: accent + "55", color: accent, background: accent + "12" }}
 >
 {gave ? "Sent " + gave.emoji + " · change" : "＋ Send kudos"}
@@ -232,7 +232,7 @@ return (
 <div className="max-w-md mx-auto">
 <div className="mb-6"><Home accent={myTypeColour} /></div>
 
-<h1 className="text-2xl font-bold mb-2">This block</h1>
+<h1 className="font-display text-2xl font-normal mb-2">This block</h1>
 <p className="text-sm text-gray-300 mb-5">
 Scored on how much of your own pledge you have hit so far this block, not raw counts,
 so someone in week one is compared fairly with someone near the end. Blocks are six
@@ -251,14 +251,14 @@ So Solo types get told, in their own terms, that stepping off is available. Ever
 else gets the same option in smaller print. Off the board still means full access to
 it, including sending and receiving kudos. See supabase/leaderboard_opt_in.sql. */}
 {meId && !onBoard ? (
-<div className="rounded-2xl border-2 p-4 mb-4" style={{ borderColor: myTypeColour + "55", background: myTypeColour + "12" }}>
-<p className="text-sm font-bold mb-1" style={{ color: myTypeColour }}>You are hidden from the rankings</p>
+<div className="rounded-md border p-4 mb-4" style={{ borderColor: myTypeColour + "55", background: myTypeColour + "12" }}>
+<p className="font-display text-sm mb-1" style={{ color: myTypeColour }}>You are hidden from the rankings</p>
 <p className="text-xs text-gray-300 mb-3">
 You asked to be left off the board. You can still see everyone and send kudos, and
 you can come back on whenever you like.
 </p>
 <button onClick={function () { setBoardVisibility(true); }} disabled={joining}
-className="w-full py-3 rounded-full font-bold text-sm"
+className="w-full py-3 rounded-sm font-display text-sm"
 style={{ background: myTypeColour, color: "#000000" }}>
 {joining ? "Joining..." : "Put me back on the board"}
 </button>
@@ -266,13 +266,13 @@ style={{ background: myTypeColour, color: "#000000" }}>
 ) : null}
 
 {meId && onBoard && soloUndecided ? (
-<div className="rounded-2xl border p-4 mb-4" style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)" }}>
+<div className="rounded-md border p-4 mb-4" style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)" }}>
 <p className="text-xs text-gray-300 mb-2">
 The {TYPES[myType].name.replace("The ", "")} trains best alone, so if being ranked is not
 for you, step off. You keep the board, the kudos and everything else.
 </p>
 <button onClick={function () { setBoardVisibility(false); }} disabled={joining}
-className="text-xs font-bold underline" style={{ color: myTypeColour }}>
+className="font-display text-xs underline" style={{ color: myTypeColour }}>
 {joining ? "Hiding..." : "Hide me from the rankings"}
 </button>
 </div>
@@ -289,7 +289,7 @@ Hide me from the rankings
 <div className="grid grid-cols-2 gap-2 mb-4">
 <button
 onClick={function () { setFilter("all"); setExpanded(false); }}
-className="py-2.5 rounded-full border text-sm font-bold"
+className="py-2.5 rounded-sm border font-display text-sm"
 style={{
 borderColor: filter === "all" ? myTypeColour : "rgba(255,255,255,0.12)",
 background: filter === "all" ? myTypeColour + "22" : "rgba(255,255,255,0.04)",
@@ -300,7 +300,7 @@ Everyone
 <button
 onClick={function () { if (myType) { setFilter("mine"); setExpanded(false); } }}
 disabled={!myType}
-className="py-2.5 rounded-full border text-sm font-bold"
+className="py-2.5 rounded-sm border font-display text-sm"
 style={{
 borderColor: filter === "mine" ? myTypeColour : "rgba(255,255,255,0.12)",
 background: filter === "mine" ? myTypeColour + "22" : "rgba(255,255,255,0.04)",
@@ -333,7 +333,7 @@ My fellow {myType && TYPES[myType] ? TYPES[myType].name.replace("The ", "") + "s
 {visible.length > TOP_N ? (
 <button
 onClick={function () { setExpanded(!expanded); }}
-className="w-full mt-3 py-3 rounded-full border text-sm font-bold"
+className="w-full mt-3 py-3 rounded-sm border font-display text-sm"
 style={{ borderColor: myTypeColour + "55", color: myTypeColour, background: myTypeColour + "12" }}
 >
 {expanded ? "Show top " + TOP_N + " only" : "Show all " + visible.length}

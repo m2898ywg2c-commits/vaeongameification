@@ -52,7 +52,7 @@ export default function ReminderSettings({ profile, accent }) {
   }, [profile, chrono]);
 
   const tone = accent || "#22D3EE";
-  const card = "rounded-2xl border border-white/10 bg-white/5 p-5 mb-4";
+  const card = "rounded-md border border-brand-line bg-brand-surface p-5 mb-4";
 
   // iPhone in a browser tab is the one case worth calling out before somebody taps.
   // Safari has the APIs and will simply never deliver, so an unexplained silence is the
@@ -101,7 +101,7 @@ export default function ReminderSettings({ profile, accent }) {
 
   return (
     <div className={card}>
-      <p className="text-base font-bold mb-1">Reminders</p>
+      <p className="font-display text-base font-normal mb-1">Reminders</p>
 
       <p className="text-sm text-gray-300 mb-4">
         {chrono
@@ -113,7 +113,7 @@ export default function ReminderSettings({ profile, accent }) {
         <button
           onClick={function () { persist(true, hour, minute); }}
           disabled={saving}
-          className="flex-1 py-4 rounded-full font-bold text-sm border"
+          className="flex-1 py-4 rounded-sm font-display text-sm border"
           style={enabled
             ? { background: tone, color: "#000000", borderColor: tone }
             : { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.2)" }}>
@@ -122,7 +122,7 @@ export default function ReminderSettings({ profile, accent }) {
         <button
           onClick={function () { persist(false, hour, minute); }}
           disabled={saving || !enabled}
-          className="flex-1 py-4 rounded-full font-bold text-sm border"
+          className="flex-1 py-4 rounded-sm font-display text-sm border"
           style={{ background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.2)", opacity: enabled ? 1 : 0.4 }}>
           Turn off
         </button>
@@ -139,7 +139,7 @@ export default function ReminderSettings({ profile, accent }) {
                 setMinute(s.minute);
                 if (enabled) persist(true, s.hour, s.minute);
               }}
-              className="px-3 py-2 rounded-xl text-xs font-bold flex-shrink-0 border"
+              className="px-3 py-2 rounded-md font-display text-xs flex-shrink-0 border"
               style={on
                 ? { background: tone, color: "#000000", borderColor: tone }
                 : { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>

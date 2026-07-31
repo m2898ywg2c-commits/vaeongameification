@@ -109,7 +109,7 @@ function LineChart({ points, accent, unit }) {
         ) : null}
       </svg>
       <p className="text-sm text-gray-300 mt-1">
-        Latest <span className="font-bold text-white">{round1(last.y)}{unit}</span>
+        Latest <span className="font-display text-white">{round1(last.y)}{unit}</span>
         {points.length > 1 ? <span>{" "}&middot; {deltaText(first.y, last.y, first.label, unit)}</span> : null}
       </p>
     </div>
@@ -258,7 +258,7 @@ export default function ProgressPage() {
   })();
 
   const activeTrend = trends.filter(function (t) { return t.name === active; })[0];
-  const card = "rounded-2xl border border-white/10 bg-white/5 p-5 mb-4";
+  const card = "rounded-md border border-brand-line bg-brand-surface p-5 mb-4";
 
   return (
     <main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
@@ -268,7 +268,7 @@ export default function ProgressPage() {
           <a href="/dashboard" className="text-xs text-gray-400 underline">Back</a>
         </div>
 
-        <h1 className="text-2xl font-bold mb-6">Progress</h1>
+        <h1 className="font-display text-2xl font-normal mb-6">Progress</h1>
 
         {loading ? (
           <p className="text-sm text-gray-400">Getting your numbers...</p>
@@ -276,7 +276,7 @@ export default function ProgressPage() {
           <div>
             {/* ---------- Sessions per week ---------- */}
             <div className={card}>
-              <p className="text-base font-bold mb-1">Sessions per week</p>
+              <p className="font-display text-base font-normal mb-1">Sessions per week</p>
               <p className="text-sm text-gray-300 mb-4">
                 {sessions.length === 0
                   ? "Nothing logged yet."
@@ -293,7 +293,7 @@ export default function ProgressPage() {
 
             {/* ---------- Lifts ---------- */}
             <div className={card}>
-              <p className="text-base font-bold mb-1">Lift progression</p>
+              <p className="font-display text-base font-normal mb-1">Lift progression</p>
               <p className="text-sm text-gray-300 mb-4">{summary}</p>
 
               {exercises.length === 0 ? (
@@ -307,7 +307,7 @@ export default function ProgressPage() {
                         <button
                           key={name}
                           onClick={function () { setPicked(name); }}
-                          className="px-3 py-2 rounded-full border text-xs font-bold"
+                          className="px-3 py-2 rounded-sm border font-display text-xs"
                           style={{
                             borderColor: on ? accent : "rgba(255,255,255,0.12)",
                             background: on ? accent + "22" : "rgba(255,255,255,0.05)",
@@ -326,8 +326,8 @@ export default function ProgressPage() {
                   )}
 
                   {activeTrend ? (
-                    <div className="mt-4 rounded-xl bg-black/25 p-4">
-                      <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: STATUS_COLOUR[activeTrend.status] }}>
+                    <div className="mt-4 rounded-md bg-black/25 p-4">
+                      <p className="font-display text-xs uppercase tracking-wide mb-1" style={{ color: STATUS_COLOUR[activeTrend.status] }}>
                         {STATUS_WORD[activeTrend.status]}
                       </p>
                       <p className="text-sm text-gray-200">{activeTrend.message}</p>
@@ -339,7 +339,7 @@ export default function ProgressPage() {
 
             {/* ---------- Bodyweight ---------- */}
             <div className={card}>
-              <p className="text-base font-bold mb-1">Bodyweight</p>
+              <p className="font-display text-base font-normal mb-1">Bodyweight</p>
               <p className="text-sm text-gray-300 mb-4">
                 {bwPoints.length < 2
                   ? "Needs a couple of entries before a line means anything."
