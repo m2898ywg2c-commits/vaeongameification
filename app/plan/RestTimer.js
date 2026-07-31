@@ -24,7 +24,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { registerWorker } from "@/lib/push";
-import { TRACK } from "@/lib/brand";
+import { BRAND, TRACK } from "@/lib/brand";
 import Icon from "../Icon";
 
 const KEY = "vaeon-rest-until";
@@ -85,6 +85,8 @@ export default function RestTimer({ accent }) {
 
   const remaining = end > now ? Math.ceil((end - now) / 1000) : 0;
   const running = remaining > 0;
+  // The last ten seconds, and the only window in which this bar raises its voice.
+  const ending = running && remaining <= 10;
 
   const start = useCallback(function (secs) {
     const until = Date.now() + secs * 1000;
@@ -144,66 +146,70 @@ export default function RestTimer({ accent }) {
           background: "linear-gradient(to top, #000000 65%, rgba(0,0,0,0))",
         }}>
         <div className="max-w-md mx-auto">
-          {/* FILLED IN THE USER'S TYPE COLOUR, BOTH STATES.
-              An outlined bar on a black page against black cards is almost invisible, and
-              a rest timer nobody notices is a rest timer nobody uses. A solid block in the
-              accent is the same treatment the workout button gets, which is correct: while
-              a session is open this is the second most important control on the screen.
+          {/* QUIET UNTIL IT MATTERS.
+              This has now been both extremes and neither was right. Outlined throughout
+              was too easy to miss on a black page against black cards. Filled throughout
+              was worse: a saturated block parked at the bottom of the screen for ninety
+              seconds while you scroll through exercises is not visible, it is nagging.
 
-              Black content on the fill throughout. Every one of the eight type accents is
-              a mid-bright colour, so black clears contrast on all of them, and the app
-              already relies on that for the workout button and the complete button. Do not
-              introduce a dark type accent without revisiting this. */}
+              So the bar stays quiet for almost all of its life and earns the accent only
+              in the last ten seconds, which is precisely the moment somebody wants to look
+              up. Brief, purposeful, and it means the colour actually carries information
+              rather than just being loud.
+
+              No pulse or flash. A colour change is enough, and anything animated would put
+              back exactly the distraction this is fixing. */}
           {running ? (
-            <div className="flex items-center gap-2.5 rounded-md p-2.5" style={{ background: tone, color: "#000000" }}>
-              <Icon name="clock" size={16} />
+            <div className="flex items-center gap-2.5 rounded-md border p-2.5"
+              style={ending
+                ? { background: tone, color: "#000000", borderColor: tone }
+                : { background: BRAND.surface, borderColor: tone + "66" }}>
+              <span style={ending ? undefined : { color: tone }}><Icon name="clock" size={16} /></span>
               {/* Display face and tabular figures. A proportional 1 is narrower than a 4,
                   so a proportional countdown visibly jiggles once a second, which is the
                   one place in the app where that is impossible not to notice. */}
-              <span className="font-display text-2xl leading-none">
+              <span className="font-display text-2xl leading-none" style={ending ? undefined : { color: tone }}>
                 {mm}:{String(ss).padStart(2, "0")}
               </span>
-              <p className="flex-1 text-[10px] leading-tight" style={{ color: "rgba(0,0,0,0.6)" }}>
-                Carries on if you lock the phone
+              <p className="flex-1 text-[10px] leading-tight"
+                style={{ color: ending ? "rgba(0,0,0,0.6)" : BRAND.dim }}>
+                {ending ? "Almost up" : "Carries on if you lock the phone"}
               </p>
               <button onClick={function () { start(length + 30); }}
                 className="text-[11px] px-3 py-2 rounded-sm border"
-                style={{ borderColor: "rgba(0,0,0,0.35)" }}>
+                style={{ borderColor: ending ? "rgba(0,0,0,0.35)" : BRAND.lineStrong }}>
                 +30s
               </button>
               <button onClick={stop}
-                className="text-[11px] px-3 py-2 rounded-sm"
-                style={{ background: "#000000", color: tone }}>
+                className="text-[11px] px-3 py-2 rounded-sm border"
+                style={{ borderColor: ending ? "rgba(0,0,0,0.35)" : BRAND.lineStrong }}>
                 Stop
               </button>
             </div>
           ) : (
-            <div className="rounded-md p-2" style={{ background: tone, color: "#000000" }}>
+            <div className="rounded-md border p-2" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
               <div className="flex items-center gap-2">
                 <button onClick={function () { start(length); }}
-                  className="flex-1 py-2.5 rounded-sm text-xs uppercase flex items-center justify-center gap-2 font-display"
-                  style={{ letterSpacing: TRACK.label }}>
+                  className="flex-1 py-2.5 rounded-sm text-xs uppercase border flex items-center justify-center gap-2"
+                  style={{ borderColor: tone + "55", color: tone, letterSpacing: TRACK.label }}>
                   <Icon name="clock" size={14} />
                   Rest {length}s
                 </button>
                 <button onClick={function () { setOpen(!open); }}
                   className="px-3 py-2.5 rounded-sm text-[11px] uppercase border"
-                  style={{ borderColor: "rgba(0,0,0,0.35)", letterSpacing: "0.16em" }}>
+                  style={{ borderColor: BRAND.line, color: BRAND.muted, letterSpacing: "0.16em" }}>
                   {open ? "Close" : "Change"}
                 </button>
               </div>
               {open ? (
-                // On the fill, the selected preset inverts to black rather than lighting
-                // up: on a coloured block, "darker" is the only direction left to signal
-                // selection with.
                 <div className="flex gap-2 mt-2">
                   {PRESETS.map(function (p) {
                     return (
                       <button key={p} onClick={function () { start(p); }}
                         className="flex-1 py-2 rounded-sm text-xs font-display border"
                         style={p === length
-                          ? { background: "#000000", color: tone, borderColor: "#000000" }
-                          : { borderColor: "rgba(0,0,0,0.35)", color: "#000000" }}>
+                          ? { background: tone, color: "#000000", borderColor: tone }
+                          : { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>
                         {p < 60 ? p + "s" : (p / 60) + "m"}
                       </button>
                     );
