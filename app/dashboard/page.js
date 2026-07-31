@@ -7,13 +7,12 @@ import { weeksFor } from "@/lib/progression";
 import { isGymReady, blockWeeksFor, currentWeekIn, blockCompleteIn } from "@/lib/gymready";
 import SignOutButton from "./SignOutButton";
 import AchievementWatcher from "./AchievementWatcher";
-import InstallPrompt from "../InstallPrompt";
 import KudosCard from "./KudosCard";
 import TypeOrb from "../TypeOrb";
 import ShareButton from "../ShareButton";
 import Track from "../Track";
-import ReminderCard from "./ReminderCard";
 import ChallengeCard from "./ChallengeCard";
+import ToDo from "./ToDo";
 import Icon from "../Icon";
 import { BRAND, TRACK } from "@/lib/brand";
 import { EVENTS } from "@/lib/events";
@@ -141,35 +140,54 @@ return (
 <Track name={EVENTS.REMINDER_OPENED} once userId={user.id} typeId={typeId} framing={profile.framing} props={{ occasion: occasion }} />
 ) : null}
 
-{/* THE PRIMARY ACTION, FIRST.
-Everything else on this dashboard is context for this one button. It used to sit
-below the banners, the install prompt and the challenge, which meant the single
-thing the app wants somebody to do was the fifth thing they saw and often below
-the fold. Nothing above it now except who they are. */}
-<p className="rule-label mb-2">{profile.fixed_days === false ? "Next up" : today}</p>
+{/* SETUP TASKS FIRST, BECAUSE THEY END.
+Starting weights, this week's measurements and the install offer are jobs with a
+finish line, and each one disappears the moment it is done. Grouped, counted and
+placed above the workout button they read as a short list to clear. Left loose below
+it, as they were, an amber card about starting weights read as permanent furniture. */}
+<ToDo accent={accent} needsBaselines={noBaselines} needsMetrics={!thisWeekMetrics} />
 
-{/* The gradient slab is gone. A saturated fill with white text on it was the loudest
-thing on the screen and it belonged to a different brand: the mark is a thin outline,
-so the primary action is now a thin outline too. It still reads first because it is
-the only accent-bordered element above the fold, which is a quieter way of being
-loud. */}
-<a href="/plan" className="flex items-center gap-3 rounded-md p-4 mb-4 border"
-style={{ borderColor: accent, background: accent + "0F" }}>
+<p className="rule-label rule-label-left mb-2">{profile.fixed_days === false ? "Next up" : today}</p>
+
+{/* Filled, not outlined. The outline version was quieter than the cards around it and
+lost the argument: this is the one thing the app wants somebody to do, and on a black
+screen a solid accent block is how you say so. The gradient is gone though, and the
+type is display weight 400 rather than bold, so it carries the brand rather than
+shouting over it. */}
+<a href="/plan" className="flex items-center gap-3 rounded-md p-5 mb-3"
+style={{ background: accent, color: "#000000" }}>
 <div className="flex-1">
-<p className="font-display text-xl font-normal leading-tight text-white">Today&rsquo;s workout</p>
-<p className="text-xs mt-0.5" style={{ color: BRAND.muted }}>Open and start logging</p>
+<p className="font-display text-2xl font-normal leading-none">Today&rsquo;s workout</p>
+<p className="text-xs mt-1.5" style={{ color: "rgba(0,0,0,0.65)" }}>Open and start logging</p>
 </div>
-<span style={{ color: accent }}><Icon name="arrow" size={20} /></span>
+<Icon name="arrow" size={22} />
 </a>
 
-<ReminderCard occasion={occasion} typeId={typeId} framing={profile.framing} accent={accent} />
+{/* WHERE YOU ARE IN THE BLOCK, DIRECTLY UNDER THE BUTTON, PERMANENTLY.
+This is the context for the thing you are about to do: which week, what that week is
+for, and what changes in it. It was sitting near the bottom under the kudos card,
+which meant the answer to "why is today heavy" was four scrolls away from today. It
+is not a task and it never completes, so unlike the To do group it stays put. */}
+<div className="rounded-md border p-4 mb-3" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
+<div className="flex items-center justify-between mb-1.5">
+<p className="font-display text-sm">Block {profile.block_number || 1} &middot; Week {weekNo}/{blockWeeks}</p>
+{/* Was a full pill. Nothing in this app is a pill any more: the mark has no curve in
+it anywhere and a lozenge next to it always looked borrowed. */}
+{!gym ? (
+<span className="text-[9px] uppercase px-2 py-1 rounded-sm border"
+style={{ borderColor: accent + "55", color: accent, letterSpacing: TRACK.label }}>{rule.label}</span>
+) : null}
+</div>
+<p className="text-xs leading-relaxed" style={{ color: BRAND.muted }}>
+{gym
+? "Your coach sets the training. Vaeon counts the sessions and reports back at the end of the block."
+: rule.increase}
+</p>
+{finished ? <a href="/blockend" className="text-xs underline block mt-2" style={{ color: "#3DDC97" }}>Block complete. See your summary and start the next one.</a> : null}
+{!profile.block_start ? <a href="/settings" className="text-xs underline block mt-2" style={{ color: "#FFB020" }}>Set your block start date</a> : null}
+</div>
 
-{/* Directly under the action and the nudge, ahead of the housekeeping banners. The
-shared goal is the reason to open the app a second time this week, and it was
-sitting below three prompts about baselines and measurements. */}
 <ChallengeCard challenge={challenge} accent={accent} />
-
-<InstallPrompt accent={accent} />
 
 {finished ? (
 <a href="/blockend" className="flex items-center gap-3 rounded-md border p-4 mb-3" style={{ borderColor: "#3DDC97", background: "rgba(61,220,151,0.08)" }}>
@@ -179,28 +197,6 @@ sitting below three prompts about baselines and measurements. */}
 <p className="text-xs text-gray-300">See your {blockWeeks}-week summary and roll straight into the next one.</p>
 </div>
 <span style={{ color: "#3DDC97" }}>&rsaquo;</span>
-</a>
-) : null}
-
-{noBaselines ? (
-<a href="/settings" className="flex items-center gap-3 rounded-md border p-4 mb-3" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.08)" }}>
-<span style={{ color: "#FFB020" }}><Icon name="alert" size={20} /></span>
-<div className="flex-1">
-<p className="font-display text-sm" style={{ color: "#FFB020" }}>Set your starting weights</p>
-<p className="text-xs text-gray-300">Takes a minute. No idea what they are? We will help.</p>
-</div>
-<span style={{ color: "#FFB020" }}>&rsaquo;</span>
-</a>
-) : null}
-
-{!thisWeekMetrics ? (
-<a href="/settings" className="flex items-center gap-3 rounded-md border p-4 mb-3" style={{ borderColor: accent, background: accent + "0F" }}>
-<span style={{ color: accent }}><Icon name="ruler" size={20} /></span>
-<div className="flex-1">
-<p className="font-display text-sm" style={{ color: accent }}>Log this week&rsquo;s stats</p>
-<p className="text-xs text-gray-300">Weight and measurements. Takes twenty seconds and makes your charts worth reading.</p>
-</div>
-<span style={{ color: accent }}>&rsaquo;</span>
 </a>
 ) : null}
 
@@ -281,25 +277,6 @@ a streak quietly propped up by a week you did not train would be a lie told kind
 
 {/* ---------- Kudos received ---------- */}
 <KudosCard kudos={myKudos} accent={accent} />
-
-<div className="rounded-md border p-4 mb-5" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
-<div className="flex items-center justify-between mb-1.5">
-<p className="font-display text-sm">Block {profile.block_number || 1} &middot; Week {weekNo}/{blockWeeks}</p>
-{/* Was a full pill. Nothing in this app is a pill any more: the mark has no curve in
-it anywhere and a lozenge next to it always looked borrowed. */}
-{!gym ? (
-<span className="text-[9px] uppercase px-2 py-1 rounded-sm border"
-style={{ borderColor: accent + "55", color: accent, letterSpacing: TRACK.label }}>{rule.label}</span>
-) : null}
-</div>
-<p className="text-xs leading-relaxed" style={{ color: BRAND.muted }}>
-{gym
-? "Your coach sets the training. Vaeon counts the sessions and reports back at the end of the block."
-: rule.increase}
-</p>
-{finished ? <a href="/blockend" className="text-xs underline block mt-2" style={{ color: "#3DDC97" }}>Block complete. See your summary and start the next one.</a> : null}
-{!profile.block_start ? <a href="/settings" className="text-xs underline block mt-2" style={{ color: "#FFB020" }}>Set your block start date</a> : null}
-</div>
 
 <AchievementWatcher profile={plain} />
 

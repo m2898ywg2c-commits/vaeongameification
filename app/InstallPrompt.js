@@ -69,7 +69,11 @@ function Step({ n, children, accent }) {
   );
 }
 
-export default function InstallPrompt({ accent = BRAND.accent }) {
+// onShow is optional and reports whether this component is actually offering anything.
+// The to-do heading above it needs to count this item, and only the browser knows whether
+// there is an install to offer: already installed, never fired beforeinstallprompt, or
+// dismissed in the last fortnight all mean nothing renders here.
+export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
   const [mode, setMode] = useState(null);
   const [deferred, setDeferred] = useState(null);
   const [open, setOpen] = useState(false);
@@ -126,6 +130,12 @@ export default function InstallPrompt({ accent = BRAND.accent }) {
     });
     dismiss();
   };
+
+  // Reported through an effect rather than during render, because calling a parent's
+  // setState mid-render is the classic way to produce an update-during-render warning.
+  useEffect(function () {
+    if (onShow) onShow(Boolean(mode));
+  }, [mode, onShow]);
 
   if (!mode) return null;
 

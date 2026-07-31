@@ -111,6 +111,19 @@ the real artwork onto a 226x188 box. `BrandLockup` has two shapes — compact (m
 "Vaeon") for the 34px bar, and `full` (adds the rule-flanked FITNESS line) for login,
 signup and splash.
 
+**Dashboard order, and why.** Top to bottom: who you are, the To do group, today's date as
+a rule label, the workout button, where you are in the block, the group challenge, then
+everything else. The rule is that **tasks which end sit above the action, and context which
+never ends sits below it**. `app/dashboard/ToDo.js` groups the setup jobs under a counted
+heading so they read as a list to clear rather than permanent furniture; each disappears
+when done. The block line moved up from near the bottom because it answers "why is today
+heavy", which was four scrolls from today.
+
+`ReminderCard.js` is **deleted**. It restated what the workout button already said and gave
+no action. The copy engine behind it is untouched: `lib/reminders.js` still drives the push
+notification and the sender, so the miss response moved off the dashboard rather than being
+lost.
+
 **Restyle status.** Foundations plus the dashboard and the plan screen are done. Still on the
 old styling: leaderboard, progress, settings, onboarding, assessment, log, blockend, type,
 feedback, fallback. `app/InstallPrompt.js` and `app/ShareButton.js` each still carry one
