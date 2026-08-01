@@ -54,7 +54,7 @@ export default function FallbackPage() {
           <p className="text-xs uppercase tracking-wide text-brand-muted mb-5">{workout.minutes} minutes</p>
 
           <div className="rounded-md border border-brand-line bg-brand-surface p-5 mb-5">
-            <ol className="text-sm space-y-2 list-decimal list-inside text-gray-100">
+            <ol className="text-sm space-y-2 list-decimal list-inside text-brand-text">
               {workout.items.map(function (item, i) { return <li key={i}>{item}</li>; })}
             </ol>
           </div>

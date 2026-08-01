@@ -244,7 +244,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
 
       {calibrating ? (
         <p className="text-xs mb-2" style={{ color: accent }}>
-          Testing week. No target today, work up to a strong set you could stop with a rep or two left, then log the weight and reps. That becomes your baseline for this lift.
+          Testing week. No target today. Work up to a set of 8 to 10 you could stop 2 reps short of, then log it. Every week after this is a percentage of this number, so do not max out.
         </p>
       ) : (loadable
         ? <p className="text-xs mb-2" style={{ color: accent }}>Bodyweight, with the option of loading it. Put any added weight in the +kg box and leave it empty if you did these unloaded.</p>

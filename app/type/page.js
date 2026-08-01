@@ -123,7 +123,7 @@ return (
 
 {/* ---------- Grounding intro ---------- */}
 <div className="rounded-md border p-5 mb-4" style={{ borderColor: accent + "55", background: "var(--brand-surface)" }}>
-<p className="text-sm text-gray-100">
+<p className="text-sm text-brand-text">
 The {type.name.replace("The ", "")} sits where three strands of motivation science meet:{" "}
 <span className="font-display">{joinModels(models)}</span>. None of this is horoscope. Each dial below
 is drawn from research on why people actually stick with training, and what makes them quit.
@@ -151,9 +151,9 @@ return (
 {/* ---------- What it means in the app ---------- */}
 <div className="rounded-md border p-5 mb-4" style={{ borderColor: accent + "40", background: "linear-gradient(135deg, " + deep + "22, transparent)" }}>
 <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">How Vaeon builds your plan</p>
-<p className="text-sm text-gray-100 mb-4">{type.plan}</p>
+<p className="text-sm text-brand-text mb-4">{type.plan}</p>
 <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">Your coaching voice</p>
-<p className="text-sm text-gray-100">{type.coaching}</p>
+<p className="text-sm text-brand-text">{type.coaching}</p>
 </div>
 
 {/* ---------- The two personal layers ---------- */}

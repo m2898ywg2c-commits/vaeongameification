@@ -35,14 +35,14 @@ function readChoice() {
   try {
     const m = document.cookie.match(/(?:^|; )vaeon_theme=([^;]*)/);
     const v = m ? decodeURIComponent(m[1]) : "system";
-    return CHOICES.indexOf(v) === -1 ? "system" : v;
+    return CHOICES.indexOf(v) === -1 ? "dark" : v;
   } catch (e) {
     return "system";
   }
 }
 
 export default function ThemeSettings({ accent }) {
-  const [choice, setChoice] = useState("system");
+  const [choice, setChoice] = useState("dark");
 
   // After mount, not during render. The server rendered this with a guess, and reading the
   // cookie while rendering would make the two disagree about the first paint.

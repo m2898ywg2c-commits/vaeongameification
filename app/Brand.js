@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { BRAND } from "@/lib/brand";
+import ThemeToggle from "./ThemeToggle";
 
 // Vaeon Fitness brand assets.
 //
@@ -166,9 +167,12 @@ export default function BrandBar({ accent }) {
 
   return (
     <header
-      className="flex items-center px-4 border-b border-white/10 shrink-0"
-      style={{ height: BAR_HEIGHT, background: BACKDROP }}
+      className="flex items-center gap-3 px-4 border-b shrink-0"
+      style={{ height: BAR_HEIGHT, background: BACKDROP, borderColor: "var(--brand-line)" }}
     >
+      {/* Top left, on every screen. See app/ThemeToggle.js for why it lives here rather
+          than only in settings. */}
+      <ThemeToggle />
       <BrandLockup size={16} accent={accent} />
     </header>
   );

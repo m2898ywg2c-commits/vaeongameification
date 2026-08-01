@@ -155,78 +155,65 @@ placed above the workout button they read as a short list to clear. Left loose b
 it, as they were, an amber card about starting weights read as permanent furniture. */}
 <ToDo accent={accent} needsBaselines={noBaselines} needsMetrics={!thisWeekMetrics} />
 
-<p className="rule-label rule-label-left mb-2">{profile.fixed_days === false ? "Next up" : today}</p>
+{/* ONE CARD FOR TODAY, NOT THREE.
+The date label, the workout button and the block context used to be three separate
+blocks stacked on top of each other, all saying something about the same session.
+They are one thing: what you are doing today and why it looks like that. The block
+line is the answer to "why is today heavy", so it belongs on the same card as today
+rather than in a card of its own underneath.
 
-{/* Filled, not outlined. The outline version was quieter than the cards around it and
-lost the argument: this is the one thing the app wants somebody to do, and on a black
-screen a solid accent block is how you say so. The gradient is gone though, and the
-type is display weight 400 rather than bold, so it carries the brand rather than
-shouting over it. */}
-<a href="/plan" className="flex items-center gap-3 rounded-md p-5 mb-3"
-style={{ background: accent, color: "var(--brand-bg)" }}>
+When the block is finished this becomes the block end link instead. There is no
+sense offering week seven of a six week block, and there used to be two separate
+"block complete" prompts on this screen fighting each other. */}
+{finished ? (
+<a href="/blockend" className="flex items-center gap-3 rounded-md p-5 mb-3"
+style={{ background: "#3DDC97", color: "var(--brand-bg)" }}>
 <div className="flex-1">
-<p className="font-display text-2xl font-normal leading-none">Today&rsquo;s workout</p>
-<p className="text-xs mt-1.5" style={{ color: "rgba(0,0,0,0.65)" }}>Open and start logging</p>
+<p className="font-display text-2xl font-normal leading-none">Block {profile.block_number || 1} done</p>
+<p className="text-xs mt-1.5" style={{ color: "rgba(0,0,0,0.65)" }}>
+See your {blockWeeks}-week summary and start the next one
+</p>
 </div>
 <Icon name="arrow" size={22} />
 </a>
-
-{/* WHERE YOU ARE IN THE BLOCK, DIRECTLY UNDER THE BUTTON, PERMANENTLY.
-This is the context for the thing you are about to do: which week, what that week is
-for, and what changes in it. It was sitting near the bottom under the kudos card,
-which meant the answer to "why is today heavy" was four scrolls away from today. It
-is not a task and it never completes, so unlike the To do group it stays put. */}
-<div className="rounded-md border p-4 mb-3" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
-<div className="flex items-center justify-between mb-1.5">
-<p className="font-display text-sm">Block {profile.block_number || 1} &middot; Week {weekNo}/{blockWeeks}</p>
-{/* Was a full pill. Nothing in this app is a pill any more: the mark has no curve in
-it anywhere and a lozenge next to it always looked borrowed. */}
-{!gym ? (
-<span className="text-[9px] uppercase px-2 py-1 rounded-sm border"
-style={{ borderColor: accent + "55", color: accent, letterSpacing: TRACK.label }}>{rule.label}</span>
-) : null}
+) : (
+<a href="/plan" className="rounded-md p-5 mb-3 block"
+style={{ background: accent, color: "var(--brand-bg)" }}>
+<div className="flex items-center gap-3">
+<div className="flex-1">
+<p className="text-[9px] uppercase" style={{ color: "rgba(0,0,0,0.55)", letterSpacing: TRACK.label }}>
+{profile.fixed_days === false ? "Next up" : today}
+</p>
+<p className="font-display text-2xl font-normal leading-none mt-1">Today&rsquo;s workout</p>
 </div>
-<p className="text-xs leading-relaxed" style={{ color: BRAND.muted }}>
+<Icon name="arrow" size={22} />
+</div>
+<p className="text-xs mt-3 pt-3" style={{ color: "rgba(0,0,0,0.7)", borderTop: "1px solid rgba(0,0,0,0.18)" }}>
+Block {profile.block_number || 1} &middot; Week {weekNo} of {blockWeeks}
+{!gym ? " \u00b7 " + rule.label : ""}
+</p>
+</a>
+)}
+
+{/* The week's coaching, as one line rather than a bordered card. It is a sentence,
+not an object. */}
+<p className="text-xs leading-relaxed mb-4 px-1" style={{ color: BRAND.muted }}>
 {gym
 ? "Your coach sets the training. Vaeon counts the sessions and reports back at the end of the block."
 : rule.increase}
 </p>
-{finished ? <a href="/blockend" className="text-xs underline block mt-2" style={{ color: "#3DDC97" }}>Block complete. See your summary and start the next one.</a> : null}
-{!profile.block_start ? <a href="/settings" className="text-xs underline block mt-2" style={{ color: "#FFB020" }}>Set your block start date</a> : null}
-</div>
+
+{!profile.block_start ? (
+<a href="/settings" className="block text-xs underline mb-4 px-1" style={{ color: "#FFB020" }}>Set your block start date</a>
+) : null}
 
 <ChallengeCard challenge={challenge} accent={accent} />
 
-{finished ? (
-<a href="/blockend" className="flex items-center gap-3 rounded-md border p-4 mb-3" style={{ borderColor: "#3DDC97", background: "rgba(61,220,151,0.08)" }}>
-<span style={{ color: "#3DDC97" }}><Icon name="flag" size={20} /></span>
-<div className="flex-1">
-<p className="font-display text-sm" style={{ color: "#3DDC97" }}>Block {profile.block_number || 1} complete</p>
-<p className="text-xs text-brand-muted">See your {blockWeeks}-week summary and roll straight into the next one.</p>
-</div>
-<span style={{ color: "#3DDC97" }}>&rsaquo;</span>
-</a>
-) : null}
-
-
-{!gym ? (
-<a href="/fallback" className="flex items-center gap-3 rounded-md border p-4 mb-5" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.06)" }}>
-<span style={{ color: "#FFB020" }}><Icon name="home" size={20} /></span>
-<div className="flex-1">
-<p className="font-display text-sm" style={{ color: "#FFB020" }}>Can&rsquo;t get to the gym today?</p>
-<p className="text-xs text-brand-muted">Desk, hotel or home. Keeps your streak alive.</p>
-</div>
-<span className="text-lg" style={{ color: "#FFB020" }}>&rsaquo;</span>
-</a>
-) : <div className="mb-5" />}
-
-{/* ONE INSTRUMENT PANEL, NOT THREE BOXES.
-Three separately rounded cards each carrying a coloured emoji meant the decoration
-outweighed the data on a screen whose entire job is the data. Now it is a single
-hairline grid: the number is the largest thing, the label is a tracked micro-caption
-above it, and the borders are drawn by the gaps rather than by three sets of corners.
-Tabular figures come from globals.css, so nothing shuffles when a digit changes. */}
-<div className="grid grid-cols-3 gap-px mb-4 rounded-md overflow-hidden border"
+{/* ONE INSTRUMENT PANEL. The number is the largest thing, the label is a tracked
+micro-caption above it, and the borders are drawn by the gaps rather than by three
+sets of corners. Tabular figures come from globals.css, so nothing shuffles when a
+digit changes. */}
+<div className="grid grid-cols-3 gap-px mb-2 rounded-md overflow-hidden border"
 style={{ borderColor: BRAND.line, background: BRAND.line }}>
 {[
 { label: "Level", value: String(stats.level), on: false },
@@ -243,39 +230,30 @@ style={{ color: t.on ? accent : BRAND.text }}>{t.value}</p>
 })}
 </div>
 
-{/* Grace weeks. Shown whether or not one has been spent, because a safety net nobody
-knows about does not do the job: half the value of a freeze is not being afraid of
-losing the streak in the first place. When one has been used it says so plainly, since
-a streak quietly propped up by a week you did not train would be a lie told kindly. */}
+{/* Grace weeks, as a footnote to the streak rather than a card of its own. It is a
+fact about the number directly above it, and it was taking up a whole bordered box
+to say one sentence. Still shown when unused, because half the value of a safety net
+is knowing it is there. */}
 {profile.block_start ? (
-<div className="rounded-md border p-3 mb-5 flex items-center gap-3" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
-<span style={{ color: BRAND.muted }}><Icon name="shield" size={18} /></span>
-<div className="flex-1">
-<p className="font-display text-xs">
+<p className="text-[11px] leading-snug mb-5 px-1" style={{ color: BRAND.dim }}>
 {stats.frozenInStreak > 0
-? "Grace week used"
-: (freezeCredits > 0 ? "Grace week available" : "No grace week left this block")}
-</p>
-<p className="text-[11px] text-brand-muted leading-snug">
-{stats.frozenInStreak > 0
-? "A week you missed is being held for you, so the streak stands. " + (freezeCredits > 0 ? "You have another in reserve." : "That was your one for this block.")
+? "A missed week is being held for you, so the streak stands. " + (freezeCredits > 0 ? "You have another grace week in reserve." : "That was your one for this block.")
 : (freezeCredits > 0
-? "Miss a week and your streak survives it. Illness, travel and bad weeks are not failures."
-: "Your next missed week will reset the streak. It refreshes when your next block starts.")}
+? "One grace week in hand. Miss a week and the streak survives it."
+: "No grace week left. Your next missed week resets the streak.")}
 </p>
-</div>
-</div>
-) : null}
+) : <div className="mb-5" />}
 
 {type ? (
-<div className="rounded-md p-4 mb-3 border" style={{ borderColor: accent + "44", background: BRAND.surface }}>
-<a href={"/type?id=" + typeId} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 mb-2">
+<a href={"/type?id=" + typeId} target="_blank" rel="noopener noreferrer"
+className="rounded-md p-4 mb-3 border block" style={{ borderColor: accent + "44", background: BRAND.surface }}>
+<div className="flex items-center gap-2 mb-2">
 <TypeOrb typeId={typeId} size={24} />
 <p className="text-[9px] uppercase flex-1" style={{ color: accent, letterSpacing: TRACK.label }}>The {type.name.replace("The ", "")} style</p>
 <span style={{ color: accent }}><Icon name="arrow" size={14} /></span>
-</a>
-<p className="text-sm leading-relaxed" style={{ color: "var(--brand-muted)" }}>{nudge}</p>
 </div>
+<p className="text-sm leading-relaxed" style={{ color: "var(--brand-muted)" }}>{nudge}</p>
+</a>
 ) : (
 <a href="/assessment" className="block rounded-md border p-4 mb-3" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
 <p className="font-display text-sm mb-1">Find your training personality</p>
@@ -300,7 +278,13 @@ style={{ borderColor: BRAND.line, background: BRAND.line }}>
 { href: "/leaderboard", icon: "board", label: "Leaderboard" },
 { href: "/progress", icon: "chart", label: "Progress" },
 { href: "/settings", icon: "sliders", label: "Stats and settings" },
-].map(function (t) {
+{ href: "/feedback", icon: "kudos", label: "Send feedback" },
+]
+// Was a permanent amber banner asking "can't get to the gym today?", which most days
+// is a question whose answer is obviously no. It is a destination, so it belongs with
+// the other destinations. Gym ready users bring their own plan and have no fallback.
+.concat(gym ? [] : [{ href: "/fallback", icon: "home", label: "Train without a gym" }])
+.map(function (t) {
 return (
 <a key={t.href} href={t.href} className="flex items-center gap-2.5 px-3 py-4" style={{ background: BRAND.bg }}>
 <span style={{ color: accent }}><Icon name={t.icon} size={18} /></span>
@@ -313,7 +297,6 @@ return (
 <div className="mb-4"><ShareButton accent={accent} /></div>
 
 <a href="/onboarding" className="block text-center text-xs text-brand-dim underline">Change goals, days or sessions a week</a>
-<a href="/feedback" className="block text-center text-xs text-brand-dim underline mt-2">Send feedback</a>
 </div>
 </main>
 );

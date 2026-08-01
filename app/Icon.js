@@ -67,6 +67,10 @@ const PATHS = {
   install: <path d="M12 3v12 M8 11l4 4 4-4 M4 19h16" />,
   // Warning, for the baselines prompt. Triangle, not a red sign.
   alert: <path d="M12 3l9 17H3z M12 9v5 M12 16.5h0" />,
+  // Night and day. Both drawn on the same 24 grid at the same stroke as everything else,
+  // so the toggle sits with the mark rather than looking like a borrowed glyph.
+  moon: <path d="M20 14a8 8 0 01-10-10 8 8 0 100 10 8 8 0 0010 0z" />,
+  sun: <path d="M12 8a4 4 0 100 8 4 4 0 000-8z M12 2v2 M12 20v2 M2 12h2 M20 12h2 M5 5l1.5 1.5 M17.5 17.5L19 19 M19 5l-1.5 1.5 M6.5 17.5L5 19" />,
   check: <path d="M4 12l5 5L20 6" />,
   arrow: <path d="M4 12h15 M13 6l6 6-6 6" />,
 };

@@ -77,7 +77,7 @@ export const viewport = {
 // final word and runs before first paint.
 export default async function RootLayout({ children }) {
   const jar = await cookies();
-  const choice = jar.get(THEME_COOKIE)?.value || "system";
+  const choice = jar.get(THEME_COOKIE)?.value || "dark";
   const lastKnownDevice = jar.get(SCHEME_COOKIE)?.value || "dark";
   const scheme = resolveScheme(choice, lastKnownDevice);
 
@@ -112,7 +112,7 @@ export default async function RootLayout({ children }) {
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var m=document.cookie.match(/(?:^|; )vaeon_theme=([^;]*)/);var c=m?decodeURIComponent(m[1]):'system';var d=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';var s=c==='light'?'light':(c==='dark'?'dark':d);document.documentElement.setAttribute('data-theme',s);document.cookie='vaeon_scheme='+d+';path=/;max-age=31536000;SameSite=Lax';}catch(e){}})();",
+              "(function(){try{var m=document.cookie.match(/(?:^|; )vaeon_theme=([^;]*)/);var c=m?decodeURIComponent(m[1]):'dark';var d=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';var s=c==='light'?'light':(c==='system'?d:'dark');document.documentElement.setAttribute('data-theme',s);document.cookie='vaeon_scheme='+d+';path=/;max-age=31536000;SameSite=Lax';}catch(e){}})();",
           }}
         />
       </head>

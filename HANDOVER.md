@@ -124,6 +124,30 @@ no action. The copy engine behind it is untouched: `lib/reminders.js` still driv
 notification and the sender, so the miss response moved off the dashboard rather than being
 lost.
 
+**Dark is the default, and only an explicit "match phone" defers to the device.** Following
+the system automatically sounds like the polite choice and is wrong here: Vaeon is a black
+app, and a user whose phone happens to be light would open it for the first time into a
+scheme nobody designed. Light is a choice somebody makes because they read it better, not
+something that happens to them. The three-way control lives in Settings; a one-tap sun/moon
+toggle sits **top left in the brand bar on every screen**, because the plan screen is where
+reading in bad light actually bites and that is the screen you are on when it matters.
+
+**Dashboard, simplified 2026-07-31.** Order of priority is unchanged: To do, then today,
+then everything else. What changed is that it is now nine blocks instead of fourteen.
+
+- The date label, the workout button and the block card were three stacked blocks all
+  describing the same session. **They are one card now**, with block and week on it, because
+  the block line is the answer to "why is today heavy".
+- When the block is finished that card becomes the block end link. There used to be **two**
+  separate "block complete" prompts on this screen fighting each other.
+- The grace week was a bordered card to say one sentence about the number directly above it.
+  It is a footnote under the stats now.
+- The week's coaching guidance is a line of prose, not a card. It is a sentence, not an
+  object.
+- "Can't get to the gym today?" was a permanent amber banner asking a question whose answer
+  is usually no. It is a destination, so it moved into the Elsewhere grid, along with Send
+  feedback.
+
 **Night and day.** `lib/theme.js`, `app/settings/ThemeSettings.js`, plus a `[data-theme="light"]`
 block in `globals.css`. Three-way setting: match the phone, dark, light.
 
@@ -309,6 +333,38 @@ Every item below follows from that.
 - **Leaderboard bug.** `coalesce(block_start, current_date)` meant a null block start
   moved forward nightly, so those users could never accumulate anything. Backfilled,
   fallback chain fixed, column defaulted
+
+---
+
+## Progression maths, verified 2026-07-31
+
+Traced end to end: testing week -> `estimateMax()` -> `record_lift_max()` -> `workingWeight()`.
+The chain is sound. Exercise names match week to week because `buildWeek()` generates the
+same week every week, so the `lift_maxes` lookup key is stable. Two findings.
+
+**FIXED. The copy contradicted the engine.** This is a percentage-of-estimated-max system,
+but the week-by-week `increase` strings promised "add 2.5kg upper, 5kg lower", which is
+linear progression, a different system. Measured: the real week-two step is +2.5kg at a 50kg
+max, +5kg at 100kg, +7.5kg at 150kg, and the deload-to-peak jump is +10, +20 and +30kg. The
+copy now describes percentages.
+
+**KNOWN, NOT FIXED. Low-rep testers never progress past their test.** Epley is calibrated
+for moderate rep sets, so a heavy triple yields a modest estimated max, and since the ladder
+tops out at 90 percent the prescriptions never exceed the tested load.
+
+| Testing week set | Est 1RM | Week 2 | Week 6 | First week beating the test |
+|---|---|---|---|---|
+| 60kg x 8 | 76.0 | 57.5 | 67.5 | week 5 |
+| 100kg x 5 | 116.7 | 87.5 | 105.0 | week 6 |
+| 80kg x 3 | 88.0 | 65.0 | 80.0 | **never** |
+
+Mitigated for now by naming a rep range: the testing card and week one both say 8 to 10 reps
+stopping 2 short, rather than the old "a strong set". **If it keeps happening, the real fix
+is to store the tested working load alongside `est_max` and anchor the ladder to that
+instead of to a derived one-rep max.** That needs a column and a migration.
+
+Also worth knowing: `record_lift_max()` does `greatest(existing, new)`, so a max only ever
+climbs. One inflated test is permanent until the row is edited by hand.
 
 ---
 
