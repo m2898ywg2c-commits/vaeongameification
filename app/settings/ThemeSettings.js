@@ -34,10 +34,13 @@ import Icon from "../Icon";
 function readChoice() {
   try {
     const m = document.cookie.match(/(?:^|; )vaeon_theme=([^;]*)/);
-    const v = m ? decodeURIComponent(m[1]) : "system";
+    // Dark, not system. No cookie means nobody has chosen, and the app defaults to dark,
+    // so showing "Match phone" as selected would be the settings screen disagreeing with
+    // what the user is actually looking at.
+    const v = m ? decodeURIComponent(m[1]) : "dark";
     return CHOICES.indexOf(v) === -1 ? "dark" : v;
   } catch (e) {
-    return "system";
+    return "dark";
   }
 }
 
