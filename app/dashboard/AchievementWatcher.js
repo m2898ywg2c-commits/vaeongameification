@@ -28,11 +28,11 @@ function Badge({ a, earned, size }) {
         flexShrink: 0,
         fontWeight: 700,
         fontSize: a.icon.length > 2 ? 12 : 14,
-        color: earned ? "#000000" : "rgba(255,255,255,0.35)",
+        color: earned ? "#000000" : "var(--brand-dim)",
         background: earned
           ? "linear-gradient(145deg, " + colours[0] + ", " + colours[1] + ")"
-          : "rgba(255,255,255,0.06)",
-        border: earned ? "none" : "1px dashed rgba(255,255,255,0.15)",
+          : "var(--brand-surface)",
+        border: earned ? "none" : "1px dashed var(--brand-line)",
       }}
     >
       {a.icon}
@@ -133,13 +133,13 @@ export default function AchievementWatcher({ profile }) {
           <div className="rounded-md border border-brand-line bg-[#161B33] p-4 flex items-center gap-4 shadow-2xl">
             <Badge a={current} earned={true} size={52} />
             <div className="flex-1">
-              <p className="text-[10px] uppercase tracking-wide text-gray-400">Achievement unlocked</p>
+              <p className="text-[10px] uppercase tracking-wide text-brand-muted">Achievement unlocked</p>
               <p className="font-display text-sm">{current.name}</p>
-              <p className="text-xs text-gray-400">{current.blurb}</p>
+              <p className="text-xs text-brand-muted">{current.blurb}</p>
             </div>
             <button
               onClick={function () { setQueue(queue.slice(1)); }}
-              className="text-xs text-gray-500 underline"
+              className="text-xs text-brand-dim underline"
             >
               Close
             </button>
@@ -149,19 +149,19 @@ export default function AchievementWatcher({ profile }) {
 
       <div className="rounded-md border border-brand-line bg-brand-surface p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs uppercase tracking-wide text-gray-400">
+          <p className="text-xs uppercase tracking-wide text-brand-muted">
             Achievements {ready ? earned.length + " of " + ACHIEVEMENTS.length : ""}
           </p>
           <button
             onClick={function () { setOpen(!open); }}
-            className="text-xs underline text-gray-400"
+            className="text-xs underline text-brand-muted"
           >
             {open ? "hide" : "show all"}
           </button>
         </div>
 
         {!ready ? (
-          <p className="text-sm text-gray-500">Checking...</p>
+          <p className="text-sm text-brand-dim">Checking...</p>
         ) : open ? (
           <div className="space-y-3">
             {ACHIEVEMENTS.map(function (a) {
@@ -170,10 +170,10 @@ export default function AchievementWatcher({ profile }) {
                 <div key={a.code} className="flex items-center gap-3">
                   <Badge a={a} earned={has} />
                   <div className="flex-1">
-                    <p className={has ? "font-display text-sm" : "font-display text-sm text-gray-500"}>
+                    <p className={has ? "font-display text-sm" : "font-display text-sm text-brand-dim"}>
                       {a.name}
                     </p>
-                    <p className="text-xs text-gray-500">{has ? a.blurb : a.hint}</p>
+                    <p className="text-xs text-brand-dim">{has ? a.blurb : a.hint}</p>
                   </div>
                 </div>
               );
@@ -190,20 +190,20 @@ export default function AchievementWatcher({ profile }) {
                 })}
               </div>
             ) : (
-              <p className="text-sm text-gray-400 mb-4">
+              <p className="text-sm text-brand-muted mb-4">
                 Nothing yet. Log your first session and that changes immediately.
               </p>
             )}
             {upcoming.length ? (
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-2">Next up</p>
+                <p className="text-[10px] uppercase tracking-wide text-brand-dim mb-2">Next up</p>
                 {upcoming.map(function (a) {
                   return (
                     <div key={a.code} className="flex items-center gap-3 mb-2">
                       <Badge a={a} earned={false} size={32} />
                       <div>
-                        <p className="font-display text-xs text-gray-300">{a.name}</p>
-                        <p className="text-xs text-gray-500">{a.hint}</p>
+                        <p className="font-display text-xs text-brand-muted">{a.name}</p>
+                        <p className="text-xs text-brand-dim">{a.hint}</p>
                       </div>
                     </div>
                   );

@@ -9,6 +9,7 @@ import { currentWeek, weeksFor, BLOCK_WEEKS, estimateMax } from "@/lib/progressi
 import { isGymReady, buildGymWeek, blockWeeksFor, currentWeekIn } from "@/lib/gymready";
 import { quoteFor, sessionIntro, praiseFor } from "@/lib/voice";
 import { track, rememberIdentity, EVENTS } from "@/lib/events";
+import { currentScheme, accentFor, deepFor } from "@/lib/theme";
 import TypeOrb from "../TypeOrb";
 import DayView from "./DayView";
 import GymDayView from "./GymDayView";
@@ -151,8 +152,11 @@ load();
 
 const type = typeId ? TYPES[typeId] : null;
 const tid = typeId || "architect";
-const accent = type ? type.colors[0] : "#4CC9F0";
-const deep = type ? type.colors[1] : "#3D2E8C";
+// Read off the document rather than recomputed, so the client agrees with whatever the
+// inline script in app/layout.js settled on before first paint.
+const scheme = currentScheme();
+const accent = accentFor(type, scheme);
+const deep = deepFor(type, scheme);
 const day = days[active] || null;
 const gym = profile ? isGymReady(profile.goals) : false;
 const blockWeeks = profile ? blockWeeksFor(profile) : BLOCK_WEEKS;
@@ -269,14 +273,14 @@ setFinished(true);
 
 if (loading) {
 return (
-<main className="min-h-screen text-white flex items-center justify-center" style={{ background: "#000000" }}>
-<p className="text-sm text-gray-400">Building your session...</p>
+<main className="min-h-screen text-brand-text flex items-center justify-center" style={{ background: "var(--brand-bg)" }}>
+<p className="text-sm text-brand-muted">Building your session...</p>
 </main>
 );
 }
 
 return (
-<main className="min-h-screen text-white px-5 py-6" style={{ background: "#000000" }}>
+<main className="min-h-screen text-brand-text px-5 py-6" style={{ background: "var(--brand-bg)" }}>
 <div className="max-w-md mx-auto">
 
 {showQuote ? (
@@ -285,21 +289,21 @@ return (
 <div className="flex justify-center mb-3"><TypeOrb typeId={tid} size={72} /></div>
 <p className="font-display text-xs uppercase tracking-wide mb-3" style={{ color: accent }}>{type ? type.name : "Your coach"}</p>
 <p className="font-display text-lg font-normal leading-snug mb-4">{quoteFor(tid, active)}</p>
-{!gym ? <p className="text-xs text-gray-400 mb-5">{sessionIntro(tid, rule.label)}</p> : <p className="text-xs text-gray-400 mb-5">Log it as you go.</p>}
+{!gym ? <p className="text-xs text-brand-muted mb-5">{sessionIntro(tid, rule.label)}</p> : <p className="text-xs text-brand-muted mb-5">Log it as you go.</p>}
 <button onClick={function () { setShowQuote(false); }} className="w-full py-4 rounded-md font-display"
-style={{ background: accent, color: "#000000" }}>Ready</button>
+style={{ background: accent, color: "var(--brand-bg)" }}>Ready</button>
 </div>
 </div>
 ) : null}
 
 {praise ? (
 <div className="fixed left-0 right-0 bottom-8 z-40 flex justify-center pointer-events-none">
-<div className="px-6 py-3 rounded-sm font-display shadow-lg" style={{ background: accent, color: "#000000" }}>{praise}</div>
+<div className="px-6 py-3 rounded-sm font-display shadow-lg" style={{ background: accent, color: "var(--brand-bg)" }}>{praise}</div>
 </div>
 ) : null}
 
 <a href="/dashboard" className="flex items-center justify-center gap-2 w-full py-4 rounded-md font-display text-base font-normal mb-4 border"
-style={{ borderColor: accent + "66", background: "rgba(255,255,255,0.05)", color: accent }}>
+style={{ borderColor: accent + "66", background: "var(--brand-surface)", color: accent }}>
 &#8592; Back to dashboard
 </a>
 
@@ -307,7 +311,7 @@ style={{ borderColor: accent + "66", background: "rgba(255,255,255,0.05)", color
 <TypeOrb typeId={tid} size={40} />
 <div>
 <p className="font-display text-sm leading-tight">{type ? type.name : "Your plan"}</p>
-<p className="text-xs text-gray-400 leading-tight">
+<p className="text-xs text-brand-muted leading-tight">
 Week {weekNo}/{blockWeeks}{gym ? "" : " · " + rule.label}
 </p>
 </div>
@@ -316,7 +320,7 @@ Week {weekNo}/{blockWeeks}{gym ? "" : " · " + rule.label}
 {isTestWeek ? (
 <div className="rounded-md border p-4 mb-3" style={{ borderColor: accent + "66", background: accent + "12" }}>
 <p className="font-display text-sm" style={{ color: accent }}>Testing week</p>
-<p className="text-xs text-gray-300">
+<p className="text-xs text-brand-muted">
 Week one sets your baselines. On the main lifts, work up to a strong set you could stop with a rep or two left, and log what you used. Every block after this builds off those real numbers.
 </p>
 </div>
@@ -325,14 +329,14 @@ Week one sets your baselines. On the main lifts, work up to a strong set you cou
 {noBaselines && !isTestWeek ? (
 <a href="/settings" className="block rounded-md border p-4 mb-3" style={{ borderColor: "#FFB020", background: "rgba(255,176,32,0.10)" }}>
 <p className="font-display text-sm" style={{ color: "#FFB020" }}>Enter your starting weights first</p>
-<p className="text-xs text-gray-300">No idea what they are? We explain it in bags of sugar.</p>
+<p className="text-xs text-brand-muted">No idea what they are? We explain it in bags of sugar.</p>
 </a>
 ) : null}
 
 {freestyle && !gym ? (
 <div className="rounded-md border p-4 mb-3" style={{ borderColor: accent + "44", background: accent + "0D" }}>
 <p className="font-display text-sm" style={{ color: accent }}>Your sessions this week</p>
-<p className="text-xs text-gray-300">
+<p className="text-xs text-brand-muted">
 Pick whichever one you fancy today. They all count the same, the order is yours, and
 anything you have already done is ticked off below.
 </p>
@@ -358,8 +362,8 @@ day_key: d.key, index: i, week: weekNo, freestyle: freestyle, already_done: done
 });
 }}
 className="px-4 py-3 rounded-md font-display text-sm flex-shrink-0 border"
-style={on ? { background: accent, color: "#000000", borderColor: accent }
-: { background: "rgba(255,255,255,0.05)", color: doneAlready ? "#64748b" : "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>
+style={on ? { background: accent, color: "var(--brand-bg)", borderColor: accent }
+: { background: "var(--brand-surface)", color: doneAlready ? "var(--brand-dim)" : "var(--brand-muted)", borderColor: "var(--brand-line)" }}>
 {label}
 </button>
 );

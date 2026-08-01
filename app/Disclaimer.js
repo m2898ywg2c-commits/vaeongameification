@@ -41,7 +41,7 @@ export default function Disclaimer({ compact = false }) {
   const gap = compact ? "space-y-3" : "space-y-5";
 
   return (
-    <div className={body + " " + gap} style={{ color: "rgba(255,255,255,0.72)" }}>
+    <div className={body + " " + gap} style={{ color: "var(--brand-muted)" }}>
       <div>
         <h2 className="font-display mb-1" style={{ color: BRAND.text }}>
           Before you train

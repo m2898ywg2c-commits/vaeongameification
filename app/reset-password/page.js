@@ -41,40 +41,40 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-brand-text px-6 py-12">
       <div className="w-full max-w-sm">
         <h1 className="font-display text-3xl font-normal mb-1">Set a new password</h1>
-        <p className="text-sm text-gray-400 mb-8">Pick something you will remember this time.</p>
+        <p className="text-sm text-brand-muted mb-8">Pick something you will remember this time.</p>
 
         {done ? (
           <div className="rounded-md border border-brand-line bg-brand-surface p-5">
-            <p className="text-sm text-gray-200">Done. Taking you to your dashboard.</p>
+            <p className="text-sm text-brand-text">Done. Taking you to your dashboard.</p>
           </div>
         ) : !ready ? (
           <div className="rounded-md border border-brand-line bg-brand-surface p-5">
-            <p className="text-sm text-gray-200 mb-2">This link looks incomplete or expired.</p>
+            <p className="text-sm text-brand-text mb-2">This link looks incomplete or expired.</p>
             <a href="/forgot-password" className="text-sm underline" style={{ color: "#22D3EE" }}>Request a fresh link</a>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs uppercase tracking-wide text-gray-400 mb-1">New password</label>
+              <label className="block text-xs uppercase tracking-wide text-brand-muted mb-1">New password</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
+                className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-brand-text outline-none focus:border-[#22D3EE]"
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wide text-gray-400 mb-1">Confirm password</label>
+              <label className="block text-xs uppercase tracking-wide text-brand-muted mb-1">Confirm password</label>
               <input
                 type="password"
                 required
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
+                className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-brand-text outline-none focus:border-[#22D3EE]"
               />
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
@@ -82,7 +82,7 @@ export default function ResetPasswordPage() {
               type="submit"
               disabled={loading}
               className="w-full py-3 rounded-sm font-display text-sm"
-              style={{ background: "#22D3EE", color: "#000000" }}
+              style={{ background: "var(--brand-accent)", color: "var(--brand-bg)" }}
             >
               {loading ? "Saving..." : "Save new password"}
             </button>

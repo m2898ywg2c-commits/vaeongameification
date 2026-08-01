@@ -154,15 +154,15 @@ export default function AssessmentPage() {
     const dim = tieDims[tieIndex];
     const tb = TIEBREAKERS[dim];
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
+      <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-brand-text px-6 py-12">
         <div className="w-full max-w-md">
-          <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">A dead heat: {tb.label.toLowerCase()}</p>
-          <p className="text-xs text-gray-500 mb-2">Tiebreaker {tieIndex + 1} of {tieDims.length}</p>
-          <div className="h-1.5 rounded-sm bg-white/10 mb-8">
+          <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">A dead heat: {tb.label.toLowerCase()}</p>
+          <p className="text-xs text-brand-dim mb-2">Tiebreaker {tieIndex + 1} of {tieDims.length}</p>
+          <div className="h-1.5 rounded-sm bg-brand-field mb-8">
             <div className="h-1.5 rounded-sm" style={{ width: "100%", background: GRAD }} />
           </div>
           <h1 className="font-display text-xl font-normal mb-2 min-h-8">{tb.prompt}</h1>
-          <p className="text-sm text-gray-400 mb-6">
+          <p className="text-sm text-brand-muted mb-6">
             Your answers landed dead even on this dial. It happens to about one person in
             seven. Rather than guess, we ask. Go with your gut.
           </p>
@@ -172,15 +172,15 @@ export default function AssessmentPage() {
                 key={o.value}
                 onClick={() => chooseTie(dim, o.value)}
                 disabled={saving}
-                className="w-full text-left px-4 py-4 rounded-md border border-brand-line bg-brand-surface hover:bg-white/15 text-sm font-medium"
+                className="w-full text-left px-4 py-4 rounded-md border border-brand-line bg-brand-surface hover:bg-brand-field text-sm font-medium"
               >
                 {o.label}
               </button>
             ))}
           </div>
-          {saving ? <p className="text-sm text-gray-400 mt-4">Saving your result...</p> : null}
+          {saving ? <p className="text-sm text-brand-muted mt-4">Saving your result...</p> : null}
           {error ? <p className="text-sm text-red-400 mt-4">{error}</p> : null}
-          <button onClick={tieBack} className="text-xs text-gray-500 underline mt-6" disabled={saving}>
+          <button onClick={tieBack} className="text-xs text-brand-dim underline mt-6" disabled={saving}>
             Back
           </button>
         </div>
@@ -196,18 +196,18 @@ export default function AssessmentPage() {
       : "When you are at your best";
 
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
+      <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-brand-text px-6 py-12">
         <div className="w-full max-w-md">
-          <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{section}</p>
-          <p className="text-xs text-gray-500 mb-2">Step {index + 1} of {TOTAL}</p>
-          <div className="h-1.5 rounded-sm bg-white/10 mb-8">
+          <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">{section}</p>
+          <p className="text-xs text-brand-dim mb-2">Step {index + 1} of {TOTAL}</p>
+          <div className="h-1.5 rounded-sm bg-brand-field mb-8">
             <div className="h-1.5 rounded-sm" style={{ width: pct + "%", background: GRAD }} />
           </div>
 
           {onChrono ? (
             <div>
               <h1 className="font-display text-xl font-normal mb-2 min-h-8">{CHRONOTYPE_PROMPT}</h1>
-              <p className="text-sm text-gray-400 mb-6">
+              <p className="text-sm text-brand-muted mb-6">
                 Your body clock changes when you perform best and how hard a session costs you. No wrong answer.
               </p>
               <div className="space-y-2">
@@ -216,10 +216,10 @@ export default function AssessmentPage() {
                     key={o.value}
                     onClick={() => chooseChrono(o.value)}
                     disabled={saving}
-                    className="w-full text-left px-4 py-4 rounded-md border border-brand-line bg-brand-surface hover:bg-white/15"
+                    className="w-full text-left px-4 py-4 rounded-md border border-brand-line bg-brand-surface hover:bg-brand-field"
                   >
                     <span className="block font-display text-sm">{o.label}</span>
-                    <span className="block text-xs text-gray-400 mt-0.5">{o.blurb}</span>
+                    <span className="block text-xs text-brand-muted mt-0.5">{o.blurb}</span>
                   </button>
                 ))}
               </div>
@@ -235,7 +235,7 @@ export default function AssessmentPage() {
                     key={a.value}
                     onClick={() => answer(a.value)}
                     disabled={saving}
-                    className="w-full text-left px-4 py-3 rounded-md border border-brand-line bg-brand-surface hover:bg-white/15 text-sm font-medium"
+                    className="w-full text-left px-4 py-3 rounded-md border border-brand-line bg-brand-surface hover:bg-brand-field text-sm font-medium"
                   >
                     {a.label}
                   </button>
@@ -244,9 +244,9 @@ export default function AssessmentPage() {
             </div>
           )}
 
-          {saving ? <p className="text-sm text-gray-400 mt-4">Saving your result...</p> : null}
+          {saving ? <p className="text-sm text-brand-muted mt-4">Saving your result...</p> : null}
           {error ? <p className="text-sm text-red-400 mt-4">{error}</p> : null}
-          <button onClick={back} className="text-xs text-gray-500 underline mt-6" disabled={saving}>
+          <button onClick={back} className="text-xs text-brand-dim underline mt-6" disabled={saving}>
             Back
           </button>
         </div>
@@ -259,26 +259,26 @@ export default function AssessmentPage() {
     const framing = result.framed.framing;
     const chronoValue = result.chrono;
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
+      <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-brand-text px-6 py-12">
         <div className="w-full max-w-md text-center">
           <div className="flex justify-center mb-2">
             <TypeOrb typeId={result.scored.typeId} size={140} />
           </div>
-          <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{t.code}</p>
+          <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">{t.code}</p>
           <h1 className="font-display text-3xl font-normal mb-2">{t.name}</h1>
-          <p className="text-sm text-gray-300 mb-8">{t.tagline}</p>
+          <p className="text-sm text-brand-muted mb-8">{t.tagline}</p>
 
           <div className="rounded-md border border-brand-line bg-brand-surface p-5 text-left mb-4">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Your training plan</p>
+            <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">Your training plan</p>
             <p className="text-sm">{t.plan}</p>
           </div>
           <div className="rounded-md border border-brand-line bg-brand-surface p-5 text-left mb-4">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">How you will be coached</p>
+            <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">How you will be coached</p>
             <p className="text-sm">{t.coaching}</p>
           </div>
 
           <div className="rounded-md border border-brand-line bg-brand-surface p-5 text-left mb-8">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">What else we learned</p>
+            <p className="text-xs uppercase tracking-wide text-brand-muted mb-2">What else we learned</p>
             <p className="text-sm mb-2">
               You are <span className="font-display">{FRAMING_LABEL[framing]}</span>, {FRAMING_EXPLAINER[framing]}
             </p>
@@ -313,11 +313,11 @@ export default function AssessmentPage() {
   }
 
   return (
-    <main className="min-h-screen bg-brand-bg text-white px-6 py-12">
+    <main className="min-h-screen bg-brand-bg text-brand-text px-6 py-12">
       <div className="max-w-3xl mx-auto">
-        <a href="/dashboard" className="inline-block text-xs text-gray-400 underline mb-6">Back to dashboard</a>
+        <a href="/dashboard" className="inline-block text-xs text-brand-muted underline mb-6">Back to dashboard</a>
         <h1 className="font-display text-3xl font-normal mb-2 text-center">Find your training personality</h1>
-        <p className="text-sm text-gray-300 text-center max-w-xl mx-auto mb-10">
+        <p className="text-sm text-brand-muted text-center max-w-xl mx-auto mb-10">
           Seventeen quick questions, about three minutes. Go with your first instinct. Twelve
           statements place you on three dials: how planned you like training, whether numbers or
           feelings drive you, and whether you thrive solo or with others. A few more read what
@@ -332,24 +332,24 @@ export default function AssessmentPage() {
               <div key={id} className="rounded-md border border-brand-line bg-brand-surface p-4 flex flex-col items-center text-center">
                 <TypeOrb typeId={id} size={84} />
                 <p className="font-display text-sm mt-2">{t.name}</p>
-                <p className="text-[10px] uppercase tracking-wide text-gray-400 mt-1">{t.code}</p>
-                <p className="text-xs text-gray-300 mt-2">{t.tagline}</p>
+                <p className="text-[10px] uppercase tracking-wide text-brand-muted mt-1">{t.code}</p>
+                <p className="text-xs text-brand-muted mt-2">{t.tagline}</p>
               </div>
             );
           })}
         </div>
 
         <div className="rounded-md border border-brand-line bg-brand-surface p-5 max-w-xl mx-auto mb-10">
-          <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Why it matters</p>
-          <p className="text-sm text-gray-200 mb-3">
+          <p className="text-xs uppercase tracking-wide text-brand-muted mb-2">Why it matters</p>
+          <p className="text-sm text-brand-text mb-3">
             Your type decides the shape of the plan Vaeon builds. Planned types get a structured
             programme with fixed sessions; freestyle types get a flexible menu and rolling challenges.
           </p>
-          <p className="text-sm text-gray-200 mb-3">
+          <p className="text-sm text-brand-text mb-3">
             It also decides what success looks like, and sets your coaching voice. Solo types get
             sharp, private check-ins; together types get group energy and friendly competition.
           </p>
-          <p className="text-sm text-gray-200">
+          <p className="text-sm text-brand-text">
             The last few questions add a personal edge on top: whether your coach frames things
             around chasing a gain or protecting your momentum, and when in the day you train best.
           </p>
@@ -363,7 +363,7 @@ export default function AssessmentPage() {
           >
             Start the assessment
           </button>
-          <p className="text-xs text-gray-500 mt-3">You can retake it any time from your dashboard.</p>
+          <p className="text-xs text-brand-dim mt-3">You can retake it any time from your dashboard.</p>
         </div>
       </div>
     </main>

@@ -196,7 +196,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       >
         <span style={{ color: "#3DDC97" }}><Icon name="check" size={16} /></span>
         <span className="flex-1 font-display text-sm" style={{ color: "#3DDC97" }}>{title}</span>
-        <span className="text-xs text-gray-400">Tap to reopen</span>
+        <span className="text-xs text-brand-muted">Tap to reopen</span>
       </button>
     );
   }
@@ -204,8 +204,8 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   // Inputs keep their size, because thumbs in a gym need the target, but lose the pill
   // radius and the bold. The number is display face and tabular, so a 5 and an 8 occupy
   // the same width and the row does not twitch as it is typed into.
-  const field = "w-full px-3 py-4 rounded-md text-xl text-center text-white placeholder-gray-600 font-display";
-  const fieldStyle = { background: "rgba(255,255,255,0.06)", border: "1px solid " + BRAND.lineStrong };
+  const field = "w-full px-3 py-4 rounded-md text-xl text-center text-brand-text placeholder-brand-dim font-display";
+  const fieldStyle = { background: "var(--brand-surface)", border: "1px solid " + BRAND.lineStrong };
   const tipBtn = "flex-1 py-2 rounded-sm text-[11px] uppercase border";
   const tipBtnStyle = { borderColor: BRAND.line, color: BRAND.muted, letterSpacing: "0.16em" };
 
@@ -231,14 +231,14 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       </div>
 
       {swap ? (
-        <p className="text-[11px] text-gray-500 mb-1">Standing in for {ex.name}</p>
+        <p className="text-[11px] text-brand-dim mb-1">Standing in for {ex.name}</p>
       ) : null}
 
-      {ex.note ? <p className="text-xs text-gray-400 mb-1">{ex.note}</p> : null}
+      {ex.note ? <p className="text-xs text-brand-muted mb-1">{ex.note}</p> : null}
 
       {swap ? (
         <div className="rounded-md px-3 py-3 mb-3 border" style={{ borderColor: accent + "55", background: accent + "14" }}>
-          <p className="text-xs text-gray-200">{alt}</p>
+          <p className="text-xs text-brand-text">{alt}</p>
         </div>
       ) : null}
 
@@ -253,7 +253,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       {suggested && !calibrating ? (
         <div className="rounded-md px-3 py-2 mb-3" style={{ background: accent + "1A" }}>
           <p className="font-display text-sm" style={{ color: accent }}>Today: {suggested}kg</p>
-          <p className="text-[11px] text-gray-400">{hasRealMax ? "From your logged max. " : ""}{increaseHint(ex.name)}</p>
+          <p className="text-[11px] text-brand-muted">{hasRealMax ? "From your logged max. " : ""}{increaseHint(ex.name)}</p>
         </div>
       ) : null}
 
@@ -262,8 +262,8 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
           prescription directly above it. */}
       {lastSets ? (
         <div className="rounded-md px-3 py-2 mb-3 border border-brand-line bg-brand-surface">
-          <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-0.5">Last time &middot; {lastAgo}</p>
-          <p className="font-display text-sm text-gray-200">
+          <p className="text-[11px] uppercase tracking-wide text-brand-dim mb-0.5">Last time &middot; {lastAgo}</p>
+          <p className="font-display text-sm text-brand-text">
             {lastSets.map(function (r) { return describeSet(r); }).filter(Boolean).join("   ")}
           </p>
         </div>
@@ -275,21 +275,21 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         <a href={videoLink(title)} target="_blank" rel="noopener noreferrer" className={tipBtn + " text-center block"} style={tipBtnStyle}>Video</a>
       </div>
 
-      {tip === "form" ? <p className="text-xs text-gray-300 mb-3 rounded-md bg-brand-surface p-3">{formTip(ex.name)}</p> : null}
-      {tip === "coach" ? <p className="text-xs text-gray-300 mb-3 rounded-md bg-brand-surface p-3">{coachTip(ex.name)}</p> : null}
+      {tip === "form" ? <p className="text-xs text-brand-muted mb-3 rounded-md bg-brand-surface p-3">{formTip(ex.name)}</p> : null}
+      {tip === "coach" ? <p className="text-xs text-brand-muted mb-3 rounded-md bg-brand-surface p-3">{coachTip(ex.name)}</p> : null}
 
       {Array.from({ length: total }).map(function (_, i) {
         const v = fields[i] || {};
         return (
           <div key={i} className="mb-3">
-            <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">
+            <p className="text-[11px] uppercase tracking-wide text-brand-dim mb-1">
               {setLabel} {i + 1}
               {kind === "time" ? <span className="normal-case"> &middot; in {UNIT_WORD[unit]}</span> : null}
               {/* Set-level history, so you are comparing like with like. A fifth set that
                   did not exist last time correctly shows nothing rather than repeating
                   the fourth. */}
               {lastSets && lastSets[i] && describeSet(lastSets[i])
-                ? <span className="normal-case text-gray-600"> &middot; last {describeSet(lastSets[i])}</span>
+                ? <span className="normal-case text-brand-dim"> &middot; last {describeSet(lastSets[i])}</span>
                 : null}
             </p>
             <div className="flex gap-2">
@@ -321,7 +321,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       <button
         onClick={function () { onComplete(ex, exIdx, fields, total, kind); }}
         className="w-full py-4 rounded-md font-display text-base"
-        style={{ background: accent, color: "#000000" }}
+        style={{ background: accent, color: "var(--brand-bg)" }}
       >
         {calibrating ? "Log it" : "Completed as planned"}
       </button>

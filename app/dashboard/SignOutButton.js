@@ -18,7 +18,7 @@ export default function SignOutButton() {
   };
 
   return (
-    <button onClick={handleSignOut} className="text-sm text-gray-400 underline">
+    <button onClick={handleSignOut} className="text-sm text-brand-muted underline">
       Log out
     </button>
   );

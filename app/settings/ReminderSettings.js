@@ -103,7 +103,7 @@ export default function ReminderSettings({ profile, accent }) {
     <div className={card}>
       <p className="font-display text-base font-normal mb-1">Reminders</p>
 
-      <p className="text-sm text-gray-300 mb-4">
+      <p className="text-sm text-brand-muted mb-4">
         {chrono
           ? "You said you are at your best " + (CHRONOTYPE_LABEL[chrono] || "at any time of day") + ", so this is set just before that window. Change it to whatever actually fits."
           : "Pick a time that fits your week. You will get one nudge a day at most, and none at all in a week where you have already hit your sessions."}
@@ -115,20 +115,20 @@ export default function ReminderSettings({ profile, accent }) {
           disabled={saving}
           className="flex-1 py-4 rounded-sm font-display text-sm border"
           style={enabled
-            ? { background: tone, color: "#000000", borderColor: tone }
-            : { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.2)" }}>
+            ? { background: tone, color: "var(--brand-bg)", borderColor: tone }
+            : { background: "var(--brand-surface)", color: "var(--brand-muted)", borderColor: "var(--brand-line)" }}>
           {enabled ? "Reminders on" : "Turn on"}
         </button>
         <button
           onClick={function () { persist(false, hour, minute); }}
           disabled={saving || !enabled}
           className="flex-1 py-4 rounded-sm font-display text-sm border"
-          style={{ background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.2)", opacity: enabled ? 1 : 0.4 }}>
+          style={{ background: "var(--brand-surface)", color: "var(--brand-muted)", borderColor: "var(--brand-line)", opacity: enabled ? 1 : 0.4 }}>
           Turn off
         </button>
       </div>
 
-      <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Time</p>
+      <p className="text-xs uppercase tracking-wide text-brand-muted mb-2">Time</p>
       <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
         {SLOTS.map(function (s) {
           const on = s.hour === hour && s.minute === minute;
@@ -141,8 +141,8 @@ export default function ReminderSettings({ profile, accent }) {
               }}
               className="px-3 py-2 rounded-md font-display text-xs flex-shrink-0 border"
               style={on
-                ? { background: tone, color: "#000000", borderColor: tone }
-                : { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>
+                ? { background: tone, color: "var(--brand-bg)", borderColor: tone }
+                : { background: "var(--brand-surface)", color: "var(--brand-muted)", borderColor: "var(--brand-line)" }}>
               {formatTime(s.hour, s.minute)}
             </button>
           );
@@ -150,7 +150,7 @@ export default function ReminderSettings({ profile, accent }) {
       </div>
 
       {needsInstall ? (
-        <p className="text-xs text-gray-400 leading-relaxed mb-2">
+        <p className="text-xs text-brand-muted leading-relaxed mb-2">
           On iPhone, notifications only arrive if Vaeon is added to your home screen. Without that
           you will still get the nudge on your dashboard when you open the app, which is most of the
           value and none of the faff.
@@ -158,7 +158,7 @@ export default function ReminderSettings({ profile, accent }) {
       ) : null}
 
       {!pushSupported() ? (
-        <p className="text-xs text-gray-400 leading-relaxed mb-2">
+        <p className="text-xs text-brand-muted leading-relaxed mb-2">
           This browser will not send notifications, so your reminder will appear on the dashboard
           when you open Vaeon instead.
         </p>
@@ -167,7 +167,7 @@ export default function ReminderSettings({ profile, accent }) {
       {note ? <p className="text-xs mb-2" style={{ color: "#FFB020" }}>{note}</p> : null}
       {error ? <p className="text-xs mb-2" style={{ color: "#FF6B57" }}>{error}</p> : null}
 
-      <p className="text-[11px] text-gray-500 leading-relaxed">
+      <p className="text-[11px] text-brand-dim leading-relaxed">
         One a day at most. Nothing at all once you have hit your sessions for the week.
       </p>
     </div>

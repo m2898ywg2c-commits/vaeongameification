@@ -42,8 +42,8 @@ const extra = items.length - shown.length;
 return (
 <div className="rounded-md border border-brand-line bg-brand-surface p-4 mb-3">
 <div className="flex items-center justify-between mb-3">
-<p className="font-display text-xs uppercase tracking-wide text-gray-400">Your kudos</p>
-<button onClick={clear} className="text-xs underline text-gray-400">Clear</button>
+<p className="font-display text-xs uppercase tracking-wide text-brand-muted">Your kudos</p>
+<button onClick={clear} className="text-xs underline text-brand-muted">Clear</button>
 </div>
 
 <div className="space-y-3">
@@ -56,7 +56,7 @@ return (
 <p className="text-sm">
 <span className="font-display">{k.from_screen_name}</span> sent you {k.emoji}
 </p>
-{line ? <p className="text-xs text-gray-300 italic mt-0.5">&ldquo;{line}&rdquo;</p> : null}
+{line ? <p className="text-xs text-brand-muted italic mt-0.5">&ldquo;{line}&rdquo;</p> : null}
 </div>
 </div>
 );
@@ -64,7 +64,7 @@ return (
 </div>
 
 {extra > 0 ? (
-<p className="text-xs text-gray-500 mt-3">and {extra} more</p>
+<p className="text-xs text-brand-dim mt-3">and {extra} more</p>
 ) : null}
 
 {error ? <p className="text-xs text-red-400 mt-3">{error}</p> : null}

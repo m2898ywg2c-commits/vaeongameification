@@ -113,11 +113,11 @@ router.refresh();
 
 const card = function (active) {
 return "w-full text-left px-4 py-4 rounded-md border text-sm font-medium " +
-(active ? "border-white bg-white/20" : "border-brand-line bg-brand-surface");
+(active ? "border-brand-text bg-brand-field" : "border-brand-line bg-brand-surface");
 };
 
-const primaryBtn = { background: "#22D3EE", color: "#000000" };
-const dimBtn = { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" };
+const primaryBtn = { background: "var(--brand-accent)", color: "var(--brand-bg)" };
+const dimBtn = { background: "var(--brand-field)", color: "var(--brand-dim)" };
 
 // Back sits on the left and forward on the right, matching the direction of travel.
 const navRow = "flex items-center gap-3";
@@ -125,11 +125,11 @@ const backBtn = "px-6 py-3 rounded-sm font-display text-sm border border-brand-l
 
 if (step === "equipment") {
 return (
-<main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
+<main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-brand-text px-6 py-12">
 <div className="w-full max-w-md">
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Where will you train</p>
+<p className="text-xs uppercase tracking-wide text-brand-muted mb-2">Where will you train</p>
 <h1 className="font-display text-3xl font-normal mb-2">What have you got?</h1>
-<p className="text-sm text-gray-300 mb-8">
+<p className="text-sm text-brand-muted mb-8">
 No gym is completely fine. We swap every exercise for something you can actually do.
 </p>
 <div className="space-y-3 mb-8">
@@ -140,7 +140,7 @@ return (
 <span className="text-2xl" aria-hidden="true">{opt.icon}</span>
 <span>
 <span className="block font-display">{opt.name}</span>
-<span className="block text-xs text-gray-400">{opt.blurb}</span>
+<span className="block text-xs text-brand-muted">{opt.blurb}</span>
 </span>
 </span>
 </button>
@@ -158,11 +158,11 @@ return (
 
 if (step === "sessions") {
 return (
-<main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
+<main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-brand-text px-6 py-12">
 <div className="w-full max-w-md">
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Be honest with yourself</p>
+<p className="text-xs uppercase tracking-wide text-brand-muted mb-2">Be honest with yourself</p>
 <h1 className="font-display text-3xl font-normal mb-2">How many sessions a week?</h1>
-<p className="text-sm text-gray-300 mb-8">
+<p className="text-sm text-brand-muted mb-8">
 This is your pledge, and what the leaderboard scores you against. Two you actually do beats five you do not.
 </p>
 <div className="grid grid-cols-5 gap-2 mb-8">
@@ -170,7 +170,7 @@ This is your pledge, and what the leaderboard scores you against. Two you actual
 const on = sessions === n;
 return (
 <button key={n} onClick={function () { setSessions(n); }}
-className={"py-4 rounded-md border font-display text-lg font-normal " + (on ? "border-white bg-white/20" : "border-brand-line bg-brand-surface")}>
+className={"py-4 rounded-md border font-display text-lg font-normal " + (on ? "border-brand-text bg-brand-field" : "border-brand-line bg-brand-surface")}>
 {n}
 </button>
 );
@@ -191,11 +191,11 @@ const blocked = fixedDays === null || needsDays;
 const mismatch = fixedDays === true && trainDays.length > 0 && trainDays.length !== sessions;
 
 return (
-<main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
+<main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-brand-text px-6 py-12">
 <div className="w-full max-w-md">
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Last one</p>
+<p className="text-xs uppercase tracking-wide text-brand-muted mb-2">Last one</p>
 <h1 className="font-display text-3xl font-normal mb-2">Do you train on set days?</h1>
-<p className="text-sm text-gray-300 mb-8">
+<p className="text-sm text-brand-muted mb-8">
 Some people like Tuesday to mean Tuesday. Others just want to know what is next.
 </p>
 <div className="space-y-3 mb-8">
@@ -204,7 +204,7 @@ Some people like Tuesday to mean Tuesday. Others just want to know what is next.
 <span className="text-2xl" aria-hidden="true">&#128197;</span>
 <span>
 <span className="block font-display">Yes, give me days</span>
-<span className="block text-xs text-gray-400">Mon, Tue, Wed and so on</span>
+<span className="block text-xs text-brand-muted">Mon, Tue, Wed and so on</span>
 </span>
 </span>
 </button>
@@ -213,7 +213,7 @@ Some people like Tuesday to mean Tuesday. Others just want to know what is next.
 <span className="text-2xl" aria-hidden="true">&#128290;</span>
 <span>
 <span className="block font-display">No, just number them</span>
-<span className="block text-xs text-gray-400">Session 1, 2, 3. Do them whenever suits.</span>
+<span className="block text-xs text-brand-muted">Session 1, 2, 3. Do them whenever suits.</span>
 </span>
 </span>
 </button>
@@ -221,7 +221,7 @@ Some people like Tuesday to mean Tuesday. Others just want to know what is next.
 
 {fixedDays === true ? (
 <div className="mb-8">
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-3">Which days?</p>
+<p className="text-xs uppercase tracking-wide text-brand-muted mb-3">Which days?</p>
 <div className="grid grid-cols-4 gap-2">
 {WEEKDAYS.map(function (d) {
 const on = trainDays.indexOf(d.n) !== -1;
@@ -229,7 +229,7 @@ return (
 <button
 key={d.n}
 onClick={function () { toggleDay(d.n); }}
-className={"py-4 rounded-md border font-display text-sm " + (on ? "border-white bg-white/20" : "border-brand-line bg-brand-surface")}
+className={"py-4 rounded-md border font-display text-sm " + (on ? "border-brand-text bg-brand-field" : "border-brand-line bg-brand-surface")}
 >
 {d.short}
 </button>
@@ -247,7 +247,7 @@ className={"py-4 rounded-md border font-display text-sm " + (on ? "border-white 
 {hasType ? (
 <div className="rounded-md border p-4 mb-4" style={{ borderColor: "#22D3EE55", background: "rgba(34,211,238,0.08)" }}>
 <p className="font-display text-sm mb-1" style={{ color: "#22D3EE" }}>Your training type stays as it is</p>
-<p className="text-xs text-gray-300">
+<p className="text-xs text-brand-muted">
 Your type is about how you like to be coached, not what you are training for, so there is
 nothing to redo. You can retake the assessment any time from Settings if it stops fitting.
 </p>
@@ -255,7 +255,7 @@ nothing to redo. You can retake the assessment any time from Settings if it stop
 ) : (
 <div className="rounded-md border p-4 mb-4" style={{ borderColor: "#22D3EE55", background: "rgba(34,211,238,0.08)" }}>
 <p className="font-display text-sm mb-1" style={{ color: "#22D3EE" }}>Next: find your training type</p>
-<p className="text-xs text-gray-300">
+<p className="text-xs text-brand-muted">
 A quick two-minute quiz. To build you the best training experience we can, we need to understand how you tick: what actually drives you, how you like to train, and when your body is at its best. That is what finding your type means.
 </p>
 </div>
@@ -276,12 +276,12 @@ style={blocked ? dimBtn : primaryBtn}>
 }
 
 return (
-<main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
+<main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-brand-text px-6 py-12">
 <div className="w-full max-w-lg">
-<a href="/dashboard" className="inline-block text-xs text-gray-400 underline mb-4">Back to dashboard</a>
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-2">What is this really for</p>
+<a href="/dashboard" className="inline-block text-xs text-brand-muted underline mb-4">Back to dashboard</a>
+<p className="text-xs uppercase tracking-wide text-brand-muted mb-2">What is this really for</p>
 <h1 className="font-display text-3xl font-normal mb-2">Pick up to two.</h1>
-<p className="text-sm text-gray-300 mb-8">Your goals decide the sessions Vaeon builds for you.</p>
+<p className="text-sm text-brand-muted mb-8">Your goals decide the sessions Vaeon builds for you.</p>
 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
 {ALL_GOALS.map(function (g) {
 const active = picked.indexOf(g.id) !== -1;
@@ -294,17 +294,17 @@ const own = g.id === GYM_READY_ID;
 return (
 <button key={g.id} onClick={function () { toggle(g.id); }}
 className={"text-left px-4 py-3 rounded-md border text-sm font-medium " +
-(active ? "border-white bg-white/20" : blocked ? "border-white/5 bg-brand-surface opacity-40" : "border-brand-line bg-brand-surface") +
+(active ? "border-brand-text bg-brand-field" : blocked ? "border-white/5 bg-brand-surface opacity-40" : "border-brand-line bg-brand-surface") +
 (own ? " sm:col-span-2" : "")}>
 <span className="block">{g.name}</span>
-{own ? <span className="block text-xs text-gray-400 mt-1">{g.blurb}</span> : null}
+{own ? <span className="block text-xs text-brand-muted mt-1">{g.blurb}</span> : null}
 </button>
 );
 })}
 </div>
 
 {gym ? (
-<p className="text-xs text-gray-400 mb-8">
+<p className="text-xs text-brand-muted mb-8">
 Gym ready replaces the other goals, because your coach is setting the plan. Vaeon will
 record your sessions, track your lifts and report back every eight weeks.
 </p>

@@ -58,7 +58,7 @@ export function TypeHeader({ typeId, subtitle }) {
       <TypeOrb typeId={typeId} size={44} />
       <div>
         <p className="font-display text-sm leading-tight">{t.name}</p>
-        <p className="text-xs text-gray-400 leading-tight">{subtitle || t.tagline}</p>
+        <p className="text-xs text-brand-muted leading-tight">{subtitle || t.tagline}</p>
       </div>
     </div>
   );

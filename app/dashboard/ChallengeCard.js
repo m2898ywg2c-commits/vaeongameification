@@ -101,11 +101,11 @@ export default function ChallengeCard({ challenge, accent }) {
         </span>
       </div>
 
-      <div className="h-1 mb-2.5 overflow-hidden rounded-sm" style={{ background: "rgba(255,255,255,0.10)" }}>
+      <div className="h-1 mb-2.5 overflow-hidden rounded-sm" style={{ background: "var(--brand-field)" }}>
         <div className="h-full" style={{ width: pct + "%", background: hit ? "#3DDC97" : tone }} />
       </div>
 
-      <p className="text-xs mb-2 leading-relaxed" style={{ color: "#d1d5db" }}>
+      <p className="text-xs mb-2 leading-relaxed" style={{ color: "var(--brand-muted)" }}>
         {hit
           ? "Cleared. Anything else this week is a bonus."
           : (collective

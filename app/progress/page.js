@@ -91,25 +91,25 @@ function LineChart({ points, accent, unit }) {
   return (
     <div>
       <svg viewBox={"0 0 " + W + " " + H} className="w-full" role="img" aria-label="Trend chart">
-        <line x1={padL} y1={H - padB} x2={W - padR} y2={H - padB} stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+        <line x1={padL} y1={H - padB} x2={W - padR} y2={H - padB} stroke="var(--brand-line)" strokeWidth="1" />
         {area ? <path d={area} fill={accent} opacity="0.12" /> : null}
         <path d={path} fill="none" stroke={accent} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
         {points.map(function (p, i) {
           return <circle key={i} cx={x(i)} cy={y(p.y)} r={i === points.length - 1 ? 4.5 : 3} fill={accent} />;
         })}
-        <text x="4" y={y(Math.max.apply(null, values)) + 4} fill="rgba(255,255,255,0.5)" fontSize="10">
+        <text x="4" y={y(Math.max.apply(null, values)) + 4} fill="var(--brand-muted)" fontSize="10">
           {round1(Math.max.apply(null, values))}
         </text>
-        <text x="4" y={y(Math.min.apply(null, values)) + 4} fill="rgba(255,255,255,0.5)" fontSize="10">
+        <text x="4" y={y(Math.min.apply(null, values)) + 4} fill="var(--brand-muted)" fontSize="10">
           {round1(Math.min.apply(null, values))}
         </text>
-        <text x={padL} y={H - 6} fill="rgba(255,255,255,0.45)" fontSize="10">{first.label}</text>
+        <text x={padL} y={H - 6} fill="var(--brand-muted)" fontSize="10">{first.label}</text>
         {points.length > 1 ? (
-          <text x={W - padR} y={H - 6} textAnchor="end" fill="rgba(255,255,255,0.45)" fontSize="10">{last.label}</text>
+          <text x={W - padR} y={H - 6} textAnchor="end" fill="var(--brand-muted)" fontSize="10">{last.label}</text>
         ) : null}
       </svg>
-      <p className="text-sm text-gray-300 mt-1">
-        Latest <span className="font-display text-white">{round1(last.y)}{unit}</span>
+      <p className="text-sm text-brand-muted mt-1">
+        Latest <span className="font-display text-brand-text">{round1(last.y)}{unit}</span>
         {points.length > 1 ? <span>{" "}&middot; {deltaText(first.y, last.y, first.label, unit)}</span> : null}
       </p>
     </div>
@@ -131,8 +131,8 @@ function BarChart({ bars, accent, pledge }) {
     <svg viewBox={"0 0 " + W + " " + H} className="w-full" role="img" aria-label="Sessions per week">
       {pledge ? (
         <g>
-          <line x1="0" y1={y(pledge)} x2={W} y2={y(pledge)} stroke="rgba(255,255,255,0.35)" strokeWidth="1" strokeDasharray="4 4" />
-          <text x={W - 2} y={y(pledge) - 4} textAnchor="end" fill="rgba(255,255,255,0.5)" fontSize="9">
+          <line x1="0" y1={y(pledge)} x2={W} y2={y(pledge)} stroke="var(--brand-dim)" strokeWidth="1" strokeDasharray="4 4" />
+          <text x={W - 2} y={y(pledge) - 4} textAnchor="end" fill="var(--brand-muted)" fontSize="9">
             pledge {pledge}
           </text>
         </g>
@@ -148,13 +148,13 @@ function BarChart({ bars, accent, pledge }) {
               width={bw}
               height={hgt}
               rx="3"
-              fill={hit ? accent : "rgba(255,255,255,0.18)"}
+              fill={hit ? accent : "var(--brand-line)"}
             />
             <text
               x={i * (bw + gap) + gap / 2 + bw / 2}
               y={H - 6}
               textAnchor="middle"
-              fill="rgba(255,255,255,0.45)"
+              fill="var(--brand-muted)"
               fontSize="9"
             >
               {b.label}
@@ -167,7 +167,7 @@ function BarChart({ bars, accent, pledge }) {
 }
 
 function Empty({ text }) {
-  return <p className="text-sm text-gray-400">{text}</p>;
+  return <p className="text-sm text-brand-muted">{text}</p>;
 }
 
 export default function ProgressPage() {
@@ -261,23 +261,23 @@ export default function ProgressPage() {
   const card = "rounded-md border border-brand-line bg-brand-surface p-5 mb-4";
 
   return (
-    <main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
+    <main className="min-h-screen text-brand-text px-5 py-8" style={{ background: "var(--brand-bg)" }}>
       <div className="max-w-md mx-auto">
         <div className="flex items-center justify-between mb-6">
           <Home accent={accent} />
-          <a href="/dashboard" className="text-xs text-gray-400 underline">Back</a>
+          <a href="/dashboard" className="text-xs text-brand-muted underline">Back</a>
         </div>
 
         <h1 className="font-display text-2xl font-normal mb-6">Progress</h1>
 
         {loading ? (
-          <p className="text-sm text-gray-400">Getting your numbers...</p>
+          <p className="text-sm text-brand-muted">Getting your numbers...</p>
         ) : (
           <div>
             {/* ---------- Sessions per week ---------- */}
             <div className={card}>
               <p className="font-display text-base font-normal mb-1">Sessions per week</p>
-              <p className="text-sm text-gray-300 mb-4">
+              <p className="text-sm text-brand-muted mb-4">
                 {sessions.length === 0
                   ? "Nothing logged yet."
                   : pledge
@@ -294,7 +294,7 @@ export default function ProgressPage() {
             {/* ---------- Lifts ---------- */}
             <div className={card}>
               <p className="font-display text-base font-normal mb-1">Lift progression</p>
-              <p className="text-sm text-gray-300 mb-4">{summary}</p>
+              <p className="text-sm text-brand-muted mb-4">{summary}</p>
 
               {exercises.length === 0 ? (
                 <Empty text="Log some weighted sets and this will show you honestly whether the bar is getting heavier." />
@@ -309,8 +309,8 @@ export default function ProgressPage() {
                           onClick={function () { setPicked(name); }}
                           className="px-3 py-2 rounded-sm border font-display text-xs"
                           style={{
-                            borderColor: on ? accent : "rgba(255,255,255,0.12)",
-                            background: on ? accent + "22" : "rgba(255,255,255,0.05)",
+                            borderColor: on ? accent : "var(--brand-line)",
+                            background: on ? accent + "22" : "var(--brand-line)",
                           }}
                         >
                           {name}
@@ -330,7 +330,7 @@ export default function ProgressPage() {
                       <p className="font-display text-xs uppercase tracking-wide mb-1" style={{ color: STATUS_COLOUR[activeTrend.status] }}>
                         {STATUS_WORD[activeTrend.status]}
                       </p>
-                      <p className="text-sm text-gray-200">{activeTrend.message}</p>
+                      <p className="text-sm text-brand-text">{activeTrend.message}</p>
                     </div>
                   ) : null}
                 </div>
@@ -340,7 +340,7 @@ export default function ProgressPage() {
             {/* ---------- Bodyweight ---------- */}
             <div className={card}>
               <p className="font-display text-base font-normal mb-1">Bodyweight</p>
-              <p className="text-sm text-gray-300 mb-4">
+              <p className="text-sm text-brand-muted mb-4">
                 {bwPoints.length < 2
                   ? "Needs a couple of entries before a line means anything."
                   : "Weight bounces around day to day. Watch the direction, not the dots."}

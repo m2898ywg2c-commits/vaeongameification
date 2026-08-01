@@ -73,34 +73,34 @@ export default function SignUpPage() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white px-6 py-12">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-brand-text px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-6">
           <BrandLockup size={30} full />
         </div>
 
         <h1 className="font-display text-2xl font-normal mb-1">Create your account</h1>
-        <p className="text-sm text-gray-400 mb-6">Your screen name is what other people see, never your real name.</p>
+        <p className="text-sm text-brand-muted mb-6">Your screen name is what other people see, never your real name.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs uppercase tracking-wide text-gray-400 mb-1">Screen name</label>
+            <label className="block text-xs uppercase tracking-wide text-brand-muted mb-1">Screen name</label>
             <input
               type="text"
               required
               value={screenName}
               onChange={(e) => setScreenName(e.target.value)}
               placeholder="e.g. IronOtter"
-              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
+              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-brand-text outline-none focus:border-[#22D3EE]"
             />
           </div>
 
           <div>
-            <label className="block text-xs uppercase tracking-wide text-gray-400 mb-1">Age group</label>
+            <label className="block text-xs uppercase tracking-wide text-brand-muted mb-1">Age group</label>
             <select
               value={ageGroup}
               onChange={(e) => setAgeGroup(e.target.value)}
-              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
+              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-brand-text outline-none focus:border-[#22D3EE]"
             >
               {AGE_GROUPS.map((a) => (
                 <option key={a} value={a} className="bg-brand-bg">
@@ -111,25 +111,25 @@ export default function SignUpPage() {
           </div>
 
           <div>
-            <label className="block text-xs uppercase tracking-wide text-gray-400 mb-1">Email</label>
+            <label className="block text-xs uppercase tracking-wide text-brand-muted mb-1">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
+              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-brand-text outline-none focus:border-[#22D3EE]"
             />
           </div>
 
           <div>
-            <label className="block text-xs uppercase tracking-wide text-gray-400 mb-1">Password</label>
+            <label className="block text-xs uppercase tracking-wide text-brand-muted mb-1">Password</label>
             <input
               type="password"
               required
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-white outline-none focus:border-[#22D3EE]"
+              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-brand-text outline-none focus:border-[#22D3EE]"
             />
           </div>
 
@@ -143,9 +143,9 @@ export default function SignUpPage() {
               onChange={(e) => setAccepted(e.target.checked)}
               className="mt-0.5 h-4 w-4 shrink-0 accent-[#22D3EE]"
             />
-            <span className="text-xs text-gray-300 leading-relaxed">
+            <span className="text-xs text-brand-muted leading-relaxed">
               {DISCLAIMER_SHORT}{" "}
-              <a href="/disclaimer" target="_blank" className="text-white underline">
+              <a href="/disclaimer" target="_blank" className="text-brand-text underline">
                 Read the full version
               </a>
               .
@@ -160,17 +160,17 @@ export default function SignUpPage() {
             className="w-full py-3 rounded-sm font-display text-sm"
             style={
               accepted
-                ? { background: "#22D3EE", color: "#000000" }
-                : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }
+                ? { background: "var(--brand-accent)", color: "var(--brand-bg)" }
+                : { background: "var(--brand-field)", color: "var(--brand-dim)" }
             }
           >
             {loading ? "Creating account..." : "Create account"}
           </button>
         </form>
 
-        <p className="text-sm text-gray-400 mt-6 text-center">
+        <p className="text-sm text-brand-muted mt-6 text-center">
           Already got an account?{" "}
-          <a href="/login" className="text-white underline">
+          <a href="/login" className="text-brand-text underline">
             Log in
           </a>
         </p>

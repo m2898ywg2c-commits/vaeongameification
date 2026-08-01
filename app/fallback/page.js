@@ -42,16 +42,16 @@ export default function FallbackPage() {
   if (location) {
     const workout = fallbackFor(category, location);
     return (
-      <main className="min-h-screen bg-brand-bg text-white px-6 py-10">
+      <main className="min-h-screen bg-brand-bg text-brand-text px-6 py-10">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Home />
-            <button onClick={function () { setLocation(null); setLogged(false); }} className="text-xs text-gray-400 underline">
+            <button onClick={function () { setLocation(null); setLogged(false); }} className="text-xs text-brand-muted underline">
               Pick a different place
             </button>
           </div>
           <h1 className="font-display text-2xl font-normal mb-1">{workout.title}</h1>
-          <p className="text-xs uppercase tracking-wide text-gray-400 mb-5">{workout.minutes} minutes</p>
+          <p className="text-xs uppercase tracking-wide text-brand-muted mb-5">{workout.minutes} minutes</p>
 
           <div className="rounded-md border border-brand-line bg-brand-surface p-5 mb-5">
             <ol className="text-sm space-y-2 list-decimal list-inside text-gray-100">
@@ -59,12 +59,12 @@ export default function FallbackPage() {
             </ol>
           </div>
 
-          <p className="text-sm text-gray-300 mb-6">{workout.note}</p>
+          <p className="text-sm text-brand-muted mb-6">{workout.note}</p>
 
           <button
             onClick={function () { logIt(workout); }}
             className="w-full px-6 py-3 rounded-sm font-display text-sm mb-2"
-            style={{ background: "#22D3EE", color: "#000000" }}
+            style={{ background: "var(--brand-accent)", color: "var(--brand-bg)" }}
           >
             {logged ? "Logged" : "Done, log it"}
           </button>
@@ -75,13 +75,13 @@ export default function FallbackPage() {
   }
 
   return (
-    <main className="min-h-screen bg-brand-bg text-white px-6 py-10">
+    <main className="min-h-screen bg-brand-bg text-brand-text px-6 py-10">
       <div className="max-w-md mx-auto">
         <div className="mb-6">
           <Home />
         </div>
         <h1 className="font-display text-2xl font-normal mb-2">Cannot get to the gym?</h1>
-        <p className="text-sm text-gray-300 mb-8">
+        <p className="text-sm text-brand-muted mb-8">
           Missing a session is how streaks die. Pick where you actually are and do something
           smaller instead. It still counts.
         </p>
@@ -95,7 +95,7 @@ export default function FallbackPage() {
                 className="w-full text-left rounded-md border border-brand-line bg-brand-surface p-4"
               >
                 <p className="font-display text-sm">{loc.name}</p>
-                <p className="text-xs text-gray-400 mt-1">{loc.blurb}</p>
+                <p className="text-xs text-brand-muted mt-1">{loc.blurb}</p>
               </button>
             );
           })}

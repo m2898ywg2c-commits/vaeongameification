@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TYPES, isSolo } from "@/lib/personality";
+import { currentScheme, accentFor } from "@/lib/theme";
 import { KUDOS_EMOJI, KUDOS_NOTES, noteText } from "@/lib/kudos";
 import TypeOrb from "../TypeOrb";
 import Home from "../Home";
@@ -115,7 +116,8 @@ setJoining(false);
 await load();
 };
 
-const myTypeColour = myType && TYPES[myType] ? TYPES[myType].colors[0] : "#22D3EE";
+const scheme = currentScheme();
+const myTypeColour = accentFor(TYPES[myType], scheme);
 const visible = rows.filter(function (r) {
 return filter === "mine" && myType ? r.type_id === myType : true;
 });
@@ -132,26 +134,26 @@ const t = r.type_id ? TYPES[r.type_id] : null;
 const mine = meId && r.user_id === meId;
 const gave = myKudos[r.user_id];
 const gaveNote = gave ? noteText(gave.note) : null;
-const accent = t ? t.colors[0] : "#22D3EE";
+const accent = accentFor(t, scheme);
 return (
 <div
 key={r.user_id}
-className={"rounded-md border p-4 " + (mine ? "border-white/40 bg-white/15" : "border-brand-line bg-brand-surface")}
+className={"rounded-md border p-4 " + (mine ? "border-white/40 bg-brand-field" : "border-brand-line bg-brand-surface")}
 >
 <div className="flex items-center gap-3">
-<span className="font-display text-sm w-5 text-gray-400">{rankIndex + 1}</span>
-{t ? <TypeOrb typeId={r.type_id} size={38} /> : <span className="w-[38px] h-[38px] rounded-full bg-white/10 inline-block" />}
+<span className="font-display text-sm w-5 text-brand-muted">{rankIndex + 1}</span>
+{t ? <TypeOrb typeId={r.type_id} size={38} /> : <span className="w-[38px] h-[38px] rounded-full bg-brand-field inline-block" />}
 <div className="flex-1 min-w-0">
 <p className="font-display text-sm truncate">
 {r.screen_name}{mine ? " (you)" : ""}
 </p>
-<p className="text-xs text-gray-400">
+<p className="text-xs text-brand-muted">
 {t ? t.name : "No type yet"} &middot; {r.done} this block &middot; wk {r.weeks}/{r.block_weeks || 6}
 </p>
 </div>
 <div className="text-right">
 <p className="font-display text-lg font-normal leading-none">{r.score}</p>
-{r.kudos_count > 0 ? <p className="text-[11px] text-gray-400 mt-1">👏 {r.kudos_count}</p> : null}
+{r.kudos_count > 0 ? <p className="text-[11px] text-brand-muted mt-1">👏 {r.kudos_count}</p> : null}
 </div>
 </div>
 
@@ -171,13 +173,13 @@ style={gave && gave.emoji === em ? { borderColor: accent, background: accent + "
 </button>
 );
 })}
-<button onClick={function () { setPickerFor(null); }} className="text-xs text-gray-500 underline ml-1">
+<button onClick={function () { setPickerFor(null); }} className="text-xs text-brand-dim underline ml-1">
 close
 </button>
 </div>
 ) : noteFor === r.user_id ? (
 <div>
-<p className="text-xs text-gray-400 mb-2">Add a line? Optional.</p>
+<p className="text-xs text-brand-muted mb-2">Add a line? Optional.</p>
 <div className="space-y-1.5">
 {KUDOS_NOTES.map(function (n) {
 const on = gave && gave.note === n.code;
@@ -187,8 +189,8 @@ key={n.code}
 onClick={function () { sendNote(r.user_id, n.code); }}
 className="w-full text-left text-xs px-3 py-2.5 rounded-md border"
 style={{
-borderColor: on ? accent : "rgba(255,255,255,0.12)",
-background: on ? accent + "22" : "rgba(255,255,255,0.04)",
+borderColor: on ? accent : "var(--brand-line)",
+background: on ? accent + "22" : "var(--brand-surface)",
 }}
 >
 {n.text}
@@ -196,7 +198,7 @@ background: on ? accent + "22" : "rgba(255,255,255,0.04)",
 );
 })}
 </div>
-<button onClick={function () { setNoteFor(null); }} className="text-xs text-gray-500 underline mt-2">
+<button onClick={function () { setNoteFor(null); }} className="text-xs text-brand-dim underline mt-2">
 No thanks, just the emoji
 </button>
 </div>
@@ -218,7 +220,7 @@ style={{ color: accent }}
 {gaveNote ? "Change your line" : "Add a line"}
 </button>
 ) : null}
-{gaveNote ? <p className="text-xs text-gray-400 mt-2 italic">&ldquo;{gaveNote}&rdquo;</p> : null}
+{gaveNote ? <p className="text-xs text-brand-muted mt-2 italic">&ldquo;{gaveNote}&rdquo;</p> : null}
 </div>
 )}
 </div>
@@ -228,12 +230,12 @@ style={{ color: accent }}
 };
 
 return (
-<main className="min-h-screen bg-brand-bg text-white px-5 py-8">
+<main className="min-h-screen bg-brand-bg text-brand-text px-5 py-8">
 <div className="max-w-md mx-auto">
 <div className="mb-6"><Home accent={myTypeColour} /></div>
 
 <h1 className="font-display text-2xl font-normal mb-2">This block</h1>
-<p className="text-sm text-gray-300 mb-5">
+<p className="text-sm text-brand-muted mb-5">
 Scored on how much of your own pledge you have hit so far this block, not raw counts,
 so someone in week one is compared fairly with someone near the end. Blocks are six
 weeks, or eight if you are following your own plan. Resets when your block does.
@@ -253,7 +255,7 @@ it, including sending and receiving kudos. See supabase/leaderboard_opt_in.sql. 
 {meId && !onBoard ? (
 <div className="rounded-md border p-4 mb-4" style={{ borderColor: myTypeColour + "55", background: myTypeColour + "12" }}>
 <p className="font-display text-sm mb-1" style={{ color: myTypeColour }}>You are hidden from the rankings</p>
-<p className="text-xs text-gray-300 mb-3">
+<p className="text-xs text-brand-muted mb-3">
 You asked to be left off the board. You can still see everyone and send kudos, and
 you can come back on whenever you like.
 </p>
@@ -266,8 +268,8 @@ style={{ background: myTypeColour, color: "#000000" }}>
 ) : null}
 
 {meId && onBoard && soloUndecided ? (
-<div className="rounded-md border p-4 mb-4" style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)" }}>
-<p className="text-xs text-gray-300 mb-2">
+<div className="rounded-md border p-4 mb-4" style={{ borderColor: "var(--brand-line)", background: "var(--brand-surface)" }}>
+<p className="text-xs text-brand-muted mb-2">
 The {TYPES[myType].name.replace("The ", "")} trains best alone, so if being ranked is not
 for you, step off. You keep the board, the kudos and everything else.
 </p>
@@ -280,7 +282,7 @@ className="font-display text-xs underline" style={{ color: myTypeColour }}>
 
 {meId && onBoard && !soloUndecided ? (
 <button onClick={function () { setBoardVisibility(false); }} disabled={joining}
-className="w-full text-center text-xs text-gray-500 underline mb-4">
+className="w-full text-center text-xs text-brand-dim underline mb-4">
 Hide me from the rankings
 </button>
 ) : null}
@@ -291,8 +293,8 @@ Hide me from the rankings
 onClick={function () { setFilter("all"); setExpanded(false); }}
 className="py-2.5 rounded-sm border font-display text-sm"
 style={{
-borderColor: filter === "all" ? myTypeColour : "rgba(255,255,255,0.12)",
-background: filter === "all" ? myTypeColour + "22" : "rgba(255,255,255,0.04)",
+borderColor: filter === "all" ? myTypeColour : "var(--brand-line)",
+background: filter === "all" ? myTypeColour + "22" : "var(--brand-surface)",
 }}
 >
 Everyone
@@ -302,8 +304,8 @@ onClick={function () { if (myType) { setFilter("mine"); setExpanded(false); } }}
 disabled={!myType}
 className="py-2.5 rounded-sm border font-display text-sm"
 style={{
-borderColor: filter === "mine" ? myTypeColour : "rgba(255,255,255,0.12)",
-background: filter === "mine" ? myTypeColour + "22" : "rgba(255,255,255,0.04)",
+borderColor: filter === "mine" ? myTypeColour : "var(--brand-line)",
+background: filter === "mine" ? myTypeColour + "22" : "var(--brand-surface)",
 opacity: myType ? 1 : 0.4,
 }}
 >
@@ -312,9 +314,9 @@ My fellow {myType && TYPES[myType] ? TYPES[myType].name.replace("The ", "") + "s
 </div>
 
 {loading ? (
-<p className="text-sm text-gray-400">Loading...</p>
+<p className="text-sm text-brand-muted">Loading...</p>
 ) : visible.length === 0 ? (
-<p className="text-sm text-gray-400">
+<p className="text-sm text-brand-muted">
 {filter === "mine" ? "Nobody of your type on the board yet." : "Nobody has logged anything yet."}
 </p>
 ) : (
@@ -325,7 +327,7 @@ My fellow {myType && TYPES[myType] ? TYPES[myType].name.replace("The ", "") + "s
 
 {pinMe ? (
 <div className="mt-2">
-<p className="text-center text-xs text-gray-600 mb-2">&middot; &middot; &middot;</p>
+<p className="text-center text-xs text-brand-dim mb-2">&middot; &middot; &middot;</p>
 {renderRow(visible[myIndex], myIndex)}
 </div>
 ) : null}
@@ -342,7 +344,7 @@ style={{ borderColor: myTypeColour + "55", color: myTypeColour, background: myTy
 </>
 )}
 
-<p className="text-xs text-gray-500 mt-6">
+<p className="text-xs text-brand-dim mt-6">
 Kudos are one per person, and you can change the emoji or the line any time. Consistency
 across the block beats a single big week, which is the whole point.
 </p>

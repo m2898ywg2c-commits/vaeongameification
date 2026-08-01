@@ -91,19 +91,19 @@ export default function LogPage() {
   const pill = function (active) {
     return (
       "px-4 py-2 rounded-sm text-sm font-medium border " +
-      (active ? "border-white bg-white/20" : "border-brand-line bg-brand-surface")
+      (active ? "border-brand-text bg-brand-field" : "border-brand-line bg-brand-surface")
     );
   };
 
   return (
-    <main className="min-h-screen bg-brand-bg text-white px-6 py-12">
+    <main className="min-h-screen bg-brand-bg text-brand-text px-6 py-12">
       <div className="max-w-md mx-auto">
         <div className="mb-6">
           <Home />
         </div>
         <h1 className="font-display text-2xl font-normal mb-6">Log a session</h1>
 
-        <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">What was it?</p>
+        <p className="text-xs uppercase tracking-wide text-brand-muted mb-2">What was it?</p>
         <div className="flex flex-wrap gap-2 mb-6">
           {SESSION_TYPES.map(function (t) {
             return (
@@ -114,7 +114,7 @@ export default function LogPage() {
           })}
         </div>
 
-        <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">How long?</p>
+        <p className="text-xs uppercase tracking-wide text-brand-muted mb-2">How long?</p>
         <div className="flex flex-wrap gap-2 mb-6">
           {DURATIONS.map(function (d) {
             return (
@@ -125,7 +125,7 @@ export default function LogPage() {
           })}
         </div>
 
-        <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">How hard? 1 easy, 5 brutal</p>
+        <p className="text-xs uppercase tracking-wide text-brand-muted mb-2">How hard? 1 easy, 5 brutal</p>
         <div className="flex gap-2 mb-6">
           {[1, 2, 3, 4, 5].map(function (e) {
             return (
@@ -140,14 +140,14 @@ export default function LogPage() {
           value={note}
           onChange={function (e) { setNote(e.target.value); }}
           placeholder="Optional note"
-          className="w-full px-4 py-3 rounded-md border border-brand-line bg-brand-surface text-sm mb-6 placeholder-gray-500"
+          className="w-full px-4 py-3 rounded-md border border-brand-line bg-brand-surface text-sm mb-6 placeholder-brand-dim"
         />
 
         <button
           onClick={save}
           disabled={saving}
           className="px-8 py-3 rounded-sm font-display text-sm mb-3"
-          style={{ background: "#22D3EE", color: "#000000" }}
+          style={{ background: "var(--brand-accent)", color: "var(--brand-bg)" }}
         >
           {saving ? "Saving..." : "Save session"}
         </button>
@@ -155,9 +155,9 @@ export default function LogPage() {
         {error ? <p className="text-sm text-red-400 mb-3">{error}</p> : null}
 
         <div className="mt-8">
-          <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">Recent sessions</p>
+          <p className="text-xs uppercase tracking-wide text-brand-muted mb-3">Recent sessions</p>
           {recent.length === 0 ? (
-            <p className="text-sm text-gray-500">Nothing logged yet.</p>
+            <p className="text-sm text-brand-dim">Nothing logged yet.</p>
           ) : (
             <div className="space-y-2">
               {recent.map(function (s) {
@@ -170,14 +170,14 @@ export default function LogPage() {
                       <p className="text-sm">
                         {s.session_type} - {s.duration_min} min - effort {s.effort}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-brand-dim">
                         {new Date(s.logged_at).toLocaleDateString()}
                         {s.note ? " - " + s.note : ""}
                       </p>
                     </div>
                     <button
                       onClick={function () { remove(s.id); }}
-                      className="text-xs text-gray-500 underline"
+                      className="text-xs text-brand-dim underline"
                     >
                       Delete
                     </button>

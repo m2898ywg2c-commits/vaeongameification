@@ -16,9 +16,15 @@
   --brand-line-strong: rgba(255, 255, 255, 0.18);
   --brand-text: #ffffff;
   --brand-muted: #9ca3af;
-  --brand-dim: #6b7280;
+  /* Was #6B7280, which is 4.1:1 against the card surface and fails AA for normal text.
+     This is 5.2:1. The dim tone carries the tracked micro-labels, so it was failing on
+     exactly the smallest type in the app. */
+  --brand-dim: #7d838f;
   --brand-accent: #22d3ee;
   --brand-accent-deep: #3b82f6;
+  /* Input and control fills. Was rgba(255,255,255,0.10) written out by hand, which only
+     works on a dark page: on white it is invisible. */
+  --brand-field: rgba(255, 255, 255, 0.1);
 
   /* RADIUS.
      Was a flat 16px (rounded-2xl) on everything, with full pills on the buttons. The mark
@@ -38,6 +44,31 @@
   --track-tight: -0.02em;
 }
 
+/* LIGHT THEME.
+   Applied by the inline script in app/layout.js setting data-theme on <html>, before
+   first paint, so there is no flash of the wrong scheme.
+
+   Not pure white. #FAFAFA against near-black text is easier on the eyes than maximum
+   contrast, and it means a genuinely white card still reads as raised.
+
+   Every value here is the same token the dark theme uses, so any screen already built
+   against the token layer follows automatically. Anything still hardcoding #000000 or a
+   grey Tailwind class does not, which is why those were swept out. */
+[data-theme="light"] {
+  --brand-bg: #fafafa;
+  --brand-surface: #ffffff;
+  --brand-line: rgba(0, 0, 0, 0.12);
+  --brand-line-strong: rgba(0, 0, 0, 0.22);
+  --brand-text: #0a0a0a;
+  /* Deliberately darker than the dark theme's muted grey. #9CA3AF on white is 2.6:1 and
+     fails; this is 4.8:1 and passes for body text. */
+  --brand-muted: #52525b;
+  --brand-dim: #6b6b73;
+  --brand-accent: #0e7490;
+  --brand-accent-deep: #22d3ee;
+  --brand-field: rgba(0, 0, 0, 0.05);
+}
+
 @theme inline {
   --color-brand-bg: var(--brand-bg);
   --color-brand-surface: var(--brand-surface);
@@ -47,6 +78,8 @@
   --color-brand-dim: var(--brand-dim);
   --color-brand-accent: var(--brand-accent);
   --color-brand-accent-deep: var(--brand-accent-deep);
+  --color-brand-field: var(--brand-field);
+  --color-brand-line-strong: var(--brand-line-strong);
 
   --font-display: var(--font-display), "Segoe UI", sans-serif;
   --font-sans: var(--font-body), "Segoe UI", sans-serif;
@@ -54,6 +87,12 @@
   --radius-sm: var(--r-sm);
   --radius-md: var(--r-md);
   --radius-lg: var(--r-lg);
+}
+
+html {
+  /* Set here as well as on body so the overscroll area matches rather than flashing white
+     on iOS when you pull past the top of a dark page. */
+  background: var(--brand-bg);
 }
 
 body {

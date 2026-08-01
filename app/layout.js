@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import { Space_Grotesk, Inter } from "next/font/google";
+import { THEME_COOKIE, SCHEME_COOKIE, resolveScheme } from "@/lib/theme";
 import "./globals.css";
 import BrandBar from "./Brand";
 import Splash from "./Splash";
@@ -55,12 +57,32 @@ export const metadata = {
 // themeColor belongs on the viewport export, not metadata. It colours the
 // status bar on Android and the tab strip on desktop Chrome.
 export const viewport = {
-  themeColor: "#000000",
+  // Two entries, not one. This paints the status bar on Android and the tab strip on
+  // desktop, and a fixed black one on a light-themed phone leaves a black band above a
+  // near-white app.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
 };
 
-export default function RootLayout({ children }) {
+// THEME RESOLVED ON THE SERVER, CORRECTED ON THE CLIENT.
+//
+// The dashboard picks a user's accent colour during render, and in light mode that is a
+// different colour, so the server has to know the scheme before it draws anything. A
+// cookie is the only preference store the server can see, which is why this is not in
+// localStorage like the rest of the app's small state.
+//
+// The cookie can be stale or absent on a first visit, so the inline script below has the
+// final word and runs before first paint.
+export default async function RootLayout({ children }) {
+  const jar = await cookies();
+  const choice = jar.get(THEME_COOKIE)?.value || "system";
+  const lastKnownDevice = jar.get(SCHEME_COOKIE)?.value || "dark";
+  const scheme = resolveScheme(choice, lastKnownDevice);
+
   return (
-    <html lang="en" className={"h-full antialiased " + display.variable + " " + body.variable}>
+    <html lang="en" data-theme={scheme} className={"h-full antialiased " + display.variable + " " + body.variable}>
       <head>
         {/* CATCH beforeinstallprompt BEFORE REACT EXISTS.
             Chrome fires this event early in page load, frequently before the bundle has
@@ -75,6 +97,22 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{
             __html:
               "window.__vaeonInstall=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__vaeonInstall=e;window.dispatchEvent(new Event('vaeon:installable'));});",
+          }}
+        />
+
+        {/* THEME, BEFORE FIRST PAINT.
+            The server has already guessed from the cookie. This corrects it against what
+            the device actually reports, which matters on a first visit when there is no
+            cookie yet and on any device whose system setting has changed since.
+
+            It runs synchronously in the head, so the correction happens before anything is
+            drawn and nobody sees a white flash on a dark phone or the reverse. It also
+            writes the resolved scheme back to the cookie so the next server render starts
+            from the right answer. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var m=document.cookie.match(/(?:^|; )vaeon_theme=([^;]*)/);var c=m?decodeURIComponent(m[1]):'system';var d=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';var s=c==='light'?'light':(c==='dark'?'dark':d);document.documentElement.setAttribute('data-theme',s);document.cookie='vaeon_scheme='+d+';path=/;max-age=31536000;SameSite=Lax';}catch(e){}})();",
           }}
         />
       </head>

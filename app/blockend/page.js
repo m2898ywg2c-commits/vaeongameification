@@ -139,8 +139,8 @@ router.push("/plan");
 
 if (loading) {
 return (
-<main className="min-h-screen text-white flex items-center justify-center" style={{ background: "#000000" }}>
-<p className="text-sm text-gray-400">Adding up your block...</p>
+<main className="min-h-screen text-brand-text flex items-center justify-center" style={{ background: "var(--brand-bg)" }}>
+<p className="text-sm text-brand-muted">Adding up your block...</p>
 </main>
 );
 }
@@ -168,41 +168,41 @@ const tile = "rounded-md border border-brand-line bg-brand-surface p-4 text-cent
 const cardCls = "rounded-md border border-brand-line bg-brand-surface p-5 mb-4";
 
 return (
-<main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
+<main className="min-h-screen text-brand-text px-5 py-8" style={{ background: "var(--brand-bg)" }}>
 <div className="max-w-md mx-auto">
-<a href="/dashboard" className="inline-block text-xs text-gray-400 underline mb-6">Back to dashboard</a>
+<a href="/dashboard" className="inline-block text-xs text-brand-muted underline mb-6">Back to dashboard</a>
 
 <div className="rounded-md p-6 mb-4 text-center" style={{ background: accent + "12", border: "1px solid " + accent + "55" }}>
 <div className="flex justify-center mb-2"><TypeOrb typeId={tid} size={84} /></div>
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{complete ? "Block " + blockNo + " complete" : "Block " + blockNo + " · week " + weekNo + " of " + blockWeeks}</p>
+<p className="text-xs uppercase tracking-wide text-brand-muted mb-1">{complete ? "Block " + blockNo + " complete" : "Block " + blockNo + " · week " + weekNo + " of " + blockWeeks}</p>
 <h1 className="font-display text-3xl font-normal mb-2">{complete ? blockWeeks + " weeks, done." : "Mid-block snapshot"}</h1>
-<p className="text-sm text-gray-300">{verdict}</p>
+<p className="text-sm text-brand-muted">{verdict}</p>
 </div>
 
 <div className="grid grid-cols-3 gap-2 mb-4">
 <div className={tile}>
 <p className="font-display text-2xl font-normal leading-tight">{sessionsDone}</p>
-<p className="text-[10px] uppercase tracking-wide text-gray-400">Sessions</p>
+<p className="text-[10px] uppercase tracking-wide text-brand-muted">Sessions</p>
 </div>
 <div className={tile}>
 <p className="font-display text-2xl font-normal leading-tight" style={{ color: accent }}>{pct}%</p>
-<p className="text-[10px] uppercase tracking-wide text-gray-400">Of your pledge</p>
+<p className="text-[10px] uppercase tracking-wide text-brand-muted">Of your pledge</p>
 </div>
 <div className={tile}>
 <p className="font-display text-2xl font-normal leading-tight">{pbs.length}</p>
-<p className="text-[10px] uppercase tracking-wide text-gray-400">New bests</p>
+<p className="text-[10px] uppercase tracking-wide text-brand-muted">New bests</p>
 </div>
 </div>
 
 {pbs.length ? (
 <div className={cardCls}>
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-3">Personal bests this block</p>
+<p className="text-xs uppercase tracking-wide text-brand-muted mb-3">Personal bests this block</p>
 {pbs.map(function (pb, i) {
 return (
 <div key={i} className={"flex items-center justify-between" + (i > 0 ? " mt-3 pt-3 border-t border-brand-line" : "")}>
 <div>
 <p className="font-display text-sm">{pb.name}</p>
-<p className="text-xs text-gray-400">Estimated max {pb.est}kg</p>
+<p className="text-xs text-brand-muted">Estimated max {pb.est}kg</p>
 </div>
 <span className="font-display text-sm" style={{ color: "#3DDC97" }}>
 {pb.gain ? "+" + pb.gain + "kg" : "First max set"}
@@ -213,19 +213,19 @@ return (
 </div>
 ) : (
 <div className={cardCls}>
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Personal bests this block</p>
-<p className="text-sm text-gray-300">No weighted sets logged this block, so nothing to compare. Log your lifts next block and this fills itself in.</p>
+<p className="text-xs uppercase tracking-wide text-brand-muted mb-1">Personal bests this block</p>
+<p className="text-sm text-brand-muted">No weighted sets logged this block, so nothing to compare. Log your lifts next block and this fills itself in.</p>
 </div>
 )}
 
 <div className={cardCls}>
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-1">How your lifts moved</p>
-<p className="text-sm text-gray-200 mb-3">{trendSummary(trends)}</p>
+<p className="text-xs uppercase tracking-wide text-brand-muted mb-1">How your lifts moved</p>
+<p className="text-sm text-brand-text mb-3">{trendSummary(trends)}</p>
 {trends.slice(0, 4).map(function (t, i) {
 return (
 <div key={i} className={i > 0 ? "mt-3 pt-3 border-t border-brand-line" : ""}>
 <p className="font-display text-sm">{t.name}</p>
-<p className="text-xs text-gray-400">{t.message}</p>
+<p className="text-xs text-brand-muted">{t.message}</p>
 </div>
 );
 })}
@@ -233,8 +233,8 @@ return (
 
 {weightDelta !== null ? (
 <div className={cardCls}>
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Bodyweight</p>
-<p className="text-sm text-gray-200">
+<p className="text-xs uppercase tracking-wide text-brand-muted mb-1">Bodyweight</p>
+<p className="text-sm text-brand-text">
 {weightDelta === 0 ? "Held steady across the block." : (weightDelta > 0 ? "Up " + weightDelta + "kg across the block." : "Down " + Math.abs(weightDelta) + "kg across the block.")}{" "}
 Whether that is good news depends entirely on what you were aiming for.
 </p>
@@ -246,16 +246,16 @@ Whether that is good news depends entirely on what you were aiming for.
 {complete ? (
 <button onClick={startNextBlock} disabled={starting}
 className="w-full py-5 rounded-md font-display text-lg mb-3"
-style={{ background: accent, color: "#000000" }}>
+style={{ background: accent, color: "var(--brand-bg)" }}>
 {starting ? "Setting up..." : "Start block " + (blockNo + 1) + " today"}
 </button>
 ) : (
 <a href="/plan" className="block w-full py-5 rounded-md font-display text-lg mb-3 text-center"
-style={{ background: accent, color: "#000000" }}>
+style={{ background: accent, color: "var(--brand-bg)" }}>
 Back to this week
 </a>
 )}
-<p className="text-xs text-gray-500 text-center mb-6">
+<p className="text-xs text-brand-dim text-center mb-6">
 {complete ? (gym ? "A fresh block starts today. Same routine, clean slate on the numbers." : "Week one of the new block is a testing week, so your first job is simply to land on honest numbers.") : "Come back when the block wraps and this becomes your full debrief."}
 </p>
 </div>

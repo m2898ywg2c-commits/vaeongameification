@@ -17,6 +17,8 @@ import Icon from "../Icon";
 import { BRAND, TRACK } from "@/lib/brand";
 import { EVENTS } from "@/lib/events";
 import { occasionFor } from "@/lib/reminders";
+import { cookies } from "next/headers";
+import { THEME_COOKIE, SCHEME_COOKIE, resolveScheme, accentFor, deepFor } from "@/lib/theme";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -34,6 +36,12 @@ export default async function DashboardPage({ searchParams }) {
 // which is the only way to know whether reminders do anything.
 const sp = await searchParams;
 const fromReminder = Boolean(sp && sp.r === "1");
+
+// Which half of each type's colour pair to use. Every colors[0] fails contrast on a light
+// background, between 1.8:1 and 3.6:1, and every colors[1] passes. Resolved here rather
+// than in the browser because this component picks the colour during render.
+const jar = await cookies();
+const scheme = resolveScheme(jar.get(THEME_COOKIE)?.value || "system", jar.get(SCHEME_COOKIE)?.value || "dark");
 
 const supabase = await createClient();
 const { data: { user } } = await supabase.auth.getUser();
@@ -99,8 +107,8 @@ const weekNo = currentWeekIn(profile.block_start, blockWeeks);
 const rule = weeksFor(category)[weekNo - 1] || weeksFor(category)[0];
 const finished = blockCompleteIn(profile.block_start, blockWeeks);
 const today = DAYS[new Date().getDay()];
-const accent = type ? type.colors[0] : "#22D3EE";
-const deep = type ? type.colors[1] : "#3B82F6";
+const accent = accentFor(type, scheme);
+const deep = deepFor(type, scheme);
 // Gym ready users get their loads from their coach, so nagging them for baselines is
 // both useless and a bit insulting.
 const noBaselines = !gym && !profile.baseline_bench && !profile.baseline_squat;
@@ -118,7 +126,7 @@ const card = "rounded-md border p-4 mb-3";
 const cardStyle = { borderColor: BRAND.line, background: BRAND.surface };
 
 return (
-<main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
+<main className="min-h-screen text-brand-text px-5 py-8" style={{ background: "var(--brand-bg)" }}>
 <div className="max-w-md mx-auto">
 
 <div className="flex items-center justify-between mb-5">
@@ -155,7 +163,7 @@ screen a solid accent block is how you say so. The gradient is gone though, and 
 type is display weight 400 rather than bold, so it carries the brand rather than
 shouting over it. */}
 <a href="/plan" className="flex items-center gap-3 rounded-md p-5 mb-3"
-style={{ background: accent, color: "#000000" }}>
+style={{ background: accent, color: "var(--brand-bg)" }}>
 <div className="flex-1">
 <p className="font-display text-2xl font-normal leading-none">Today&rsquo;s workout</p>
 <p className="text-xs mt-1.5" style={{ color: "rgba(0,0,0,0.65)" }}>Open and start logging</p>
@@ -194,7 +202,7 @@ style={{ borderColor: accent + "55", color: accent, letterSpacing: TRACK.label }
 <span style={{ color: "#3DDC97" }}><Icon name="flag" size={20} /></span>
 <div className="flex-1">
 <p className="font-display text-sm" style={{ color: "#3DDC97" }}>Block {profile.block_number || 1} complete</p>
-<p className="text-xs text-gray-300">See your {blockWeeks}-week summary and roll straight into the next one.</p>
+<p className="text-xs text-brand-muted">See your {blockWeeks}-week summary and roll straight into the next one.</p>
 </div>
 <span style={{ color: "#3DDC97" }}>&rsaquo;</span>
 </a>
@@ -206,7 +214,7 @@ style={{ borderColor: accent + "55", color: accent, letterSpacing: TRACK.label }
 <span style={{ color: "#FFB020" }}><Icon name="home" size={20} /></span>
 <div className="flex-1">
 <p className="font-display text-sm" style={{ color: "#FFB020" }}>Can&rsquo;t get to the gym today?</p>
-<p className="text-xs text-gray-300">Desk, hotel or home. Keeps your streak alive.</p>
+<p className="text-xs text-brand-muted">Desk, hotel or home. Keeps your streak alive.</p>
 </div>
 <span className="text-lg" style={{ color: "#FFB020" }}>&rsaquo;</span>
 </a>
@@ -248,7 +256,7 @@ a streak quietly propped up by a week you did not train would be a lie told kind
 ? "Grace week used"
 : (freezeCredits > 0 ? "Grace week available" : "No grace week left this block")}
 </p>
-<p className="text-[11px] text-gray-400 leading-snug">
+<p className="text-[11px] text-brand-muted leading-snug">
 {stats.frozenInStreak > 0
 ? "A week you missed is being held for you, so the streak stands. " + (freezeCredits > 0 ? "You have another in reserve." : "That was your one for this block.")
 : (freezeCredits > 0
@@ -266,12 +274,12 @@ a streak quietly propped up by a week you did not train would be a lie told kind
 <p className="text-[9px] uppercase flex-1" style={{ color: accent, letterSpacing: TRACK.label }}>The {type.name.replace("The ", "")} style</p>
 <span style={{ color: accent }}><Icon name="arrow" size={14} /></span>
 </a>
-<p className="text-sm leading-relaxed" style={{ color: "#d1d5db" }}>{nudge}</p>
+<p className="text-sm leading-relaxed" style={{ color: "var(--brand-muted)" }}>{nudge}</p>
 </div>
 ) : (
 <a href="/assessment" className="block rounded-md border p-4 mb-3" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
 <p className="font-display text-sm mb-1">Find your training personality</p>
-<p className="text-xs text-gray-400">Two minutes. It decides how you get coached.</p>
+<p className="text-xs text-brand-muted">Two minutes. It decides how you get coached.</p>
 </a>
 )}
 
@@ -304,8 +312,8 @@ return (
 
 <div className="mb-4"><ShareButton accent={accent} /></div>
 
-<a href="/onboarding" className="block text-center text-xs text-gray-500 underline">Change goals, days or sessions a week</a>
-<a href="/feedback" className="block text-center text-xs text-gray-500 underline mt-2">Send feedback</a>
+<a href="/onboarding" className="block text-center text-xs text-brand-dim underline">Change goals, days or sessions a week</a>
+<a href="/feedback" className="block text-center text-xs text-brand-dim underline mt-2">Send feedback</a>
 </div>
 </main>
 );

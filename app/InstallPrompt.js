@@ -67,7 +67,7 @@ function Step({ n, children, accent }) {
       >
         {n}
       </span>
-      <span className="text-sm text-gray-200 leading-relaxed pt-0.5">{children}</span>
+      <span className="text-sm text-brand-text leading-relaxed pt-0.5">{children}</span>
     </li>
   );
 }
@@ -193,7 +193,7 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
         <span style={{ color: accent }}><Icon name="install" size={20} /></span>
         <span className="flex-1">
           <span className="block font-display text-sm" style={{ color: accent }}>Put Vaeon on your home screen</span>
-          <span className="block text-xs text-gray-300">
+          <span className="block text-xs text-brand-muted">
             Opens full screen with no browser bar. Takes about fifteen seconds.
           </span>
         </span>
@@ -216,11 +216,11 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
           >
             <div className="flex items-start justify-between gap-3 mb-1">
               <p className="font-display text-lg font-normal">Add Vaeon to your home screen</p>
-              <button onClick={function () { setOpen(false); }} aria-label="Close" className="text-gray-500 text-2xl leading-none">
+              <button onClick={function () { setOpen(false); }} aria-label="Close" className="text-brand-dim text-2xl leading-none">
                 &times;
               </button>
             </div>
-            <p className="text-xs text-gray-400 mb-5">
+            <p className="text-xs text-brand-muted mb-5">
               It behaves like a normal app after this. Full screen, its own icon, and it turns up in
               your app switcher.
             </p>
@@ -229,9 +229,9 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
               <ol className="space-y-3 mb-5">
                 <Step n="1" accent={accent}>Open your browser menu. It is the three dots or lines, usually top right.</Step>
                 <Step n="2" accent={accent}>
-                  Choose <span className="text-white font-display">Install</span>,{" "}
-                  <span className="text-white font-display">Install app</span> or{" "}
-                  <span className="text-white font-display">Add to Home screen</span>. The wording
+                  Choose <span className="text-brand-text font-display">Install</span>,{" "}
+                  <span className="text-brand-text font-display">Install app</span> or{" "}
+                  <span className="text-brand-text font-display">Add to Home screen</span>. The wording
                   depends on the browser.
                 </Step>
               </ol>
@@ -239,7 +239,7 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
               <>
                 <ol className="space-y-3 mb-5">
                   <Step n="1" accent={accent}>Tap the button below.</Step>
-                  <Step n="2" accent={accent}>Confirm <span className="text-white font-display">Install</span> when your phone asks.</Step>
+                  <Step n="2" accent={accent}>Confirm <span className="text-brand-text font-display">Install</span> when your phone asks.</Step>
                 </ol>
                 <button
                   onClick={install}
@@ -256,7 +256,7 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
                     <span>Tap the Share button at the bottom of Safari. It is the square with an arrow coming out of the top:</span>
                     <span
                       className="inline-flex items-center justify-center rounded-sm px-2 py-1"
-                      style={{ background: "rgba(255,255,255,0.08)" }}
+                      style={{ background: "var(--brand-field)" }}
                     >
                       <ShareGlyph size={18} colour={accent} />
                     </span>
@@ -266,15 +266,15 @@ export default function InstallPrompt({ accent = BRAND.accent, onShow }) {
                   Scroll down the list that slides up. It is a fair way down, past the sharing options.
                 </Step>
                 <Step n="3" accent={accent}>
-                  Tap <span className="text-white font-display">Add to Home Screen</span>.
+                  Tap <span className="text-brand-text font-display">Add to Home Screen</span>.
                 </Step>
                 <Step n="4" accent={accent}>
-                  Tap <span className="text-white font-display">Add</span> in the top right. Vaeon appears on your home screen.
+                  Tap <span className="text-brand-text font-display">Add</span> in the top right. Vaeon appears on your home screen.
                 </Step>
               </ol>
             )}
 
-            <button onClick={dismiss} className="w-full py-3 rounded-md text-xs text-gray-400 border border-brand-line">
+            <button onClick={dismiss} className="w-full py-3 rounded-md text-xs text-brand-muted border border-brand-line">
               Not now, stop asking
             </button>
           </div>

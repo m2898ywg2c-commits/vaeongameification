@@ -105,7 +105,7 @@ export default function ExportData({ profile }) {
   return (
     <div className="rounded-md border border-brand-line bg-brand-surface p-5 mb-4">
       <p className="font-display text-base font-normal mb-1">Your data</p>
-      <p className="text-sm text-gray-300 mb-4">
+      <p className="text-sm text-brand-muted mb-4">
         Everything Vaeon holds about you, in one file. Your profile, every session, every set,
         your measurements, your type and your kudos. It is yours and you can take it whenever
         you like.

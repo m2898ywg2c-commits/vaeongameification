@@ -11,14 +11,14 @@ export const metadata = {
 // an app store listing.
 export default function DisclaimerPage() {
   return (
-    <main className="min-h-screen text-white px-6 py-10">
+    <main className="min-h-screen text-brand-text px-6 py-10">
       <div className="max-w-xl mx-auto">
         <div className="mb-8">
           <BrandLockup size={26} full />
         </div>
 
         <h1 className="font-display text-3xl font-normal mb-2">Training and AI disclaimer</h1>
-        <p className="text-xs text-gray-500 mb-8">Version {DISCLAIMER_VERSION}</p>
+        <p className="text-xs text-brand-dim mb-8">Version {DISCLAIMER_VERSION}</p>
 
         <Disclaimer />
 

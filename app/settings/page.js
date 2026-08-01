@@ -8,8 +8,10 @@ import Disclaimer from "../Disclaimer";
 import { WEIGHT_ANCHORS, EFFORT_ANCHORS, STARTER_GUIDE } from "@/lib/exercisedb";
 import { SESSION_CHOICES } from "@/lib/training";
 import { TYPES } from "@/lib/personality";
+import { currentScheme, accentFor, deepFor } from "@/lib/theme";
 import Home from "../Home";
 import ReminderSettings from "./ReminderSettings";
+import ThemeSettings from "./ThemeSettings";
 import ExportData from "./ExportData";
 
 const EQUIPMENT = [
@@ -153,8 +155,9 @@ setStats(next);
 };
 
 const type = typeId ? TYPES[typeId] : null;
-const accent = type ? type.colors[0] : "#22D3EE";
-const deep = type ? type.colors[1] : "#3B82F6";
+const scheme = currentScheme();
+const accent = accentFor(type, scheme);
+const deep = deepFor(type, scheme);
 const gym = profile ? isGymReady(profile.goals) : false;
 const blockWeeks = profile ? blockWeeksFor(profile) : 6;
 const week = profile ? currentWeekIn(profile.block_start, blockWeeks) : 1;
@@ -164,16 +167,16 @@ const finished = profile ? blockCompleteIn(profile.block_start, blockWeeks) : fa
 const noBaselines = !gym && !bench && !squat;
 const dayMismatch = fixedDays && trainDays.length > 0 && trainDays.length !== sessions;
 
-const bigInput = "w-full px-4 py-4 rounded-md bg-white/8 border font-display text-xl font-normal text-center";
-const primaryBtn = { background: "linear-gradient(90deg, " + accent + ", " + deep + ")", color: "#000000" };
+const bigInput = "w-full px-4 py-4 rounded-md bg-brand-field border font-display text-xl font-normal text-center";
+const primaryBtn = { background: accent, color: "var(--brand-bg)" };
 const card = "rounded-md border border-brand-line bg-brand-surface p-5 mb-4";
 
 return (
-<main className="min-h-screen text-white px-5 py-8" style={{ background: "#000000" }}>
+<main className="min-h-screen text-brand-text px-5 py-8" style={{ background: "var(--brand-bg)" }}>
 <div className="max-w-md mx-auto">
 <div className="flex items-center justify-between mb-6">
 <Home accent={accent} />
-<a href="/dashboard" className="text-xs text-gray-400 underline">Back</a>
+<a href="/dashboard" className="text-xs text-brand-muted underline">Back</a>
 </div>
 
 <h1 className="font-display text-2xl font-normal mb-6">Log stats and settings</h1>
@@ -181,7 +184,7 @@ return (
 {/* ---------- Body stats ---------- */}
 <div className={card}>
 <p className="font-display text-base font-normal mb-1">Log your body stats</p>
-<p className="text-sm text-gray-300 mb-4">
+<p className="text-sm text-brand-muted mb-4">
 Your last numbers stay filled in. Type over whatever has changed, bodyweight alone is enough to draw a trend.
 </p>
 
@@ -189,7 +192,7 @@ Your last numbers stay filled in. Type over whatever has changed, bodyweight alo
 {MEASURES.map(function (m) {
 return (
 <div key={m.key}>
-<label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">
+<label className="block text-xs uppercase tracking-wide text-brand-muted mb-2">
 {m.label} ({m.unit})
 </label>
 <input
@@ -215,7 +218,7 @@ Start from last time
 </button>
 ) : null}
 
-{statsMsg ? <p className="text-sm text-gray-300 mb-3">{statsMsg}</p> : null}
+{statsMsg ? <p className="text-sm text-brand-muted mb-3">{statsMsg}</p> : null}
 
 <button onClick={saveStats} className="w-full py-4 rounded-sm font-display text-sm" style={primaryBtn}>
 Log today&apos;s stats
@@ -226,16 +229,16 @@ Log today&apos;s stats
 <div className={card}>
 <p className="font-display text-base font-normal mb-4">You</p>
 
-<label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">Screen name</label>
+<label className="block text-xs uppercase tracking-wide text-brand-muted mb-2">Screen name</label>
 <input
 value={screenName}
 onChange={function (e) { setScreenName(e.target.value); }}
 placeholder="What the leaderboard calls you"
-className="w-full px-4 py-4 rounded-md bg-white/8 border font-display text-lg font-normal mb-4"
+className="w-full px-4 py-4 rounded-md bg-brand-field border font-display text-lg font-normal mb-4"
 style={{ borderColor: accent + "44" }}
 />
 
-<label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">Year you were born</label>
+<label className="block text-xs uppercase tracking-wide text-brand-muted mb-2">Year you were born</label>
 <input
 value={birthYear}
 onChange={function (e) { setBirthYear(e.target.value); }}
@@ -244,7 +247,7 @@ placeholder="1985"
 className={bigInput + " mb-2"}
 style={{ borderColor: accent + "44" }}
 />
-<p className="text-xs text-gray-400 mb-4">
+<p className="text-xs text-brand-muted mb-4">
 Used to pick the music for your sessions. Nothing else, and nobody sees it.
 </p>
 
@@ -268,12 +271,12 @@ style={primaryBtn}
 <div className={card}>
 <p className="font-display text-base font-normal mb-1">Your training type</p>
 {type ? (
-<p className="text-sm text-gray-300 mb-4">
+<p className="text-sm text-brand-muted mb-4">
 You are <a href={"/type?id=" + typeId} className="underline font-display" style={{ color: accent }}>{type.name}</a>.
 If it has never quite fitted, retake the assessment. Three minutes, and your plan and coaching voice rebuild around the result.
 </p>
 ) : (
-<p className="text-sm text-gray-300 mb-4">
+<p className="text-sm text-brand-muted mb-4">
 You have not found your type yet. It shapes your whole plan, so it is worth the three minutes.
 </p>
 )}
@@ -282,17 +285,20 @@ You have not found your type yet. It shapes your whole plan, so it is worth the 
 </a>
 </div>
 
+{/* ---------- Night and day ---------- */}
+<ThemeSettings accent={accent} />
+
 {/* ---------- Reminders ---------- */}
 <ReminderSettings profile={profile} accent={accent} />
 
 {/* ---------- Schedule ---------- */}
 <div className={card}>
 <p className="font-display text-base font-normal mb-1">Your week</p>
-<p className="text-sm text-gray-300 mb-4">
+<p className="text-sm text-brand-muted mb-4">
 Sessions per week is your pledge. It is what the leaderboard scores you against.
 </p>
 
-<label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">Sessions per week</label>
+<label className="block text-xs uppercase tracking-wide text-brand-muted mb-2">Sessions per week</label>
 <div className="grid grid-cols-5 gap-2 mb-5">
 {SESSION_CHOICES.map(function (n) {
 const on = sessions === n;
@@ -302,8 +308,8 @@ key={n}
 onClick={function () { setSessions(n); }}
 className="py-4 rounded-md border font-display text-lg font-normal"
 style={{
-borderColor: on ? accent : "rgba(255,255,255,0.1)",
-background: on ? accent + "22" : "rgba(255,255,255,0.05)",
+borderColor: on ? accent : "var(--brand-line)",
+background: on ? accent + "22" : "var(--brand-line)",
 }}
 >
 {n}
@@ -312,14 +318,14 @@ background: on ? accent + "22" : "rgba(255,255,255,0.05)",
 })}
 </div>
 
-<label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">How to label sessions</label>
+<label className="block text-xs uppercase tracking-wide text-brand-muted mb-2">How to label sessions</label>
 <div className="grid grid-cols-2 gap-2 mb-5">
 <button
 onClick={function () { setFixedDays(true); }}
 className="py-4 rounded-md border text-center"
 style={{
-borderColor: fixedDays ? accent : "rgba(255,255,255,0.1)",
-background: fixedDays ? accent + "22" : "rgba(255,255,255,0.05)",
+borderColor: fixedDays ? accent : "var(--brand-line)",
+background: fixedDays ? accent + "22" : "var(--brand-line)",
 }}
 >
 <span className="block text-xl" aria-hidden="true">&#128197;</span>
@@ -329,8 +335,8 @@ background: fixedDays ? accent + "22" : "rgba(255,255,255,0.05)",
 onClick={function () { setFixedDays(false); }}
 className="py-4 rounded-md border text-center"
 style={{
-borderColor: !fixedDays ? accent : "rgba(255,255,255,0.1)",
-background: !fixedDays ? accent + "22" : "rgba(255,255,255,0.05)",
+borderColor: !fixedDays ? accent : "var(--brand-line)",
+background: !fixedDays ? accent + "22" : "var(--brand-line)",
 }}
 >
 <span className="block text-xl" aria-hidden="true">&#128290;</span>
@@ -340,7 +346,7 @@ background: !fixedDays ? accent + "22" : "rgba(255,255,255,0.05)",
 
 {fixedDays ? (
 <div className="mb-5">
-<label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">
+<label className="block text-xs uppercase tracking-wide text-brand-muted mb-2">
 Which days do you train?
 </label>
 <div className="grid grid-cols-4 gap-2">
@@ -352,8 +358,8 @@ key={d.n}
 onClick={function () { toggleDay(d.n); }}
 className="py-4 rounded-md border font-display text-sm"
 style={{
-borderColor: on ? accent : "rgba(255,255,255,0.1)",
-background: on ? accent + "22" : "rgba(255,255,255,0.05)",
+borderColor: on ? accent : "var(--brand-line)",
+background: on ? accent + "22" : "var(--brand-line)",
 }}
 >
 {d.short}
@@ -379,7 +385,7 @@ You have picked {trainDays.length} day{trainDays.length === 1 ? "" : "s"} but pl
 className="rounded-md border p-5 mb-4"
 style={{
 borderColor: noBaselines ? "#FFB020" : accent + "55",
-background: noBaselines ? "rgba(255,176,32,0.10)" : "rgba(255,255,255,0.04)",
+background: noBaselines ? "rgba(255,176,32,0.10)" : "var(--brand-surface)",
 }}
 >
 <div className="flex items-center gap-2 mb-1">
@@ -388,23 +394,23 @@ background: noBaselines ? "rgba(255,176,32,0.10)" : "rgba(255,255,255,0.04)",
 {noBaselines ? "Set your starting weights" : "Your starting weights"}
 </p>
 </div>
-<p className="text-sm text-gray-300 mb-2">
+<p className="text-sm text-brand-muted mb-2">
 {noBaselines
 ? "Vaeon needs these to work out what you should lift each week. Without them your plan has no numbers on it."
 : "Vaeon uses these to calculate your working weight for every week of the block, and to scale every other lift."}
 </p>
-<p className="text-xs text-gray-400 mb-4">
+<p className="text-xs text-brand-muted mb-4">
 Enter your working max: the heaviest you can manage for one to three clean reps. Not a true one-rep max, there is no need to test that and it is how people get hurt.
 </p>
 
 <div className="grid grid-cols-2 gap-3 mb-3">
 <div>
-<label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">Bench max (kg)</label>
+<label className="block text-xs uppercase tracking-wide text-brand-muted mb-2">Bench max (kg)</label>
 <input value={bench} onChange={function (e) { setBench(e.target.value); }} inputMode="decimal" placeholder="20"
 className={bigInput} style={{ borderColor: accent + "66" }} />
 </div>
 <div>
-<label className="block text-xs uppercase tracking-wide text-gray-400 mb-2">Squat max (kg)</label>
+<label className="block text-xs uppercase tracking-wide text-brand-muted mb-2">Squat max (kg)</label>
 <input value={squat} onChange={function (e) { setSquat(e.target.value); }} inputMode="decimal" placeholder="20"
 className={bigInput} style={{ borderColor: accent + "66" }} />
 </div>
@@ -417,26 +423,26 @@ className={bigInput} style={{ borderColor: accent + "66" }} />
 {showHelp ? (
 <div className="rounded-md bg-black/25 p-4 mb-3">
 <p className="font-display text-sm mb-2">Start here, honestly</p>
-<p className="text-sm text-gray-200 mb-1">{STARTER_GUIDE.bench.line}</p>
-<p className="text-xs text-gray-400 mb-4">{STARTER_GUIDE.bench.detail}</p>
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-2">What weight actually feels like</p>
+<p className="text-sm text-brand-text mb-1">{STARTER_GUIDE.bench.line}</p>
+<p className="text-xs text-brand-muted mb-4">{STARTER_GUIDE.bench.detail}</p>
+<p className="text-xs uppercase tracking-wide text-brand-muted mb-2">What weight actually feels like</p>
 <div className="space-y-1 mb-4">
 {WEIGHT_ANCHORS.map(function (a) {
 return (
 <div key={a.kg} className="flex items-center gap-3 text-sm">
 <span className="font-display w-12" style={{ color: accent }}>{a.kg}kg</span>
-<span className="text-gray-300">{a.thing}</span>
+<span className="text-brand-muted">{a.thing}</span>
 </div>
 );
 })}
 </div>
-<p className="text-xs uppercase tracking-wide text-gray-400 mb-2">And effort, for the cardio bits</p>
+<p className="text-xs uppercase tracking-wide text-brand-muted mb-2">And effort, for the cardio bits</p>
 <div className="space-y-1">
 {EFFORT_ANCHORS.map(function (a) {
 return (
 <div key={a.level} className="flex items-start gap-3 text-sm">
 <span className="font-display w-6" style={{ color: accent }}>{a.level}</span>
-<span className="text-gray-300">{a.thing}</span>
+<span className="text-brand-muted">{a.thing}</span>
 </div>
 );
 })}
@@ -473,8 +479,8 @@ key={o.id}
 onClick={function () { setEquipment(o.id); patch({ equipment: o.id }, "kit"); }}
 className="py-4 rounded-md border text-center"
 style={{
-borderColor: on ? accent : "rgba(255,255,255,0.1)",
-background: on ? accent + "22" : "rgba(255,255,255,0.05)",
+borderColor: on ? accent : "var(--brand-line)",
+background: on ? accent + "22" : "var(--brand-line)",
 }}
 >
 <span className="block text-xl" aria-hidden="true">{o.icon}</span>
@@ -489,7 +495,7 @@ background: on ? accent + "22" : "rgba(255,255,255,0.05)",
 <div className={card}>
 <p className="font-display text-base font-normal mb-3">Block {(profile && profile.block_number) || 1} &middot; week {week} of {blockWeeks}</p>
 <input type="date" value={blockStart} onChange={function (e) { setBlockStart(e.target.value); }}
-className="w-full px-4 py-4 rounded-md bg-white/8 border border-brand-line text-lg mb-3" />
+className="w-full px-4 py-4 rounded-md bg-brand-field border border-brand-line text-lg mb-3" />
 <button onClick={function () { patch({ block_start: blockStart }, "date"); }}
 className="w-full py-3 rounded-sm font-display text-sm mb-3" style={primaryBtn}>
 {savedWhat === "date" ? "✓ Saved" : "Save start date"}
@@ -510,7 +516,7 @@ className="w-full py-3 rounded-sm font-display text-sm mb-3" style={primaryBtn}>
 <p className="font-display text-base font-normal mb-3">Training and AI disclaimer</p>
 <Disclaimer compact />
 {profile && profile.disclaimer_accepted_at && (
-<p className="text-xs text-gray-500 mt-4">
+<p className="text-xs text-brand-dim mt-4">
 Accepted {new Date(profile.disclaimer_accepted_at).toLocaleDateString("en-GB")}
 {profile.disclaimer_version ? " (version " + profile.disclaimer_version + ")" : ""}
 </p>

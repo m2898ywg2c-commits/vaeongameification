@@ -162,7 +162,7 @@ export default function RestTimer({ accent }) {
           {running ? (
             <div className="flex items-center gap-2.5 rounded-md border p-2.5"
               style={ending
-                ? { background: tone, color: "#000000", borderColor: tone }
+                ? { background: tone, color: "var(--brand-bg)", borderColor: tone }
                 : { background: BRAND.surface, borderColor: tone + "66" }}>
               <span style={ending ? undefined : { color: tone }}><Icon name="clock" size={16} /></span>
               {/* Display face and tabular figures. A proportional 1 is narrower than a 4,
@@ -208,8 +208,8 @@ export default function RestTimer({ accent }) {
                       <button key={p} onClick={function () { start(p); }}
                         className="flex-1 py-2 rounded-sm text-xs font-display border"
                         style={p === length
-                          ? { background: tone, color: "#000000", borderColor: tone }
-                          : { background: "rgba(255,255,255,0.05)", color: "#cbd5e1", borderColor: "rgba(255,255,255,0.1)" }}>
+                          ? { background: tone, color: "var(--brand-bg)", borderColor: tone }
+                          : { background: "var(--brand-surface)", color: "var(--brand-muted)", borderColor: "var(--brand-line)" }}>
                         {p < 60 ? p + "s" : (p / 60) + "m"}
                       </button>
                     );

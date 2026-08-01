@@ -124,6 +124,33 @@ no action. The copy engine behind it is untouched: `lib/reminders.js` still driv
 notification and the sender, so the miss response moved off the dashboard rather than being
 lost.
 
+**Night and day.** `lib/theme.js`, `app/settings/ThemeSettings.js`, plus a `[data-theme="light"]`
+block in `globals.css`. Three-way setting: match the phone, dark, light.
+
+Not a cosmetic toggle. Around half of people have some astigmatism, and on a dark background
+light text produces halation, where the glyphs bleed and blur. Preference splits roughly a
+third each way. **For some users light is the only comfortable way to read this app.**
+
+- **The preference is a COOKIE, not localStorage.** The dashboard picks a user's accent
+  colour on the server during render, so the server has to know the scheme. An inline script
+  in the head corrects the cookie against the device before first paint, so there is no
+  flash.
+- **The type palette already contained both halves.** Every `colors[0]` fails on a light
+  background, 1.8:1 to 3.6:1. Every `colors[1]` passes, 5.5:1 to 11.5:1. So `colors[0]` is
+  the dark accent and `colors[1]` is the light one, via `accentFor()`. Type identity survives
+  the switch rather than being flattened to grey.
+- **Nothing may hardcode a colour any more.** Every `#000000` background, `text-gray-*`,
+  `bg-white/*` and raw `rgba(255,255,255,...)` was swept to a token. `lib/brand.js` chrome
+  values are now `var(--brand-*)` strings, so inline styles follow the theme without any
+  component knowing a theme exists. `BRAND.accent` stays hex because it is concatenated with
+  alpha suffixes and `var(--x)0F` is not a colour.
+- Contrast verified both ways. Light: text 19:1, muted 7.7:1, dim 5.3:1, accent 5.4:1. Dark:
+  text 21:1, muted 7.8:1, dim 5.2:1, accent 11.6:1. `--brand-dim` was **#6B7280 and failing
+  at 4.1:1**, which mattered because it carries the smallest type in the app.
+
+**Still outstanding on accessibility.** The restyle added a lot of 9px and 10px tracked
+uppercase labels. That is below any sensible minimum and no theme fixes it.
+
 **Restyle status: complete.** Every screen is on the new system. The mechanical rules, so
 a new screen matches without anyone having to guess:
 
