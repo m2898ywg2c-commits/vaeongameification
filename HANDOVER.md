@@ -4,6 +4,72 @@ Everything a new session needs to pick up development. Last updated 2026-07-30.
 
 ---
 
+## START HERE, if you are a new session
+
+Last worked on 2 August 2026. `next build` passes. Everything below is in the working tree;
+**check with James whether it is committed and pushed**, because at least one round of the
+accent bug was reported as "committed but not changed" and turned out to be a deploy gap.
+
+**The single most important fact about this project.** Twelve to fifteen profiles, and only
+four people have ever logged an exercise. The longest anyone has kept it up is three
+separate days. A six-week test started on 30 July to find out whether any of this works. Do
+not add features without asking whether they get somebody to session three in their first
+fortnight, because that is the number that decides whether there is a business here.
+
+**Read `FEATURES.md`** for what exists and **`GUIDE.md`** for how a user is meant to use it.
+Both are current. `CHARACTER-BRIEF.md` is a live piece of work, see below.
+
+### Three things that will bite you
+
+**1. The per-type accent colour. Do not "simplify" it.** It took three attempts and the
+final shape is the only one that works. The dashboard writes the user's two hex codes into a
+`<style>` block scoped to the page, keyed on `[data-accent]`, and CSS picks between them on
+`data-theme`. There is no `var()` indirection and the server never chooses.
+
+The two failed attempts, so nobody repeats them:
+- Resolving the scheme server-side from a cookie. The cookie goes stale, the server picks the
+  light colour, the inline script paints the page dark, and you get dark brown on black.
+- Declaring `--accent: var(--type-dark)` on `:root` while `--type-dark` lives on `<main>`.
+  **`var()` is substituted where a property is DECLARED, not where it is used.** It resolved
+  against a `:root` with no `--type-dark`, fell through to the cyan fallback, and every type
+  came out Vaeon cyan.
+
+**2. The progression maths has a known characteristic, documented with numbers further down.**
+Low-rep testers never exceed their week-one load across the whole block. Mitigated by naming
+a rep range; the real fix needs a column to store the tested working load.
+
+**3. Line endings are mixed and must be preserved per file.** Most files are CRLF, a dozen
+are LF. Do not normalise. Check with `file` before and after any scripted edit.
+
+### What is outstanding, in the order I would do it
+
+1. **Confirm the accent fix actually deployed.** Inspect `<main>` on the dashboard: you want
+   a `<style>` tag inside it containing literal hex. If you see `style="--type-dark:..."` on
+   the main tag instead, that is the second failed attempt still live.
+2. **Web push.** Written, not deployed. Needs VAPID keys, a Vercel env var and a `pg_cron`
+   schedule. Instructions are in the header of `supabase/functions/send-reminders/index.ts`.
+   The in-app reminder works for everyone regardless, so this is not blocking.
+3. **Age gate at signup.** Under-18s are on the platform. Needs deciding before the first
+   stranger signs up.
+4. **The 9px and 10px labels** were lifted to a 11px floor and converted to rem, so the text
+   size setting reaches them. Worth another pass with fresh eyes.
+5. **Type characters.** `CHARACTER-BRIEF.md` has the full brief, the locked style rules and
+   real hex for all eight. **James wants one animal and one human of the Hunter generated
+   side by side before committing to a set**, and wants to reconnect Artlist first. There was
+   no Artlist connector visible at the end of the session. Canva IS connected, with the Vaeon
+   brand kit `kAHQwFp29_E`, as a fallback route.
+
+### Where I would push back on him
+
+He moves fast and asks for polish while the retention number is flat. The colour, the theme,
+the typography and the characters are all real improvements and none of them will get a
+thirteenth person to log a session. The six-week test ends around 10 September. **The block
+end report on 31 August is the first time the app has to prove its own argument**, and
+nobody has ever seen that screen because no block has completed. That is the thing to watch,
+not the next feature.
+
+---
+
 ## What it is
 
 A training app that records what you actually do and reports whether it is working.

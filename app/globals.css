@@ -94,11 +94,21 @@
 [data-accent] {
   --accent: #22d3ee;
   --accent-deep: #3b82f6;
+  --accent-55: #22d3ee55;
+  --accent-40: #22d3ee40;
+  --accent-22: #22d3ee22;
+  --accent-12: #22d3ee12;
+  --deep-22: #3b82f622;
 }
 
 [data-theme="light"] [data-accent] {
   --accent: #0e7490;
   --accent-deep: #22d3ee;
+  --accent-55: #0e749055;
+  --accent-40: #0e749040;
+  --accent-22: #0e749022;
+  --accent-12: #0e749012;
+  --deep-22: #22d3ee22;
 }
 
 :root {

@@ -12,6 +12,7 @@ import { estimateMax, liftTrends, trendSummary } from "@/lib/progression";
 import { blockWeeksFor, currentWeekIn, blockCompleteIn, isGymReady } from "@/lib/gymready";
 import TypeOrb from "../TypeOrb";
 import { track, rememberIdentity, EVENTS } from "@/lib/events";
+import { accentFor, deepFor } from "@/lib/theme";
 
 export default function BlockEndPage() {
 const router = useRouter();
@@ -147,8 +148,21 @@ return (
 
 const type = typeId ? TYPES[typeId] : null;
 const tid = typeId || "architect";
-const accent = type ? type.colors[0] : "#22D3EE";
-const deep = type ? type.colors[1] : "#3B82F6";
+// THE ACCENT, EMITTED AS LITERAL HEX IN A SCOPED STYLE TAG.
+//
+// This screen read type.colors[0] directly, which is the dark-theme colour, so in light
+// mode the block-end report painted the bright accent onto a near-white page. Both pairs
+// now go into a scoped style block and CSS picks on data-theme, matching the dashboard.
+// See the long note in app/dashboard/page.js for the two attempts that failed first.
+const accentDark = accentFor(type, "dark");
+const accentLight = accentFor(type, "light");
+const deepDark = deepFor(type, "dark");
+const deepLight = deepFor(type, "light");
+const accentCss =
+"[data-accent]{--accent:" + accentDark + ";--accent-deep:" + deepDark + ";--accent-55:" + accentDark + "55;--accent-12:" + accentDark + "12}" +
+"[data-theme=\"light\"] [data-accent]{--accent:" + accentLight + ";--accent-deep:" + deepLight + ";--accent-55:" + accentLight + "55;--accent-12:" + accentLight + "12}";
+const accent = "var(--accent)";
+const deep = "var(--accent-deep)";
 const blockNo = profile.block_number || 1;
 const blockWeeks = blockWeeksFor(profile);
 const gym = isGymReady(profile.goals);
@@ -168,11 +182,13 @@ const tile = "rounded-md border border-brand-line bg-brand-surface p-4 text-cent
 const cardCls = "rounded-md border border-brand-line bg-brand-surface p-5 mb-4";
 
 return (
-<main className="min-h-screen text-brand-text px-5 py-8" style={{ background: "var(--brand-bg)" }}>
+<main data-accent className="min-h-screen text-brand-text px-5 py-8" style={{ background: "var(--brand-bg)" }}>
+{/* Scoped to this page, generated from the user's own colour pair. See accentCss above. */}
+<style dangerouslySetInnerHTML={{ __html: accentCss }} />
 <div className="max-w-md mx-auto">
 <a href="/dashboard" className="inline-block text-xs text-brand-muted underline mb-6">Back to dashboard</a>
 
-<div className="rounded-md p-6 mb-4 text-center" style={{ background: accent + "12", border: "1px solid " + accent + "55" }}>
+<div className="rounded-md p-6 mb-4 text-center" style={{ background: "var(--accent-12)", border: "1px solid var(--accent-55)" }}>
 <div className="flex justify-center mb-2"><TypeOrb typeId={tid} size={84} /></div>
 <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">{complete ? "Block " + blockNo + " complete" : "Block " + blockNo + " · week " + weekNo + " of " + blockWeeks}</p>
 <h1 className="font-display text-3xl font-normal mb-2">{complete ? blockWeeks + " weeks, done." : "Mid-block snapshot"}</h1>

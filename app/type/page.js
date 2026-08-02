@@ -7,6 +7,7 @@ import { TYPES } from "@/lib/personality";
 import { DIMENSIONS, TYPE_POLES, DIM_ORDER, LAYERS, modelsFor, sourcesFor } from "@/lib/typeguide";
 import TypeOrb from "../TypeOrb";
 import { track, EVENTS } from "@/lib/events";
+import { accentFor, deepFor } from "@/lib/theme";
 
 function joinModels(models) {
 if (models.length <= 1) return models.join("");
@@ -44,7 +45,7 @@ setTimeout(function () { setSaved(false); }, 2000);
 };
 
 return (
-<div className="rounded-md border p-5 mb-4" style={{ borderColor: accent + "55", background: "var(--brand-surface)" }}>
+<div className="rounded-md border p-5 mb-4" style={{ borderColor: "var(--accent-55)", background: "var(--brand-surface)" }}>
 <p className="font-display text-sm mb-1">How well does this fit you?</p>
 <p className="text-xs text-brand-muted mb-3">1 is nothing like me, 5 is that is me exactly. It helps us tune the types.</p>
 <div className="grid grid-cols-5 gap-2">
@@ -57,7 +58,7 @@ onClick={function () { rate(v); }}
 className="py-3 rounded-md border font-display text-lg font-normal"
 style={{
 borderColor: on ? accent : "var(--brand-line)",
-background: on ? accent + "22" : "var(--brand-line)",
+background: on ? "var(--accent-22)" : "var(--brand-line)",
 color: on ? accent : "#fff",
 }}
 >
@@ -104,17 +105,34 @@ return (
 );
 }
 
-const accent = type.colors[0];
-const deep = type.colors[1];
+// THE ACCENT, EMITTED AS LITERAL HEX IN A SCOPED STYLE TAG.
+//
+// Same shape as the dashboard, and for the same reasons. This page used to read
+// type.colors[0] straight off the type object, which is the DARK-theme colour, so in light
+// mode it painted the bright colour onto a near-white page. The Monk was all but invisible.
+// Both pairs now go into a scoped style block as literal hex and CSS picks on data-theme.
+// No var() indirection, no scheme guessed in JS. See the long note in app/dashboard/page.js
+// for the two attempts that failed before this shape.
+const accentDark = accentFor(type, "dark");
+const accentLight = accentFor(type, "light");
+const deepDark = deepFor(type, "dark");
+const deepLight = deepFor(type, "light");
+const accentCss =
+"[data-accent]{--accent:" + accentDark + ";--accent-deep:" + deepDark + ";--accent-55:" + accentDark + "55;--accent-40:" + accentDark + "40;--accent-22:" + accentDark + "22;--deep-22:" + deepDark + "22}" +
+"[data-theme=\"light\"] [data-accent]{--accent:" + accentLight + ";--accent-deep:" + deepLight + ";--accent-55:" + accentLight + "55;--accent-40:" + accentLight + "40;--accent-22:" + accentLight + "22;--deep-22:" + deepLight + "22}";
+const accent = "var(--accent)";
+const deep = "var(--accent-deep)";
 const models = modelsFor(id);
 const sources = sourcesFor(id);
 
 return (
-<main className="min-h-screen text-brand-text px-5 py-8" style={{ background: "var(--brand-bg)" }}>
+<main data-accent className="min-h-screen text-brand-text px-5 py-8" style={{ background: "var(--brand-bg)" }}>
+{/* Scoped to this page, generated from the user's own colour pair. See accentCss above. */}
+<style dangerouslySetInnerHTML={{ __html: accentCss }} />
 <div className="max-w-md mx-auto">
 <a href="/dashboard" className="inline-block text-xs text-brand-muted underline mb-6">Back to dashboard</a>
 
-<div className="rounded-md p-6 mb-6 text-center" style={{ background: "linear-gradient(135deg, " + accent + "22, transparent)" }}>
+<div className="rounded-md p-6 mb-6 text-center" style={{ background: "linear-gradient(135deg, var(--accent-22), transparent)" }}>
 <div className="flex justify-center mb-2"><TypeOrb typeId={id} size={120} /></div>
 <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">{type.code}</p>
 <h1 className="font-display text-3xl font-normal mb-1">About the {type.name.replace("The ", "")} training style</h1>
@@ -122,7 +140,7 @@ return (
 </div>
 
 {/* ---------- Grounding intro ---------- */}
-<div className="rounded-md border p-5 mb-4" style={{ borderColor: accent + "55", background: "var(--brand-surface)" }}>
+<div className="rounded-md border p-5 mb-4" style={{ borderColor: "var(--accent-55)", background: "var(--brand-surface)" }}>
 <p className="text-sm text-brand-text">
 The {type.name.replace("The ", "")} sits where three strands of motivation science meet:{" "}
 <span className="font-display">{joinModels(models)}</span>. None of this is horoscope. Each dial below
@@ -137,7 +155,7 @@ return (
 <div key={dim} className="rounded-md border border-brand-line bg-brand-surface p-5 mb-4">
 <div className="flex items-center justify-between mb-2">
 <p className="text-xs uppercase tracking-wide text-brand-muted">{DIMENSIONS[dim].label}</p>
-<span className="text-[0.75rem] font-display px-2 py-0.5 rounded-sm" style={{ background: accent + "22", color: accent }}>{pole.pole}</span>
+<span className="text-[0.75rem] font-display px-2 py-0.5 rounded-sm" style={{ background: "var(--accent-22)", color: accent }}>{pole.pole}</span>
 </div>
 <p className="text-xs mb-2" style={{ color: accent }}>Grounded in {pole.model}</p>
 <p className="text-sm text-brand-text mb-3">{pole.body}</p>
@@ -149,7 +167,7 @@ return (
 })}
 
 {/* ---------- What it means in the app ---------- */}
-<div className="rounded-md border p-5 mb-4" style={{ borderColor: accent + "40", background: "linear-gradient(135deg, " + deep + "22, transparent)" }}>
+<div className="rounded-md border p-5 mb-4" style={{ borderColor: "var(--accent-40)", background: "linear-gradient(135deg, var(--deep-22), transparent)" }}>
 <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">How Vaeon builds your plan</p>
 <p className="text-sm text-brand-text mb-4">{type.plan}</p>
 <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">Your coaching voice</p>
