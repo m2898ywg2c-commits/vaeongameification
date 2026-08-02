@@ -75,7 +75,7 @@ character wears its own type's colours and no others.
 | The Architect | Owl | Planned · Outcome · Solo | `#7C8CF8` | `#3D2E8C` |
 | The Captain | Lion | Planned · Outcome · Together | `#2DD4BF` | `#0F766E` |
 | The Monk | Crane | Planned · Experience · Solo | `#4CC9F0` | `#155E75` |
-| The Anchor | Elephant | Planned · Experience · Together | `#FFB020` | `#8C5A00` |
+| The Anchor | Elephant | Planned · Experience · Together | `#AE63F0` | `#5B2394` |
 | The Hunter | Falcon | Freestyle · Outcome · Solo | `#FF8C42` | `#7A2E0E` |
 | The Gladiator | Ram | Freestyle · Outcome · Together | `#E052A0` | `#6B1547` |
 | The Wanderer | Fox | Freestyle · Experience · Solo | `#3DDC97` | `#0E5C3F` |
