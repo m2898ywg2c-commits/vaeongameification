@@ -69,6 +69,31 @@
   --brand-field: rgba(0, 0, 0, 0.05);
 }
 
+/* THE PER-TYPE ACCENT, RESOLVED IN CSS RATHER THAN IN JAVASCRIPT.
+   A page sets --type-dark and --type-light from the user's colour pair and these pick the
+   right one. The server no longer has to know the scheme, which is what it was getting
+   wrong: it read a stale cookie, chose the light-mode colour, and rendered it on a dark
+   page. CSS reads data-theme, which the inline script sets before first paint and is
+   therefore always correct.
+
+   --on-accent is what sits ON a solid accent fill. Black on the bright dark-mode colours,
+   white on the deep light-mode ones. */
+:root {
+  --accent: var(--type-dark, #22d3ee);
+  --accent-deep: var(--type-deep-dark, #3b82f6);
+  --on-accent: #000000;
+  --on-accent-dim: rgba(0, 0, 0, 0.62);
+  --on-accent-line: rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="light"] {
+  --accent: var(--type-light, #0e7490);
+  --accent-deep: var(--type-deep-light, #22d3ee);
+  --on-accent: #ffffff;
+  --on-accent-dim: rgba(255, 255, 255, 0.72);
+  --on-accent-line: rgba(255, 255, 255, 0.24);
+}
+
 @theme inline {
   --color-brand-bg: var(--brand-bg);
   --color-brand-surface: var(--brand-surface);

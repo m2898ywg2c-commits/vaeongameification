@@ -41,7 +41,12 @@ const fromReminder = Boolean(sp && sp.r === "1");
 // background, between 1.8:1 and 3.6:1, and every colors[1] passes. Resolved here rather
 // than in the browser because this component picks the colour during render.
 const jar = await cookies();
-const scheme = resolveScheme(jar.get(THEME_COOKIE)?.value || "system", jar.get(SCHEME_COOKIE)?.value || "dark");
+// MUST match the default in app/layout.js. It did not, and the symptom was a Hunter
+// whose dashboard rendered in dark brown while every other screen showed bright orange:
+// the server resolved "light" from a stale device cookie and handed this page colors[1],
+// the half of the pair meant for a white background, while the inline script painted the
+// page dark. The CSS variables below make that disagreement impossible from now on.
+const scheme = resolveScheme(jar.get(THEME_COOKIE)?.value || "dark", jar.get(SCHEME_COOKIE)?.value || "dark");
 
 const supabase = await createClient();
 const { data: { user } } = await supabase.auth.getUser();
@@ -107,8 +112,19 @@ const weekNo = currentWeekIn(profile.block_start, blockWeeks);
 const rule = weeksFor(category)[weekNo - 1] || weeksFor(category)[0];
 const finished = blockCompleteIn(profile.block_start, blockWeeks);
 const today = DAYS[new Date().getDay()];
-const accent = accentFor(type, scheme);
-const deep = deepFor(type, scheme);
+// Both halves go to CSS as variables and the stylesheet picks on data-theme. The server
+// no longer needs to be right about the scheme, which removes the whole class of bug
+// above rather than patching this instance of it.
+const typeDark = accentFor(type, "dark");
+const typeLight = accentFor(type, "light");
+const accent = "var(--accent)";
+const deep = "var(--accent-deep)";
+const accentVars = {
+"--type-dark": typeDark,
+"--type-light": typeLight,
+"--type-deep-dark": deepFor(type, "dark"),
+"--type-deep-light": deepFor(type, "light"),
+};
 // Gym ready users get their loads from their coach, so nagging them for baselines is
 // both useless and a bit insulting.
 const noBaselines = !gym && !profile.baseline_bench && !profile.baseline_squat;
@@ -126,7 +142,7 @@ const card = "rounded-md border p-4 mb-3";
 const cardStyle = { borderColor: BRAND.line, background: BRAND.surface };
 
 return (
-<main className="min-h-screen text-brand-text px-5 py-8" style={{ background: "var(--brand-bg)" }}>
+<main className="min-h-screen text-brand-text px-5 py-8" style={Object.assign({ background: "var(--brand-bg)" }, accentVars)}>
 <div className="max-w-md mx-auto">
 
 <div className="flex items-center justify-between mb-5">
@@ -167,10 +183,10 @@ sense offering week seven of a six week block, and there used to be two separate
 "block complete" prompts on this screen fighting each other. */}
 {finished ? (
 <a href="/blockend" className="flex items-center gap-3 rounded-md p-5 mb-3"
-style={{ background: "#3DDC97", color: "var(--brand-bg)" }}>
+style={{ background: "#3DDC97", color: "#000000" }}>
 <div className="flex-1">
 <p className="font-display text-2xl font-normal leading-none">Block {profile.block_number || 1} done</p>
-<p className="text-xs mt-1.5" style={{ color: "rgba(0,0,0,0.65)" }}>
+<p className="text-xs mt-1.5" style={{ color: "var(--on-accent-dim)" }}>
 See your {blockWeeks}-week summary and start the next one
 </p>
 </div>
@@ -178,17 +194,17 @@ See your {blockWeeks}-week summary and start the next one
 </a>
 ) : (
 <a href="/plan" className="rounded-md p-5 mb-3 block"
-style={{ background: accent, color: "var(--brand-bg)" }}>
+style={{ background: accent, color: "var(--on-accent)" }}>
 <div className="flex items-center gap-3">
 <div className="flex-1">
-<p className="text-[0.6875rem] uppercase" style={{ color: "rgba(0,0,0,0.55)", letterSpacing: TRACK.label }}>
+<p className="text-[0.6875rem] uppercase" style={{ color: "var(--on-accent-dim)", letterSpacing: TRACK.label }}>
 {profile.fixed_days === false ? "Next up" : today}
 </p>
 <p className="font-display text-2xl font-normal leading-none mt-1">Today&rsquo;s workout</p>
 </div>
 <Icon name="arrow" size={22} />
 </div>
-<p className="text-xs mt-3 pt-3" style={{ color: "rgba(0,0,0,0.7)", borderTop: "1px solid rgba(0,0,0,0.18)" }}>
+<p className="text-xs mt-3 pt-3" style={{ color: "var(--on-accent-dim)", borderTop: "1px solid var(--on-accent-line)" }}>
 Block {profile.block_number || 1} &middot; Week {weekNo} of {blockWeeks}
 {!gym ? " \u00b7 " + rule.label : ""}
 </p>
@@ -246,7 +262,7 @@ is knowing it is there. */}
 
 {type ? (
 <a href={"/type?id=" + typeId} target="_blank" rel="noopener noreferrer"
-className="rounded-md p-4 mb-3 border block" style={{ borderColor: accent + "44", background: BRAND.surface }}>
+className="rounded-md p-4 mb-3 border block" style={{ borderColor: "color-mix(in srgb, var(--accent) 27%, transparent)", background: BRAND.surface }}>
 <div className="flex items-center gap-2 mb-2">
 <TypeOrb typeId={typeId} size={24} />
 <p className="text-[0.6875rem] uppercase flex-1" style={{ color: accent, letterSpacing: TRACK.label }}>The {type.name.replace("The ", "")} style</p>
