@@ -5,6 +5,7 @@ import { workingWeight, workingHold, increaseHint } from "@/lib/progression";
 import { formTip, coachTip, homeAlternative, needsGym } from "@/lib/exercisedb";
 import { BRAND } from "@/lib/brand";
 import Icon from "../Icon";
+import SetFeedback from "./SetFeedback";
 
 function videoLink(name) {
   return "https://www.youtube.com/results?search_query=" + encodeURIComponent(name + " proper form technique");
@@ -207,16 +208,33 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   }
 
   if (done) {
+    // Was a single <button> wrapping the whole row. It cannot stay one, because the
+    // feedback controls are buttons too and a button inside a button is invalid markup
+    // that reopens the card on every tap. The reopen target is now its own button and the
+    // card around it is a plain div.
     return (
-      <button
-        onClick={function () { onReopen(exIdx); }}
-        className="w-full flex items-center gap-3 rounded-md p-4 mb-3 border text-left"
+      <div
+        className="rounded-md p-4 mb-3 border"
         style={{ borderColor: "rgba(61,220,151,0.35)", background: "rgba(61,220,151,0.08)" }}
       >
-        <span style={{ color: "#3DDC97" }}><Icon name="check" size={16} /></span>
-        <span className="flex-1 font-display text-sm" style={{ color: "#3DDC97" }}>{title}</span>
-        <span className="text-xs text-brand-muted">Tap to reopen</span>
-      </button>
+        <button
+          type="button"
+          onClick={function () { onReopen(exIdx); }}
+          className="w-full flex items-center gap-3 text-left"
+        >
+          <span style={{ color: "#3DDC97" }}><Icon name="check" size={16} /></span>
+          <span className="flex-1 font-display text-sm" style={{ color: "#3DDC97" }}>{title}</span>
+          <span className="text-xs text-brand-muted">Tap to reopen</span>
+        </button>
+
+        {/* Asked here rather than at the end of the session, because by the time somebody
+            has finished six exercises they cannot tell you which one was too heavy. */}
+        <div className="flex items-center justify-between gap-2 mt-3 pt-3"
+          style={{ borderTop: "1px solid rgba(61,220,151,0.2)" }}>
+          <span className="text-[0.6875rem] uppercase tracking-wide text-brand-muted">How did that feel?</span>
+          <SetFeedback dayKey={dayKey} exercise={ex.name} />
+        </div>
+      </div>
     );
   }
 

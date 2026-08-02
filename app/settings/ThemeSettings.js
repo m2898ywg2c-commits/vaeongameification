@@ -61,6 +61,14 @@ export default function ThemeSettings({ accent }) {
     applyChoice(next);
   }
 
+  // This was missing entirely. The buttons below called pickText, nothing defined it, and
+  // every click threw a ReferenceError into the console and changed nothing. A build will
+  // never catch that, because it is a runtime reference inside a handler.
+  function pickText(next) {
+    setTextSize(next);
+    applyTextSize(next);
+  }
+
   const tone = accent || BRAND.accent;
 
   return (
