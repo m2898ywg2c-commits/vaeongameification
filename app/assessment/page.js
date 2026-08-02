@@ -23,6 +23,7 @@ import {
 } from "@/lib/framing";
 import { track, rememberIdentity, EVENTS } from "@/lib/events";
 import TypeOrb from "../TypeOrb";
+import TypeCharacter from "../TypeCharacter";
 
 const GRAD = "#22D3EE";
 
@@ -262,7 +263,7 @@ export default function AssessmentPage() {
       <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-brand-text px-6 py-12">
         <div className="w-full max-w-md text-center">
           <div className="flex justify-center mb-2">
-            <TypeOrb typeId={result.scored.typeId} size={140} />
+            <TypeCharacter typeId={result.scored.typeId} size={140} />
           </div>
           <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">{t.code}</p>
           <h1 className="font-display text-3xl font-normal mb-2">{t.name}</h1>

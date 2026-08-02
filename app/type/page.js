@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { TYPES } from "@/lib/personality";
 import { DIMENSIONS, TYPE_POLES, DIM_ORDER, LAYERS, modelsFor, sourcesFor } from "@/lib/typeguide";
 import TypeOrb from "../TypeOrb";
+import TypeCharacter from "../TypeCharacter";
 import { track, EVENTS } from "@/lib/events";
 import { accentFor, deepFor } from "@/lib/theme";
 
@@ -133,7 +134,7 @@ return (
 <a href="/dashboard" className="inline-block text-xs text-brand-muted underline mb-6">Back to dashboard</a>
 
 <div className="rounded-md p-6 mb-6 text-center" style={{ background: "linear-gradient(135deg, var(--accent-22), transparent)" }}>
-<div className="flex justify-center mb-2"><TypeOrb typeId={id} size={120} /></div>
+<div className="flex justify-center mb-2"><TypeCharacter typeId={id} size={120} /></div>
 <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">{type.code}</p>
 <h1 className="font-display text-3xl font-normal mb-1">About the {type.name.replace("The ", "")} training style</h1>
 <p className="text-sm text-brand-muted">{type.tagline}</p>

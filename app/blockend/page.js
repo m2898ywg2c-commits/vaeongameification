@@ -11,6 +11,7 @@ import { TYPES } from "@/lib/personality";
 import { estimateMax, liftTrends, trendSummary } from "@/lib/progression";
 import { blockWeeksFor, currentWeekIn, blockCompleteIn, isGymReady } from "@/lib/gymready";
 import TypeOrb from "../TypeOrb";
+import TypeCharacter from "../TypeCharacter";
 import { track, rememberIdentity, EVENTS } from "@/lib/events";
 import { accentFor, deepFor } from "@/lib/theme";
 
@@ -189,7 +190,7 @@ return (
 <a href="/dashboard" className="inline-block text-xs text-brand-muted underline mb-6">Back to dashboard</a>
 
 <div className="rounded-md p-6 mb-4 text-center" style={{ background: "var(--accent-12)", border: "1px solid var(--accent-55)" }}>
-<div className="flex justify-center mb-2"><TypeOrb typeId={tid} size={84} /></div>
+<div className="flex justify-center mb-2"><TypeCharacter typeId={tid} size={84} /></div>
 <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">{complete ? "Block " + blockNo + " complete" : "Block " + blockNo + " · week " + weekNo + " of " + blockWeeks}</p>
 <h1 className="font-display text-3xl font-normal mb-2">{complete ? blockWeeks + " weeks, done." : "Mid-block snapshot"}</h1>
 <p className="text-sm text-brand-muted">{verdict}</p>
