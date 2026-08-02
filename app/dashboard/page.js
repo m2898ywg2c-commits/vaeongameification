@@ -9,6 +9,7 @@ import SignOutButton from "./SignOutButton";
 import AchievementWatcher from "./AchievementWatcher";
 import KudosCard from "./KudosCard";
 import TypeOrb from "../TypeOrb";
+import TypeCharacter from "../TypeCharacter";
 import ShareButton from "../ShareButton";
 import Track from "../Track";
 import ChallengeCard from "./ChallengeCard";
@@ -165,7 +166,10 @@ accentCss above for why this is a style tag rather than inline custom properties
 
 <div className="flex items-center justify-between mb-5">
 <div className="flex items-center gap-3">
-{type ? <TypeOrb typeId={typeId} size={46} /> : null}
+{/* Face, not orb. The leaderboard shows this person as a character, so showing them a
+    ball on their own dashboard made the same user two different things on two screens.
+    The type is named in text immediately to the right, so nothing rests on colour alone. */}
+{type ? <TypeCharacter typeId={typeId} size={46} variant="face" /> : null}
 <div>
 <p className="font-display text-lg font-normal leading-tight">{profile.screen_name}</p>
 <p className="text-[0.6875rem] leading-tight uppercase" style={{ color: accent, letterSpacing: TRACK.label }}>
