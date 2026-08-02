@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { celebrate } from "@/lib/haptics";
 import { computeStats } from "@/lib/plan";
 import { blockComplete } from "@/lib/progression";
 import {
@@ -112,6 +113,14 @@ export default function AchievementWatcher({ profile }) {
     }, 5000);
     return function () { clearTimeout(t); };
   }, [queue]);
+
+  // One buzz per achievement as it reaches the front of the queue, not one per batch.
+  // Somebody who unlocks three at once should feel three, because three is the news, and
+  // the toast shows them one at a time anyway. Silent on iOS. See lib/haptics.js.
+  const head = queue.length ? queue[0] : null;
+  useEffect(function () {
+    if (head) celebrate();
+  }, [head]);
 
   const current = queue.length ? byCode(queue[0]) : null;
   const upcoming = nextUp(earned, 3);
