@@ -112,19 +112,34 @@ const weekNo = currentWeekIn(profile.block_start, blockWeeks);
 const rule = weeksFor(category)[weekNo - 1] || weeksFor(category)[0];
 const finished = blockCompleteIn(profile.block_start, blockWeeks);
 const today = DAYS[new Date().getDay()];
-// Both halves go to CSS as variables and the stylesheet picks on data-theme. The server
-// no longer needs to be right about the scheme, which removes the whole class of bug
-// above rather than patching this instance of it.
+// THE ACCENT, EMITTED AS LITERAL HEX IN A SCOPED STYLE TAG.
+//
+// This is the third attempt and the first one that cannot fail, so it is worth saying why
+// the other two did.
+//
+// One: the server resolved the scheme from a cookie and picked the colour itself. The
+// cookie went stale, the server chose the light-mode colour, and the inline script painted
+// the page dark. Dark brown on black.
+//
+// Two: the pair went into CSS variables and a :root rule picked between them with var().
+// That fails because var() is substituted where a property is DECLARED. --accent resolved
+// against a :root that had no --type-dark, fell through to the Vaeon cyan fallback, and the
+// computed cyan then inherited down past the element that had the real values.
+//
+// Three, this one: no indirection at all. The server writes the user's actual hex codes
+// into a style block scoped to this page, and the theme picks between two literal values.
+// There is no var() to substitute, no inheritance order to get wrong, and no cookie to be
+// stale about, because both colours are present and CSS chooses on data-theme, which the
+// inline script sets before first paint and is always right.
 const typeDark = accentFor(type, "dark");
 const typeLight = accentFor(type, "light");
+const deepDark = deepFor(type, "dark");
+const deepLight = deepFor(type, "light");
 const accent = "var(--accent)";
 const deep = "var(--accent-deep)";
-const accentVars = {
-"--type-dark": typeDark,
-"--type-light": typeLight,
-"--type-deep-dark": deepFor(type, "dark"),
-"--type-deep-light": deepFor(type, "light"),
-};
+const accentCss =
+"[data-accent]{--accent:" + typeDark + ";--accent-deep:" + deepDark + "}" +
+"[data-theme=\"light\"] [data-accent]{--accent:" + typeLight + ";--accent-deep:" + deepLight + "}";
 // Gym ready users get their loads from their coach, so nagging them for baselines is
 // both useless and a bit insulting.
 const noBaselines = !gym && !profile.baseline_bench && !profile.baseline_squat;
@@ -142,7 +157,10 @@ const card = "rounded-md border p-4 mb-3";
 const cardStyle = { borderColor: BRAND.line, background: BRAND.surface };
 
 return (
-<main data-accent className="min-h-screen text-brand-text px-5 py-8" style={Object.assign({ background: "var(--brand-bg)" }, accentVars)}>
+<main data-accent className="min-h-screen text-brand-text px-5 py-8" style={{ background: "var(--brand-bg)" }}>
+{/* Scoped to this page and generated from the user's own colour pair. See the note by
+accentCss above for why this is a style tag rather than inline custom properties. */}
+<style dangerouslySetInnerHTML={{ __html: accentCss }} />
 <div className="max-w-md mx-auto">
 
 <div className="flex items-center justify-between mb-5">

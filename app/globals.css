@@ -87,14 +87,18 @@
    --on-accent is what sits ON a solid accent fill: black on the bright dark-mode colours,
    white on the deep light-mode ones. Those are plain values with no substitution, so they
    are safe on :root. */
+/* Fallback only, for any [data-accent] element whose page has not emitted its own rule.
+   The real values are written per page as literal hex, because var() substitution happens
+   where a property is declared and a rule here can never see a --type-dark set further
+   down the tree. That mistake is what turned every type Vaeon cyan. */
 [data-accent] {
-  --accent: var(--type-dark, #22d3ee);
-  --accent-deep: var(--type-deep-dark, #3b82f6);
+  --accent: #22d3ee;
+  --accent-deep: #3b82f6;
 }
 
 [data-theme="light"] [data-accent] {
-  --accent: var(--type-light, #0e7490);
-  --accent-deep: var(--type-deep-light, #22d3ee);
+  --accent: #0e7490;
+  --accent-deep: #22d3ee;
 }
 
 :root {
