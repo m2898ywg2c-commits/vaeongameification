@@ -1,8 +1,9 @@
 import TypeOrb from "./TypeOrb";
 import { TYPES } from "@/lib/personality";
 
-// Types whose render still shows the old colour. See the note by PENDING_ARTWORK below.
-const PENDING_ARTWORK = ["anchor"];
+// Types whose render still shows the old colour. Empty: the Anchor's render was recoloured
+// in place when its palette moved, so nothing is currently waiting on new artwork.
+const PENDING_ARTWORK = [];
 
 // The type character.
 //
