@@ -171,17 +171,17 @@ export default function RestTimer({ accent }) {
               <span className="font-display text-2xl leading-none" style={ending ? undefined : { color: tone }}>
                 {mm}:{String(ss).padStart(2, "0")}
               </span>
-              <p className="flex-1 text-[10px] leading-tight"
+              <p className="flex-1 text-[0.6875rem] leading-tight"
                 style={{ color: ending ? "rgba(0,0,0,0.6)" : BRAND.dim }}>
                 {ending ? "Almost up" : "Carries on if you lock the phone"}
               </p>
               <button onClick={function () { start(length + 30); }}
-                className="text-[11px] px-3 py-2 rounded-sm border"
+                className="text-[0.75rem] px-3 py-2 rounded-sm border"
                 style={{ borderColor: ending ? "rgba(0,0,0,0.35)" : BRAND.lineStrong }}>
                 +30s
               </button>
               <button onClick={stop}
-                className="text-[11px] px-3 py-2 rounded-sm border"
+                className="text-[0.75rem] px-3 py-2 rounded-sm border"
                 style={{ borderColor: ending ? "rgba(0,0,0,0.35)" : BRAND.lineStrong }}>
                 Stop
               </button>
@@ -196,7 +196,7 @@ export default function RestTimer({ accent }) {
                   Rest {length}s
                 </button>
                 <button onClick={function () { setOpen(!open); }}
-                  className="px-3 py-2.5 rounded-sm text-[11px] uppercase border"
+                  className="px-3 py-2.5 rounded-sm text-[0.75rem] uppercase border"
                   style={{ borderColor: BRAND.line, color: BRAND.muted, letterSpacing: "0.16em" }}>
                   {open ? "Close" : "Change"}
                 </button>

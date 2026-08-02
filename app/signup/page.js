@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { BrandLockup } from "../Brand";
 import { DISCLAIMER_SHORT, DISCLAIMER_VERSION } from "../Disclaimer";
 import { track, EVENTS } from "@/lib/events";
+import PasswordField from "../PasswordField";
 
 const AGE_GROUPS = ["Under 18", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
 
@@ -121,17 +122,12 @@ export default function SignUpPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-xs uppercase tracking-wide text-brand-muted mb-1">Password</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-brand-text outline-none focus:border-[#22D3EE]"
-            />
-          </div>
+          <PasswordField
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            minLength={6}
+          />
 
           {/* Required, and deliberately not pre-ticked. A box the user actually clicked is
               evidence; a box that arrived ticked is not. */}

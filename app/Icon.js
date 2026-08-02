@@ -71,6 +71,10 @@ const PATHS = {
   // so the toggle sits with the mark rather than looking like a borrowed glyph.
   moon: <path d="M20 14a8 8 0 01-10-10 8 8 0 100 10 8 8 0 0010 0z" />,
   sun: <path d="M12 8a4 4 0 100 8 4 4 0 000-8z M12 2v2 M12 20v2 M2 12h2 M20 12h2 M5 5l1.5 1.5 M17.5 17.5L19 19 M19 5l-1.5 1.5 M6.5 17.5L5 19" />,
+  // Password reveal. The struck-through version is the "currently hidden" state, which is
+  // the way round most people expect: the eye with a line means "you cannot see it".
+  eye: <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z M12 9a3 3 0 100 6 3 3 0 000-6z" />,
+  eyeOff: <path d="M4 4l16 16 M9.5 9.6A3 3 0 0012 15a3 3 0 002.4-1.2 M6.3 6.4C3.7 8.1 2 12 2 12s4 6 10 6c1.7 0 3.2-.5 4.5-1.2 M19.2 15.1C21 13.6 22 12 22 12s-4-6-10-6c-.9 0-1.7.1-2.5.4" />,
   check: <path d="M4 12l5 5L20 6" />,
   arrow: <path d="M4 12h15 M13 6l6 6-6 6" />,
 };

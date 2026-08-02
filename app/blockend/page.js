@@ -182,15 +182,15 @@ return (
 <div className="grid grid-cols-3 gap-2 mb-4">
 <div className={tile}>
 <p className="font-display text-2xl font-normal leading-tight">{sessionsDone}</p>
-<p className="text-[10px] uppercase tracking-wide text-brand-muted">Sessions</p>
+<p className="text-[0.6875rem] uppercase tracking-wide text-brand-muted">Sessions</p>
 </div>
 <div className={tile}>
 <p className="font-display text-2xl font-normal leading-tight" style={{ color: accent }}>{pct}%</p>
-<p className="text-[10px] uppercase tracking-wide text-brand-muted">Of your pledge</p>
+<p className="text-[0.6875rem] uppercase tracking-wide text-brand-muted">Of your pledge</p>
 </div>
 <div className={tile}>
 <p className="font-display text-2xl font-normal leading-tight">{pbs.length}</p>
-<p className="text-[10px] uppercase tracking-wide text-brand-muted">New bests</p>
+<p className="text-[0.6875rem] uppercase tracking-wide text-brand-muted">New bests</p>
 </div>
 </div>
 

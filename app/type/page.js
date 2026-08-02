@@ -137,7 +137,7 @@ return (
 <div key={dim} className="rounded-md border border-brand-line bg-brand-surface p-5 mb-4">
 <div className="flex items-center justify-between mb-2">
 <p className="text-xs uppercase tracking-wide text-brand-muted">{DIMENSIONS[dim].label}</p>
-<span className="text-[11px] font-display px-2 py-0.5 rounded-sm" style={{ background: accent + "22", color: accent }}>{pole.pole}</span>
+<span className="text-[0.75rem] font-display px-2 py-0.5 rounded-sm" style={{ background: accent + "22", color: accent }}>{pole.pole}</span>
 </div>
 <p className="text-xs mb-2" style={{ color: accent }}>Grounded in {pole.model}</p>
 <p className="text-sm text-brand-text mb-3">{pole.body}</p>

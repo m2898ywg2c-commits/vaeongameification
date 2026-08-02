@@ -89,10 +89,28 @@
   --radius-lg: var(--r-lg);
 }
 
+/* TEXT SIZE.
+   Scales the root font size, which every rem-based size in the app inherits, so one
+   setting moves the whole interface rather than a handful of headings.
+
+   This only works because the hardcoded px text sizes were converted to rem first. An
+   absolute px label ignores the root entirely, which would have left the smallest and most
+   important labels exactly as small as they were, for the users who need this most.
+
+   Applied via data-text on <html> by the same inline script that sets the theme. */
 html {
   /* Set here as well as on body so the overscroll area matches rather than flashing white
      on iOS when you pull past the top of a dark page. */
   background: var(--brand-bg);
+  font-size: 100%;
+}
+
+html[data-text="large"] {
+  font-size: 118%;
+}
+
+html[data-text="larger"] {
+  font-size: 136%;
 }
 
 body {
@@ -124,7 +142,9 @@ body {
   align-items: center;
   gap: 0.6rem;
   font-family: var(--font-display), sans-serif;
-  font-size: 9px;
+  /* Was 9px. Below any sensible minimum, and absolute so it ignored the text size
+     setting entirely. This is the same floor every other micro-label now sits on. */
+  font-size: 0.6875rem;
   font-weight: 400;
   letter-spacing: var(--track-label);
   text-transform: uppercase;

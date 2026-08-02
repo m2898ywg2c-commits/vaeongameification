@@ -133,7 +133,7 @@ export default function AchievementWatcher({ profile }) {
           <div className="rounded-md border border-brand-line bg-[#161B33] p-4 flex items-center gap-4 shadow-2xl">
             <Badge a={current} earned={true} size={52} />
             <div className="flex-1">
-              <p className="text-[10px] uppercase tracking-wide text-brand-muted">Achievement unlocked</p>
+              <p className="text-[0.6875rem] uppercase tracking-wide text-brand-muted">Achievement unlocked</p>
               <p className="font-display text-sm">{current.name}</p>
               <p className="text-xs text-brand-muted">{current.blurb}</p>
             </div>
@@ -196,7 +196,7 @@ export default function AchievementWatcher({ profile }) {
             )}
             {upcoming.length ? (
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-brand-dim mb-2">Next up</p>
+                <p className="text-[0.6875rem] uppercase tracking-wide text-brand-dim mb-2">Next up</p>
                 {upcoming.map(function (a) {
                   return (
                     <div key={a.code} className="flex items-center gap-3 mb-2">

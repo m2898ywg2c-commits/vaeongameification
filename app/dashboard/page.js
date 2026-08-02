@@ -134,7 +134,7 @@ return (
 {type ? <TypeOrb typeId={typeId} size={46} /> : null}
 <div>
 <p className="font-display text-lg font-normal leading-tight">{profile.screen_name}</p>
-<p className="text-[10px] leading-tight uppercase" style={{ color: accent, letterSpacing: TRACK.label }}>
+<p className="text-[0.6875rem] leading-tight uppercase" style={{ color: accent, letterSpacing: TRACK.label }}>
 {type ? type.name : (gym ? "Gym ready" : names.join(" + "))}
 </p>
 </div>
@@ -181,7 +181,7 @@ See your {blockWeeks}-week summary and start the next one
 style={{ background: accent, color: "var(--brand-bg)" }}>
 <div className="flex items-center gap-3">
 <div className="flex-1">
-<p className="text-[9px] uppercase" style={{ color: "rgba(0,0,0,0.55)", letterSpacing: TRACK.label }}>
+<p className="text-[0.6875rem] uppercase" style={{ color: "rgba(0,0,0,0.55)", letterSpacing: TRACK.label }}>
 {profile.fixed_days === false ? "Next up" : today}
 </p>
 <p className="font-display text-2xl font-normal leading-none mt-1">Today&rsquo;s workout</p>
@@ -222,7 +222,7 @@ style={{ borderColor: BRAND.line, background: BRAND.line }}>
 ].map(function (t) {
 return (
 <div key={t.label} className="px-3 py-3" style={{ background: BRAND.bg }}>
-<p className="text-[9px] uppercase" style={{ color: BRAND.dim, letterSpacing: TRACK.label }}>{t.label}</p>
+<p className="text-[0.6875rem] uppercase" style={{ color: BRAND.dim, letterSpacing: TRACK.label }}>{t.label}</p>
 <p className="font-display text-2xl font-normal leading-none mt-1.5"
 style={{ color: t.on ? accent : BRAND.text }}>{t.value}</p>
 </div>
@@ -235,7 +235,7 @@ fact about the number directly above it, and it was taking up a whole bordered b
 to say one sentence. Still shown when unused, because half the value of a safety net
 is knowing it is there. */}
 {profile.block_start ? (
-<p className="text-[11px] leading-snug mb-5 px-1" style={{ color: BRAND.dim }}>
+<p className="text-[0.75rem] leading-snug mb-5 px-1" style={{ color: BRAND.dim }}>
 {stats.frozenInStreak > 0
 ? "A missed week is being held for you, so the streak stands. " + (freezeCredits > 0 ? "You have another grace week in reserve." : "That was your one for this block.")
 : (freezeCredits > 0
@@ -249,7 +249,7 @@ is knowing it is there. */}
 className="rounded-md p-4 mb-3 border block" style={{ borderColor: accent + "44", background: BRAND.surface }}>
 <div className="flex items-center gap-2 mb-2">
 <TypeOrb typeId={typeId} size={24} />
-<p className="text-[9px] uppercase flex-1" style={{ color: accent, letterSpacing: TRACK.label }}>The {type.name.replace("The ", "")} style</p>
+<p className="text-[0.6875rem] uppercase flex-1" style={{ color: accent, letterSpacing: TRACK.label }}>The {type.name.replace("The ", "")} style</p>
 <span style={{ color: accent }}><Icon name="arrow" size={14} /></span>
 </div>
 <p className="text-sm leading-relaxed" style={{ color: "var(--brand-muted)" }}>{nudge}</p>

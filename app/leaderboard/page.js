@@ -153,7 +153,7 @@ className={"rounded-md border p-4 " + (mine ? "border-white/40 bg-brand-field" :
 </div>
 <div className="text-right">
 <p className="font-display text-lg font-normal leading-none">{r.score}</p>
-{r.kudos_count > 0 ? <p className="text-[11px] text-brand-muted mt-1">👏 {r.kudos_count}</p> : null}
+{r.kudos_count > 0 ? <p className="text-[0.75rem] text-brand-muted mt-1">👏 {r.kudos_count}</p> : null}
 </div>
 </div>
 

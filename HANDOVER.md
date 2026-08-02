@@ -336,6 +336,43 @@ Every item below follows from that.
 
 ---
 
+## Added 2026-07-31, later
+
+**Password reveal.** `app/PasswordField.js`, used on login, signup and reset. Typing a
+password blind on a phone keyboard is how people get locked out of an app they only joined
+because a relative asked them to, and it is an accessibility issue as much as a convenience.
+Both NCSC and NIST now recommend offering a reveal. Two details worth keeping: the button is
+`type="button"` (a bare button inside a form submits, so the eye would have attempted a
+login) and `tabIndex={-1}` so tapping it does not dismiss the mobile keyboard.
+
+**Text size.** Three steps, scaling the root font size, in Settings next to the theme.
+**This only works because every hardcoded `text-[9px]`, `text-[10px]` and `text-[11px]` was
+converted to rem first** — an absolute px size ignores the root entirely, which would have
+left the smallest labels untouched for exactly the people who need this. The same sweep
+lifted the floor: nothing is below `0.6875rem` (11px) any more, which closes the accessibility
+regression the restyle introduced. `.rule-label` moved off 9px too.
+
+**Yoga.** A fourteenth goal with its own category and its own six-week ladder in
+`YOGA_WEEKS`, because a yoga block progresses in seconds and depth rather than kilos.
+
+- **The anchor is the hold you logged, not a max derived from it.** `workingHold()`
+  multiplies week one directly, so the low-rep problem that affects the lifting ladder
+  cannot happen here: there is no estimation step to get wrong.
+- Week one prescribes nothing and asks for an honest hold. Weeks then run 1.15, 1.3, **0.85**,
+  1.45, 1.6. Week four goes down on purpose: connective tissue adapts slower than muscle and
+  a six-week ramp with no let-up is how somebody tears a hamstring in week five.
+- `holdProgression` is passed **only for the yoga category**. Every other plan has timed work
+  in it, and turning this on globally would silently convert every plank in the app into a
+  percentage of your best plank.
+- Holds are stored in `lift_maxes` in seconds. `record_lift_max()` uses `greatest()`, which
+  is the right rule for a best hold as well as a best lift.
+- All six sessions use Mobility, Skill or Recovery focuses, which sit in `NO_FINISHER`, so a
+  yoga session never gets a burpee ladder bolted onto the end of it.
+- Rounding is length-dependent. Five seconds is sensible on a minute-long pigeon and absurd
+  on a fifteen second crow, where it produced a week one target *below* what was just logged.
+
+---
+
 ## Progression maths, verified 2026-07-31
 
 Traced end to end: testing week -> `estimateMax()` -> `record_lift_max()` -> `workingWeight()`.

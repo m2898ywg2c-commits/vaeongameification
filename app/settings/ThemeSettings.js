@@ -27,7 +27,8 @@
 // half of their type's colour pair. See lib/theme.js.
 
 import { useEffect, useState } from "react";
-import { CHOICES, CHOICE_LABEL, THEME_COOKIE, applyChoice } from "@/lib/theme";
+import { CHOICES, CHOICE_LABEL, THEME_COOKIE, applyChoice,
+  TEXT_SIZES, TEXT_LABEL, applyTextSize, currentTextSize } from "@/lib/theme";
 import { BRAND, TRACK } from "@/lib/brand";
 import Icon from "../Icon";
 
@@ -46,11 +47,13 @@ function readChoice() {
 
 export default function ThemeSettings({ accent }) {
   const [choice, setChoice] = useState("dark");
+  const [textSize, setTextSize] = useState("normal");
 
   // After mount, not during render. The server rendered this with a guess, and reading the
   // cookie while rendering would make the two disagree about the first paint.
   useEffect(function () {
     setChoice(readChoice());
+    setTextSize(currentTextSize());
   }, []);
 
   function pick(next) {
@@ -88,11 +91,48 @@ export default function ThemeSettings({ accent }) {
         })}
       </div>
 
-      <p className="text-[11px] text-brand-dim leading-relaxed mt-3">
+      <p className="text-[0.75rem] text-brand-dim leading-relaxed mt-3">
         {choice === "system"
           ? "Following whatever your phone is set to, and it will change with it."
           : "Set to " + CHOICE_LABEL[choice].toLowerCase() + " on this device, whatever your phone does."}
       </p>
+
+      {/* TEXT SIZE.
+          Separate control, separate cookie. Somebody who needs larger type usually does not
+          also need a different background, and bundling the two forces a choice nobody
+          asked to make.
+
+          It scales the root font size, so it moves the whole interface rather than a
+          handful of headings. That only works because the app's hardcoded px labels were
+          converted to rem first: an absolute px size ignores this entirely, which would
+          have left the smallest labels untouched for exactly the people who need it. */}
+      <div className="mt-5 pt-5" style={{ borderTop: "1px solid " + BRAND.line }}>
+        <p className="font-display text-base font-normal mb-1">Text size</p>
+        <p className="text-sm text-brand-muted mb-4">
+          Makes everything bigger, not just the headings. If you are squinting at your phone in
+          a gym, use it.
+        </p>
+
+        <div className="grid grid-cols-3 gap-2">
+          {TEXT_SIZES.map(function (t) {
+            const on = textSize === t;
+            return (
+              <button key={t} onClick={function () { pickText(t); }}
+                className="py-3 rounded-sm font-display border"
+                // The button itself previews the size it sets, which saves a round trip of
+                // choose, look, change your mind.
+                style={Object.assign(
+                  { fontSize: t === "normal" ? "0.8rem" : (t === "large" ? "0.95rem" : "1.1rem") },
+                  on
+                    ? { background: tone, color: "var(--brand-bg)", borderColor: tone }
+                    : { borderColor: BRAND.line, color: BRAND.muted }
+                )}>
+                {TEXT_LABEL[t]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

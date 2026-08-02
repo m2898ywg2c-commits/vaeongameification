@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import PasswordField from "../PasswordField";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -57,26 +58,20 @@ export default function ResetPasswordPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs uppercase tracking-wide text-brand-muted mb-1">New password</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-brand-text outline-none focus:border-[#22D3EE]"
-              />
-            </div>
-            <div>
-              <label className="block text-xs uppercase tracking-wide text-brand-muted mb-1">Confirm password</label>
-              <input
-                type="password"
-                required
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-brand-text outline-none focus:border-[#22D3EE]"
-              />
-            </div>
+            <PasswordField
+              id="new-password"
+              label="New password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+            <PasswordField
+              id="confirm-password"
+              label="Confirm password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              autoComplete="new-password"
+            />
             {error && <p className="text-sm text-red-400">{error}</p>}
             <button
               type="submit"

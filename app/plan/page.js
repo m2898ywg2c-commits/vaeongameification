@@ -203,6 +203,31 @@ week: weekNo, test_week: isTestWeek,
 // Learn this lift's max from what was actually done, so the plan builds off real data.
 // Gym ready logs feed this too, which is why block titles are canonicalised: without
 // that, one lift would fragment across several spellings and the trends would be junk.
+// Yoga holds go into the same store as lift maxes, in seconds. record_lift_max uses
+// greatest(), which is exactly the right rule for a best hold as well as a best lift.
+// Scoped to yoga on purpose: every other plan prescribes its timed work rather than
+// growing it from a logged best, so recording planks here would silently convert every
+// plank in the app into a percentage of your best plank.
+if (kind === "time" && cat === "yoga") {
+let bestSecs = 0;
+for (let i = 0; i < total; i++) {
+const v = fields[i] || {};
+// Minutes are stored as minutes in the log line, so convert before comparing.
+const raw = Number(v.secs) || 0;
+const secs = (v.unit === "min") ? raw * 60 : raw;
+if (secs > bestSecs) bestSecs = secs;
+}
+if (bestSecs > 0) {
+await supabase.rpc("record_lift_max", { p_exercise: ex.name, p_est: bestSecs });
+setMaxes(function (m) {
+const next = Object.assign({}, m);
+const key = (ex.name || "").toLowerCase();
+next[key] = Math.max(next[key] || 0, bestSecs);
+return next;
+});
+}
+}
+
 if (kind === "weight") {
 let best = 0;
 for (let i = 0; i < total; i++) {
@@ -377,6 +402,7 @@ finished={finished} onFinish={finish} />
 ) : (
 <DayView day={day} active={active} profile={profile} rule={rule} accent={accent} deep={deep}
 tid={tid} homeMode={homeMode} done={done} maxes={maxes} isTestWeek={isTestWeek} lastSets={lastSets}
+holdProgression={cat === "yoga"}
 onComplete={completeSet} onReopen={reopen} finished={finished} onFinish={finish} onStation={logStation} />
 )}
 </div>

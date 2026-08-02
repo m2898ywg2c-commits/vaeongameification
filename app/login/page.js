@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import PasswordField from "../PasswordField";
 import { BrandLockup } from "../Brand";
 
 export default function LoginPage() {
@@ -49,13 +50,10 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-wide text-brand-muted mb-1">Password</label>
-            <input
-              type="password"
-              required
+            <PasswordField
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-sm px-3 py-2 bg-brand-surface border border-brand-line text-brand-text outline-none focus:border-[#22D3EE]"
+              autoComplete="current-password"
             />
             <div className="text-right mt-1">
               <a href="/forgot-password" className="text-xs text-brand-muted underline">Forgot password?</a>

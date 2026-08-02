@@ -71,7 +71,7 @@ export default function GymBlock({ block, blockIdx, accent, done, onComplete, on
 
   return (
     <div className="rounded-md border border-brand-line bg-brand-surface p-4 mb-3">
-      <p className="text-[11px] uppercase tracking-wide text-brand-dim mb-2">Block {blockIdx + 1}</p>
+      <p className="text-[0.75rem] uppercase tracking-wide text-brand-dim mb-2">Block {blockIdx + 1}</p>
 
       <div className="relative mb-3">
         <input
@@ -96,7 +96,7 @@ export default function GymBlock({ block, blockIdx, accent, done, onComplete, on
                 </button>
               );
             })}
-            <p className="px-3 py-2 text-[11px] text-brand-dim">
+            <p className="px-3 py-2 text-[0.75rem] text-brand-dim">
               Pick one so your progress joins up, or keep your own wording.
             </p>
           </div>
@@ -136,7 +136,7 @@ export default function GymBlock({ block, blockIdx, accent, done, onComplete, on
         const v = fields[i] || {};
         return (
           <div key={i} className="mb-3">
-            <p className="text-[11px] uppercase tracking-wide text-brand-dim mb-1">Set {i + 1}</p>
+            <p className="text-[0.75rem] uppercase tracking-wide text-brand-dim mb-1">Set {i + 1}</p>
             <div className="flex gap-2">
               {mode === "weight" ? (
                 <input type="number" inputMode="decimal" placeholder="kg"

@@ -167,7 +167,7 @@ export default function ReminderSettings({ profile, accent }) {
       {note ? <p className="text-xs mb-2" style={{ color: "#FFB020" }}>{note}</p> : null}
       {error ? <p className="text-xs mb-2" style={{ color: "#FF6B57" }}>{error}</p> : null}
 
-      <p className="text-[11px] text-brand-dim leading-relaxed">
+      <p className="text-[0.75rem] text-brand-dim leading-relaxed">
         One a day at most. Nothing at all once you have hit your sessions for the week.
       </p>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { workingWeight, increaseHint } from "@/lib/progression";
+import { workingWeight, workingHold, increaseHint } from "@/lib/progression";
 import { formTip, coachTip, homeAlternative, needsGym } from "@/lib/exercisedb";
 import { BRAND } from "@/lib/brand";
 import Icon from "../Icon";
@@ -110,7 +110,7 @@ function describeSet(row) {
   return bits.join(" ");
 }
 
-export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, onComplete, onReopen }) {
+export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, holdProgression, onComplete, onReopen }) {
   const total = Number(ex.sets) || 1;
   const swap = homeMode && needsGym(ex.name);
   const alt = swap ? homeAlternative(ex.name) : "";
@@ -130,9 +130,24 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   const loadable = !swap && kind === "reps" && isLoadable(ex);
   const suggested = kind === "weight" ? workingWeight(ex.name, profile, weekPct, maxes) : null;
   const hasRealMax = !!(maxes && maxes[(ex.name || "").toLowerCase()]);
-  // On the testing week, weighted lifts we have no real number for get no prescribed weight,
-  // so you find and log your own. Everything else prefills as normal.
-  const calibrating = isTestWeek && kind === "weight" && !hasRealMax;
+
+  // YOGA HOLDS PROGRESS LIKE WEIGHTS DO, IN SECONDS.
+  //
+  // holdProgression is on only for the yoga category. Every other plan has timed work in it
+  // too, planks and carries and easy runs, and those are prescribed by the plan rather than
+  // grown from a logged best. Turning this on globally would quietly convert every plank in
+  // the app into a percentage of your best plank, which nobody asked for.
+  //
+  // The anchor is the hold you actually logged in week one, not a figure derived from it.
+  // There is no one-rep max for a tree pose.
+  const holdTarget = holdProgression && kind === "time" ? workingHold(ex.name, weekPct, maxes) : null;
+  const hasHold = !!(holdProgression && maxes && maxes[(ex.name || "").toLowerCase()]);
+
+  // On the testing week you find your own number and log it. For lifts that means no
+  // prescribed weight; for yoga it means no prescribed hold.
+  const calibrating =
+    (isTestWeek && kind === "weight" && !hasRealMax) ||
+    (isTestWeek && holdProgression && kind === "time" && !hasHold);
 
   const title = altTitle || ex.name;
 
@@ -167,7 +182,11 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         // belt weight is the only sensible starting number.
         weight: (!calibrating && suggested) ? String(suggested) : prevWeight,
         reps: kind === "weight" || kind === "reps" ? (targetNumber(ex.reps) || prevReps) : "",
-        secs: kind === "time" ? (targetTime(ex.reps) || prevSecs) : "",
+        // A prescribed hold beats the plan's printed target, because the prescription is
+        // built from this person's own week one rather than from a sensible average.
+        secs: kind === "time"
+          ? (calibrating ? "" : (holdTarget ? String(holdTarget) : (targetTime(ex.reps) || prevSecs)))
+          : "",
         // Carried through to completeSet so the log records "20 min" rather
         // than "20 sec". Read there, not passed as another argument.
         unit: unit || "sec",
@@ -206,7 +225,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   // the same width and the row does not twitch as it is typed into.
   const field = "w-full px-3 py-4 rounded-md text-xl text-center text-brand-text placeholder-brand-dim font-display";
   const fieldStyle = { background: "var(--brand-surface)", border: "1px solid " + BRAND.lineStrong };
-  const tipBtn = "flex-1 py-2 rounded-sm text-[11px] uppercase border";
+  const tipBtn = "flex-1 py-2 rounded-sm text-[0.75rem] uppercase border";
   const tipBtnStyle = { borderColor: BRAND.line, color: BRAND.muted, letterSpacing: "0.16em" };
 
   // "3 x 45 sec" reads as three sets of forty five somethings. For a hold, say
@@ -224,14 +243,14 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
             filled badge, three bold buttons and a bold set count, which meant nothing was
             actually emphasised. */}
         <p className="font-display text-base font-normal leading-tight flex-1">{title}</p>
-        <span className="text-[10px] px-2 py-1 rounded-sm border flex-shrink-0"
+        <span className="text-[0.6875rem] px-2 py-1 rounded-sm border flex-shrink-0"
           style={{ borderColor: accent + "55", color: accent, letterSpacing: "0.08em" }}>
           {badge}
         </span>
       </div>
 
       {swap ? (
-        <p className="text-[11px] text-brand-dim mb-1">Standing in for {ex.name}</p>
+        <p className="text-[0.75rem] text-brand-dim mb-1">Standing in for {ex.name}</p>
       ) : null}
 
       {ex.note ? <p className="text-xs text-brand-muted mb-1">{ex.note}</p> : null}
@@ -244,16 +263,20 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
 
       {calibrating ? (
         <p className="text-xs mb-2" style={{ color: accent }}>
-          Testing week. No target today. Work up to a set of 8 to 10 you could stop 2 reps short of, then log it. Every week after this is a percentage of this number, so do not max out.
+          {kind === "time"
+            ? "Baseline week. No target today. Hold the pose as long as you can keep the shape and the breath, then log the seconds. Every later week is a proportion of this number."
+            : "Testing week. No target today. Work up to a set of 8 to 10 you could stop 2 reps short of, then log it. Every week after this is a percentage of this number, so do not max out."}
         </p>
       ) : (loadable
         ? <p className="text-xs mb-2" style={{ color: accent }}>Bodyweight, with the option of loading it. Put any added weight in the +kg box and leave it empty if you did these unloaded.</p>
-        : (HINTS[kind] ? <p className="text-xs mb-2" style={{ color: accent }}>{HINTS[kind]}</p> : null))}
+        : (holdTarget
+          ? <p className="text-xs mb-2" style={{ color: accent }}>Your target is {holdTarget} seconds, built from what you held in week one. It is a target, not an instruction: if the shape breaks first, come out and log what you got.</p>
+          : (HINTS[kind] ? <p className="text-xs mb-2" style={{ color: accent }}>{HINTS[kind]}</p> : null)))}
 
       {suggested && !calibrating ? (
         <div className="rounded-md px-3 py-2 mb-3" style={{ background: accent + "1A" }}>
           <p className="font-display text-sm" style={{ color: accent }}>Today: {suggested}kg</p>
-          <p className="text-[11px] text-brand-muted">{hasRealMax ? "From your logged max. " : ""}{increaseHint(ex.name)}</p>
+          <p className="text-[0.75rem] text-brand-muted">{hasRealMax ? "From your logged max. " : ""}{increaseHint(ex.name)}</p>
         </div>
       ) : null}
 
@@ -262,7 +285,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
           prescription directly above it. */}
       {lastSets ? (
         <div className="rounded-md px-3 py-2 mb-3 border border-brand-line bg-brand-surface">
-          <p className="text-[11px] uppercase tracking-wide text-brand-dim mb-0.5">Last time &middot; {lastAgo}</p>
+          <p className="text-[0.75rem] uppercase tracking-wide text-brand-dim mb-0.5">Last time &middot; {lastAgo}</p>
           <p className="font-display text-sm text-brand-text">
             {lastSets.map(function (r) { return describeSet(r); }).filter(Boolean).join("   ")}
           </p>
@@ -282,7 +305,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         const v = fields[i] || {};
         return (
           <div key={i} className="mb-3">
-            <p className="text-[11px] uppercase tracking-wide text-brand-dim mb-1">
+            <p className="text-[0.75rem] uppercase tracking-wide text-brand-dim mb-1">
               {setLabel} {i + 1}
               {kind === "time" ? <span className="normal-case"> &middot; in {UNIT_WORD[unit]}</span> : null}
               {/* Set-level history, so you are comparing like with like. A fifth set that

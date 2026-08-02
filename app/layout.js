@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { Space_Grotesk, Inter } from "next/font/google";
-import { THEME_COOKIE, SCHEME_COOKIE, resolveScheme } from "@/lib/theme";
+import { THEME_COOKIE, SCHEME_COOKIE, TEXT_COOKIE, resolveScheme, resolveTextSize } from "@/lib/theme";
 import "./globals.css";
 import BrandBar from "./Brand";
 import Splash from "./Splash";
@@ -80,9 +80,10 @@ export default async function RootLayout({ children }) {
   const choice = jar.get(THEME_COOKIE)?.value || "dark";
   const lastKnownDevice = jar.get(SCHEME_COOKIE)?.value || "dark";
   const scheme = resolveScheme(choice, lastKnownDevice);
+  const textSize = resolveTextSize(jar.get(TEXT_COOKIE)?.value);
 
   return (
-    <html lang="en" data-theme={scheme} className={"h-full antialiased " + display.variable + " " + body.variable}>
+    <html lang="en" data-theme={scheme} data-text={textSize} className={"h-full antialiased " + display.variable + " " + body.variable}>
       <head>
         {/* CATCH beforeinstallprompt BEFORE REACT EXISTS.
             Chrome fires this event early in page load, frequently before the bundle has
@@ -112,7 +113,7 @@ export default async function RootLayout({ children }) {
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var m=document.cookie.match(/(?:^|; )vaeon_theme=([^;]*)/);var c=m?decodeURIComponent(m[1]):'dark';var d=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';var s=c==='light'?'light':(c==='system'?d:'dark');document.documentElement.setAttribute('data-theme',s);document.cookie='vaeon_scheme='+d+';path=/;max-age=31536000;SameSite=Lax';}catch(e){}})();",
+              "(function(){try{var m=document.cookie.match(/(?:^|; )vaeon_theme=([^;]*)/);var c=m?decodeURIComponent(m[1]):'dark';var d=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';var s=c==='light'?'light':(c==='system'?d:'dark');document.documentElement.setAttribute('data-theme',s);document.cookie='vaeon_scheme='+d+';path=/;max-age=31536000;SameSite=Lax';var tm=document.cookie.match(/(?:^|; )vaeon_text=([^;]*)/);var t=tm?decodeURIComponent(tm[1]):'normal';if(t!=='large'&&t!=='larger')t='normal';document.documentElement.setAttribute('data-text',t);}catch(e){}})();",
           }}
         />
       </head>

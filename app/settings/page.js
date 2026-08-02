@@ -329,7 +329,7 @@ background: fixedDays ? accent + "22" : "var(--brand-line)",
 }}
 >
 <span className="block text-xl" aria-hidden="true">&#128197;</span>
-<span className="block text-[11px] mt-1">Days of the week</span>
+<span className="block text-[0.75rem] mt-1">Days of the week</span>
 </button>
 <button
 onClick={function () { setFixedDays(false); }}
@@ -340,7 +340,7 @@ background: !fixedDays ? accent + "22" : "var(--brand-line)",
 }}
 >
 <span className="block text-xl" aria-hidden="true">&#128290;</span>
-<span className="block text-[11px] mt-1">Session 1, 2, 3</span>
+<span className="block text-[0.75rem] mt-1">Session 1, 2, 3</span>
 </button>
 </div>
 
@@ -484,7 +484,7 @@ background: on ? accent + "22" : "var(--brand-line)",
 }}
 >
 <span className="block text-xl" aria-hidden="true">{o.icon}</span>
-<span className="block text-[11px] mt-1">{o.name}</span>
+<span className="block text-[0.75rem] mt-1">{o.name}</span>
 </button>
 );
 })}

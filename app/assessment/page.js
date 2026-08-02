@@ -332,7 +332,7 @@ export default function AssessmentPage() {
               <div key={id} className="rounded-md border border-brand-line bg-brand-surface p-4 flex flex-col items-center text-center">
                 <TypeOrb typeId={id} size={84} />
                 <p className="font-display text-sm mt-2">{t.name}</p>
-                <p className="text-[10px] uppercase tracking-wide text-brand-muted mt-1">{t.code}</p>
+                <p className="text-[0.6875rem] uppercase tracking-wide text-brand-muted mt-1">{t.code}</p>
                 <p className="text-xs text-brand-muted mt-2">{t.tagline}</p>
               </div>
             );

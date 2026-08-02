@@ -71,7 +71,7 @@ export default function ChallengeCard({ challenge, accent }) {
   // else.
   if (hidden && ready) {
     return (
-      <button onClick={show} className="w-full text-left text-[11px] mb-3 underline"
+      <button onClick={show} className="w-full text-left text-[0.75rem] mb-3 underline"
         style={{ color: BRAND.dim }}>
         Show the group challenge
       </button>
@@ -82,10 +82,10 @@ export default function ChallengeCard({ challenge, accent }) {
     <div className="rounded-md border p-4 mb-3" style={{ borderColor: tone + "44", background: BRAND.surface }}>
       <div className="flex items-center gap-2 mb-2.5">
         <span style={{ color: tone }}><Icon name="group" size={16} /></span>
-        <p className="text-[9px] uppercase flex-1" style={{ color: tone, letterSpacing: TRACK.label }}>
+        <p className="text-[0.6875rem] uppercase flex-1" style={{ color: tone, letterSpacing: TRACK.label }}>
           {challenge.title}
         </p>
-        <button onClick={hide} className="text-[10px] uppercase px-2 py-1"
+        <button onClick={hide} className="text-[0.6875rem] uppercase px-2 py-1"
           style={{ color: BRAND.dim, letterSpacing: "0.16em" }} aria-label="Hide the group challenge">
           Hide
         </button>
@@ -96,7 +96,7 @@ export default function ChallengeCard({ challenge, accent }) {
         <span className="font-display text-3xl leading-none" style={{ color: hit ? "#3DDC97" : tone }}>{done}</span>
         <span className="text-sm" style={{ color: BRAND.muted }}>of {target}</span>
         <span className="flex-1" />
-        <span className="text-[11px]" style={{ color: days <= 1 ? "#FFB020" : BRAND.dim }}>
+        <span className="text-[0.75rem]" style={{ color: days <= 1 ? "#FFB020" : BRAND.dim }}>
           {days <= 0 ? "Last day" : days + (days === 1 ? " day left" : " days left")}
         </span>
       </div>
@@ -117,16 +117,16 @@ export default function ChallengeCard({ challenge, accent }) {
           until you realise you have no idea whether any of them were yours. */}
       {collective ? (
         <div className="flex items-center gap-2 pt-2.5" style={{ borderTop: "1px solid " + BRAND.line }}>
-          <span className="text-[9px] uppercase" style={{ color: BRAND.dim, letterSpacing: TRACK.label }}>Yours</span>
+          <span className="text-[0.6875rem] uppercase" style={{ color: BRAND.dim, letterSpacing: TRACK.label }}>Yours</span>
           <span className="font-display text-sm" style={{ color: mine > 0 ? tone : BRAND.dim }}>{mine}</span>
           <span className="flex-1" />
           {names.length ? (
-            <span className="text-[11px] truncate" style={{ color: BRAND.dim, maxWidth: "62%" }}>
+            <span className="text-[0.75rem] truncate" style={{ color: BRAND.dim, maxWidth: "62%" }}>
               {names.slice(0, 4).map(function (p) { return p.name + " " + p.done; }).join("  ")}
               {names.length > 4 ? "  +" + (names.length - 4) : ""}
             </span>
           ) : (
-            <span className="text-[11px]" style={{ color: BRAND.dim }}>Nobody has logged one yet</span>
+            <span className="text-[0.75rem]" style={{ color: BRAND.dim }}>Nobody has logged one yet</span>
           )}
         </div>
       ) : null}
