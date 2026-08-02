@@ -6,6 +6,7 @@ import { TYPES, isSolo } from "@/lib/personality";
 import { currentScheme, accentFor } from "@/lib/theme";
 import { KUDOS_EMOJI, KUDOS_NOTES, noteText } from "@/lib/kudos";
 import TypeOrb from "../TypeOrb";
+import TypeCharacter from "../TypeCharacter";
 import Home from "../Home";
 import { track, trackOnce, EVENTS } from "@/lib/events";
 
@@ -142,7 +143,7 @@ className={"rounded-md border p-4 " + (mine ? "border-white/40 bg-brand-field" :
 >
 <div className="flex items-center gap-3">
 <span className="font-display text-sm w-5 text-brand-muted">{rankIndex + 1}</span>
-{t ? <TypeOrb typeId={r.type_id} size={38} /> : <span className="w-[38px] h-[38px] rounded-full bg-brand-field inline-block" />}
+{t ? <TypeCharacter typeId={r.type_id} size={38} variant="face" /> : <span className="w-[38px] h-[38px] rounded-full bg-brand-field inline-block" />}
 <div className="flex-1 min-w-0">
 <p className="font-display text-sm truncate">
 {r.screen_name}{mine ? " (you)" : ""}

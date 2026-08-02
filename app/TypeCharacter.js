@@ -1,57 +1,67 @@
 import TypeOrb from "./TypeOrb";
 import { TYPES } from "@/lib/personality";
 
-// Types whose render still shows the old colour. See the note in the component.
+// Types whose render still shows the old colour. See the note by PENDING_ARTWORK below.
 const PENDING_ARTWORK = ["anchor"];
 
 // The type character.
 //
-// WHY THERE IS A HARD FLOOR AT 60px.
+// TWO VARIANTS, AND THE DIFFERENCE IS NOT DECORATIVE.
 //
-// These are raster renders, not vectors, and they were measured before they were used.
-// Cropped out of the poster and shrunk, all eight are the same white face on a dark body
-// by 38px and an indistinguishable smear by 24px. The orb is legible at every one of the
-// eleven sizes this app asks for; the character is not. So the component refuses rather
-// than degrades: ask for anything under 60 and you get the orb back. If a future pass
-// wants a character on the leaderboard, it has to replace the artwork first, not the floor.
+// "full" is the whole figure. It was measured before it was used: shrunk below about 60px
+// all eight are the same pale face on a dark body, so the component refuses rather than
+// degrades and hands back the orb instead. The floor is real, not cautious.
 //
-// WHY THE DARK MEDALLION.
+// "face" is a head-and-shoulders crop, centred on each character by finding the brightest
+// cluster in the upper frame rather than assuming the figure sits in the middle of its
+// card, which it does not. Cropping to the head is what makes a small avatar work: at 38px
+// a full body gives you fifteen pixels of head, and a portrait gives you thirty-eight.
 //
-// The renders have their background baked in. There is no alpha, and there cannot be,
+// WHAT THE FACE VARIANT COSTS, WRITTEN DOWN SO IT IS A DECISION AND NOT AN ACCIDENT.
+//
+// The orb carries the type letter. The portrait does not, so on the leaderboard the only
+// thing separating eight people is hue. Around one man in twelve has some colour vision
+// deficiency, and for them the leaderboard just lost its type column. The alt text carries
+// the name for screen readers, but that does nothing for someone who can see the picture
+// perfectly well and cannot tell teal from green. If that matters more than the character,
+// put the orb back on the leaderboard; it is one word in leaderboard/page.js.
+//
+// WHY THE DARK MEDALLION ON THE FULL VARIANT.
+//
+// The renders have their background baked in. There is no alpha and there cannot be,
 // because the characters are charcoal-black and so is the backdrop, so nothing can key
-// them apart. Dropped straight onto the light theme they are black rectangles, which
-// would break the one feature in this app that exists for accessibility rather than taste.
-//
-// Framing them in their own dark tile fixes that honestly. In dark mode the tile all but
-// disappears. In light mode it reads as a framed picture, which is what it is, rather than
-// as a broken asset. The poster already does this; the cards are the frame.
-export default function TypeCharacter({ typeId, size, className }) {
+// them apart. Dropped raw onto the light theme they are black rectangles, which would
+// break the one feature in this app that exists for accessibility rather than taste.
+// Framing them fixes it honestly: invisible in dark mode, a framed picture in light mode.
+export default function TypeCharacter({ typeId, size, variant, className }) {
   const t = TYPES[typeId];
   if (!t) return null;
 
   const s = size || 120;
-  if (s < 60) return <TypeOrb typeId={typeId} size={s} />;
+  const face = variant === "face";
+
   // The Anchor moved to violet and its artwork did not. Until it is regenerated it falls
   // back to the orb, which is already the right colour, rather than shipping a type whose
-  // character and accent disagree on the same screen. Delete it from this set the day the
-  // new render lands. Nothing else needs to change.
+  // character and accent disagree on the same screen. Delete it from the list above the
+  // day the new render lands. Nothing else needs to change.
   if (PENDING_ARTWORK.indexOf(typeId) !== -1) return <TypeOrb typeId={typeId} size={s} />;
+  if (!face && s < 60) return <TypeOrb typeId={typeId} size={s} />;
 
   return (
     <div
       className={className}
       style={{
         width: s, height: s, flexShrink: 0,
-        borderRadius: Math.round(s * 0.14),
+        borderRadius: face ? "50%" : Math.round(s * 0.14),
         overflow: "hidden",
         background: "#0B0B0E",
-        border: "1px solid " + t.colors[0] + "40",
+        border: "1px solid " + t.colors[0] + (face ? "55" : "40"),
         boxShadow: "0 0 " + Math.round(s * 0.18) + "px " + t.colors[0] + "24",
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={"/characters/" + typeId + ".webp"}
+        src={"/characters/" + typeId + (face ? "-face" : "") + ".webp"}
         alt={t.name}
         width={s}
         height={s}
