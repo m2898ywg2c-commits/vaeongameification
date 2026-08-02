@@ -165,18 +165,39 @@ accentCss above for why this is a style tag rather than inline custom properties
 <div className="max-w-md mx-auto">
 
 <div className="flex items-center justify-between mb-5">
-<div className="flex items-center gap-3">
-{/* Face, not orb. The leaderboard shows this person as a character, so showing them a
-    ball on their own dashboard made the same user two different things on two screens.
-    The type is named in text immediately to the right, so nothing rests on colour alone. */}
-{type ? <TypeCharacter typeId={typeId} size={46} variant="face" /> : null}
-<div>
-<p className="font-display text-lg font-normal leading-tight">{profile.screen_name}</p>
+{/* THE HEADER IS THE WAY IN TO THE TYPE PAGE.
+
+    Face, not orb: the leaderboard shows this person as a character, so a ball here made
+    the same user two different things on two screens. The type is named in text right
+    beside it, so nothing rests on colour alone.
+
+    And it links. /type had no route into it from anywhere in the app, despite the note at
+    the top of that page claiming it opens from the dashboard. An app whose entire argument
+    is that your type changes how you are coached had no way to read about your type.
+
+    Same tab, not a new one. This is installed to a home screen and runs standalone, and
+    target=_blank drops people out of the app into a browser chrome they did not ask for. */}
+{type ? (
+<a href={"/type?id=" + typeId} className="flex items-center gap-3 min-w-0"
+   aria-label={"Read about " + type.name}>
+<TypeCharacter typeId={typeId} size={46} variant="face" />
+<div className="min-w-0">
+<p className="font-display text-lg font-normal leading-tight truncate">{profile.screen_name}</p>
 <p className="text-[0.6875rem] leading-tight uppercase" style={{ color: accent, letterSpacing: TRACK.label }}>
-{type ? type.name : (gym ? "Gym ready" : names.join(" + "))}
+{type.name}
+</p>
+</div>
+</a>
+) : (
+<div className="flex items-center gap-3 min-w-0">
+<div className="min-w-0">
+<p className="font-display text-lg font-normal leading-tight truncate">{profile.screen_name}</p>
+<p className="text-[0.6875rem] leading-tight uppercase" style={{ color: accent, letterSpacing: TRACK.label }}>
+{gym ? "Gym ready" : names.join(" + ")}
 </p>
 </div>
 </div>
+)}
 <SignOutButton />
 </div>
 
