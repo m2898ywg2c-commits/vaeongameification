@@ -142,7 +142,7 @@ const card = "rounded-md border p-4 mb-3";
 const cardStyle = { borderColor: BRAND.line, background: BRAND.surface };
 
 return (
-<main className="min-h-screen text-brand-text px-5 py-8" style={Object.assign({ background: "var(--brand-bg)" }, accentVars)}>
+<main data-accent className="min-h-screen text-brand-text px-5 py-8" style={Object.assign({ background: "var(--brand-bg)" }, accentVars)}>
 <div className="max-w-md mx-auto">
 
 <div className="flex items-center justify-between mb-5">
