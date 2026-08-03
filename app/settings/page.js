@@ -13,6 +13,7 @@ import Home from "../Home";
 import ReminderSettings from "./ReminderSettings";
 import ThemeSettings from "./ThemeSettings";
 import ExportData from "./ExportData";
+import DeleteAccount from "./DeleteAccount";
 
 const EQUIPMENT = [
 { id: "gym", icon: "🏋️", name: "Full gym" },
@@ -507,6 +508,10 @@ className="w-full py-3 rounded-sm font-display text-sm mb-3" style={primaryBtn}>
 
 {/* ---------- Your data ---------- */}
 <ExportData profile={profile} />
+
+{/* Directly under the export, deliberately. Anyone about to delete everything should
+    have just walked past the way to keep a copy of it. */}
+<DeleteAccount />
 
 {/* ---------- Disclaimer ---------- */}
 {/* Last card on purpose. Nobody comes to settings to read it, but it needs to be

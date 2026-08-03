@@ -151,6 +151,9 @@ const lastSession = sessions && sessions.length ? sessions[0].logged_at : null;
 const lastExercise = lastLog ? lastLog.logged_at : null;
 const lastActivity = [lastSession, lastExercise].filter(Boolean).sort().pop() || null;
 const occasion = occasionFor(lastActivity, stats.thisWeekCount, pledged);
+// Nobody has trained yet. Used to decide whether first-run explanation is still earning
+// its space, rather than storing a flag and having to keep it honest.
+const brandNew = !sessions || sessions.length === 0;
 
 // Shared card. One radius, one border, one surface, all from the token layer rather than
 // a bg-brand-surface written out by hand on twenty elements.
@@ -183,8 +186,11 @@ accentCss above for why this is a style tag rather than inline custom properties
 <TypeCharacter typeId={typeId} size={46} variant="face" />
 <div className="min-w-0">
 <p className="font-display text-lg font-normal leading-tight truncate">{profile.screen_name}</p>
-<p className="text-[0.6875rem] leading-tight uppercase" style={{ color: accent, letterSpacing: TRACK.label }}>
+<p className="text-[0.6875rem] leading-tight uppercase flex items-center gap-1" style={{ color: accent, letterSpacing: TRACK.label }}>
 {type.name}
+{/* The only thing telling anyone this header is tappable. Without it the route into
+    the type page is a hidden feature that most people never find. */}
+<span style={{ color: accent, display: "inline-flex" }}><Icon name="arrow" size={11} /></span>
 </p>
 </div>
 </a>
@@ -306,7 +312,12 @@ is knowing it is there. */}
 {/* Same tab, matching the header link above. This opened with target="_blank", which
     on a home-screen install throws people out of the standalone app and into browser
     chrome they did not ask for, with no way back but the back gesture. */}
-{type ? (
+{/* ONE TIME, NOT FOREVER.
+    Once somebody has logged a session they know what their style is, and a permanent
+    card explaining it becomes furniture. It shows while they have logged nothing, which
+    self-clears the moment they train and needs no column to track it. After that the
+    arrow in the header above is the way through. */}
+{type && brandNew ? (
 <a href={"/type?id=" + typeId}
 className="rounded-md p-4 mb-3 border block" style={{ borderColor: "color-mix(in srgb, var(--accent) 27%, transparent)", background: BRAND.surface }}>
 <div className="flex items-center gap-2 mb-2">
@@ -316,12 +327,12 @@ className="rounded-md p-4 mb-3 border block" style={{ borderColor: "color-mix(in
 </div>
 <p className="text-sm leading-relaxed" style={{ color: "var(--brand-muted)" }}>{nudge}</p>
 </a>
-) : (
+) : !type ? (
 <a href="/assessment" className="block rounded-md border p-4 mb-3" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
 <p className="font-display text-sm mb-1">Find your training personality</p>
 <p className="text-xs text-brand-muted">Two minutes. It decides how you get coached.</p>
 </a>
-)}
+) : null}
 
 {/* ---------- Kudos received ---------- */}
 <KudosCard kudos={myKudos} accent={accent} />
@@ -344,9 +355,26 @@ style={{ borderColor: BRAND.line, background: BRAND.line }}>
 ]
 // Was a permanent amber banner asking "can't get to the gym today?", which most days
 // is a question whose answer is obviously no. It is a destination, so it belongs with
-// the other destinations. Gym ready users bring their own plan and have no fallback.
-.concat(gym ? [] : [{ href: "/fallback", icon: "home", label: "Train without a gym" }])
+// the other destinations.
+//
+// GYM READY USERS GET IT GREYED RATHER THAN MISSING.
+//
+// They bring their own plan, so there is no fallback week to send them to and the tile
+// cannot be a link. Omitting it left an odd number of cells in a two column grid, and the
+// hole showed the grid's own border colour through the gap, which read as a rendering
+// fault rather than a gap. Present but plainly inert says "not for you" and keeps the
+// block square.
+.concat([{ href: "/fallback", icon: "home", label: "Train without a gym", off: gym }])
 .map(function (t) {
+if (t.off) {
+return (
+<div key={t.href} aria-hidden="true" className="flex items-center gap-2.5 px-3 py-4"
+style={{ background: BRAND.bg, opacity: 0.32 }}>
+<span style={{ color: BRAND.dim }}><Icon name={t.icon} size={18} /></span>
+<span className="text-sm" style={{ color: BRAND.dim }}>{t.label}</span>
+</div>
+);
+}
 return (
 <a key={t.href} href={t.href} className="flex items-center gap-2.5 px-3 py-4" style={{ background: BRAND.bg }}>
 <span style={{ color: accent }}><Icon name={t.icon} size={18} /></span>
