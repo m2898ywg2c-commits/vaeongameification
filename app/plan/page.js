@@ -94,8 +94,8 @@ lastByExercise[k].sets.sort(function (a, b) { return (a.set_index || 0) - (b.set
 // Gym ready users bring their own plan, so the week is empty slots rather than
 // prescribed sessions.
 const week = isGymReady(p.goals)
-? buildGymWeek(p.sessions_per_week || 3)
-: buildWeek(p.goals, p.sessions_per_week || 3);
+? buildGymWeek(p.sessions_per_week || 3, p.train_days, p.fixed_days)
+: buildWeek(p.goals, p.sessions_per_week || 3, p.train_days, p.fixed_days);
 // Freestyle types land on a choice, not on a weekday.
 //
 // A Hunter or a Wanderer opening the app on a Wednesday and being shown "Wednesday"
