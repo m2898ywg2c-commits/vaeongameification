@@ -5,6 +5,7 @@ import { workingWeight, workingHold, increaseHint } from "@/lib/progression";
 import { formTip, coachTip, homeAlternative, needsGym } from "@/lib/exercisedb";
 import { BRAND } from "@/lib/brand";
 import Icon from "../Icon";
+import NotForMe from "./NotForMe";
 import SetFeedback from "./SetFeedback";
 
 function videoLink(name) {
@@ -111,7 +112,7 @@ function describeSet(row) {
   return bits.join(" ");
 }
 
-export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, holdProgression, onComplete, onReopen }) {
+export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, holdProgression, onComplete, onReopen, onAvoid }) {
   const total = Number(ex.sets) || 1;
   const swap = homeMode && needsGym(ex.name);
   const alt = swap ? homeAlternative(ex.name) : "";
@@ -366,6 +367,10 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       >
         {calibrating ? "Log it" : "Completed as planned"}
       </button>
+
+      {/* Under the log button, not beside it. Somebody who can do the exercise should never
+          have to read past this to finish their set. */}
+      {onAvoid ? <NotForMe exercise={ex.name} onAvoided={onAvoid} /> : null}
     </div>
   );
 }

@@ -6,11 +6,13 @@ import { sessionMusic, stationMusic } from "@/lib/music";
 import ExerciseCard from "./ExerciseCard";
 import RestTimer from "./RestTimer";
 import TypeOrb from "../TypeOrb";
+import TypeCharacter from "../TypeCharacter";
+import SessionFanfare from "./SessionFanfare";
 import { sessionDone } from "@/lib/voice";
 
 const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export default function DayView({ day, active, profile, rule, accent, deep, tid, homeMode, done, maxes, isTestWeek, lastSets, holdProgression, onComplete, onReopen, finished, onFinish, onStation }) {
+export default function DayView({ day, active, profile, rule, accent, deep, tid, homeMode, done, maxes, isTestWeek, lastSets, holdProgression, onComplete, onReopen, finished, onFinish, onStation, onAvoid }) {
 const [openWarmup, setOpenWarmup] = useState(false);
 const [openFlow, setOpenFlow] = useState(false);
 const [stations, setStations] = useState({});
@@ -80,7 +82,7 @@ return (
 weekPct={rule.pct} accent={accent} homeMode={homeMode} done={!!done[i]}
 maxes={maxes} isTestWeek={isTestWeek} holdProgression={holdProgression}
 last={lastSets ? lastSets[(ex.name || "").toLowerCase()] : null}
-onComplete={onComplete} onReopen={onReopen} />
+onComplete={onComplete} onReopen={onReopen} onAvoid={onAvoid} />
 );
 })}
 
@@ -162,7 +164,7 @@ return <p key={i} className="text-sm text-brand-muted mb-1">&middot; {m}</p>;
 
 {finished ? (
 <div className="rounded-md p-5 mb-6 text-center border" style={{ borderColor: accent, background: "var(--brand-surface)" }}>
-<div className="flex justify-center mb-2"><TypeOrb typeId={tid} size={54} /></div>
+<div className="flex justify-center mb-2"><SessionFanfare typeId={tid} dayKey={day ? day.key : ""} size={54} /></div>
 <p className="font-display text-base font-normal">{sessionDone(tid)}</p>
 <p className="text-xs text-brand-muted mt-1">Session logged.</p>
 <a href="/dashboard" className="inline-block mt-4 text-sm underline" style={{ color: accent }}>Back to dashboard</a>

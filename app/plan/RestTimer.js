@@ -85,6 +85,48 @@ export default function RestTimer({ accent }) {
 
   const remaining = end > now ? Math.ceil((end - now) / 1000) : 0;
   const running = remaining > 0;
+
+  // KEEP THE SCREEN ON WHILE A REST IS RUNNING.
+  //
+  // The timer was already immune to the phone locking: it stores a wall-clock end time and
+  // re-reads it on wake, so it cannot drift. What it could not do is stay VISIBLE. Ninety
+  // seconds of rest is well past most auto-lock settings, so the screen went black mid-set
+  // and the timer had to be hunted for with a thumbprint, which is exactly the moment
+  // somebody is holding a bar and cannot be bothered.
+  //
+  // Screen Wake Lock is supported in Chrome and on Android, and in Safari from iOS 16.4,
+  // so unlike the vibration in lib/haptics.js this one does reach iPhones.
+  //
+  // The browser revokes the lock whenever the page is hidden and does not hand it back on
+  // return, so it has to be re-requested on visibilitychange. Released the instant the rest
+  // ends: holding a wake lock for longer than the reason for it is a battery complaint
+  // waiting to happen.
+  useEffect(function () {
+    if (!running) return;
+    let sentinel = null;
+    let gone = false;
+
+    function acquire() {
+      try {
+        if (!navigator.wakeLock || document.visibilityState !== "visible") return;
+        navigator.wakeLock.request("screen").then(function (s) {
+          if (gone) { try { s.release(); } catch (e) {} return; }
+          sentinel = s;
+        }).catch(function () {});
+      } catch (e) {}
+    }
+    function onVisible() {
+      if (document.visibilityState === "visible") acquire();
+    }
+
+    acquire();
+    document.addEventListener("visibilitychange", onVisible);
+    return function () {
+      gone = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      try { if (sentinel) sentinel.release(); } catch (e) {}
+    };
+  }, [running]);
   // The last ten seconds, and the only window in which this bar raises its voice.
   const ending = running && remaining <= 10;
 

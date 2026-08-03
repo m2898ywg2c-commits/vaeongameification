@@ -256,3 +256,69 @@ main.min-h-screen {
     transition: none;
   }
 }
+
+
+/* SESSION FANFARE.
+
+   Fired once when a session is logged, behind the user's own character. No confetti
+   library: the whole thing is four keyframes and some absolutely positioned divs, so it
+   adds nothing to the bundle and inherits the type colours for free.
+
+   Rotation, translation and scale are animated as INDEPENDENT properties rather than
+   through transform. A ray needs a fixed rotation and an animated scale at the same time,
+   and putting both in transform means the keyframe overwrites the angle on every frame.
+
+   Reduced motion switches all of it off. Somebody who has asked the operating system to
+   stop moving things at them has not made an exception for celebrations. */
+@keyframes vf-ray {
+  0%   { opacity: 0; scale: 1 0.2; }
+  22%  { opacity: 1; }
+  100% { opacity: 0; scale: 1 1.4; }
+}
+@keyframes vf-ring {
+  0%   { opacity: 0; scale: 0.5; }
+  16%  { opacity: 0.9; }
+  100% { opacity: 0; scale: 2.2; }
+}
+@keyframes vf-spark {
+  0%   { opacity: 0; translate: 0 0; scale: 0.4; }
+  15%  { opacity: 1; }
+  100% { opacity: 0; translate: var(--vx) var(--vy); scale: 0.85; }
+}
+@keyframes vf-bloom {
+  0%   { opacity: 0; scale: 0.45; }
+  25%  { opacity: 0.5; }
+  100% { opacity: 0; scale: 1.6; }
+}
+
+.vf-wrap { position: relative; display: grid; place-items: center; }
+.vf-layer { position: absolute; inset: 0; pointer-events: none; }
+
+.vf-ray {
+  position: absolute; left: 50%; top: 50%;
+  width: 2px; height: 30%; margin-left: -1px;
+  transform-origin: 50% 100%;
+  transform: rotate(var(--va)) translateY(-150%);
+  background: linear-gradient(to top, transparent, var(--vc));
+  animation: vf-ray 900ms cubic-bezier(.16,.9,.3,1) both;
+}
+.vf-ring {
+  position: absolute; inset: 18%;
+  border: 2px solid var(--vc); border-radius: 50%;
+  animation: vf-ring 1100ms cubic-bezier(.16,.9,.3,1) both;
+}
+.vf-spark {
+  position: absolute; left: 50%; top: 50%;
+  width: 6px; height: 6px; margin: -3px 0 0 -3px;
+  border-radius: 50%; background: var(--vc);
+  animation: vf-spark 1000ms cubic-bezier(.2,.75,.3,1) both;
+}
+.vf-bloom {
+  position: absolute; inset: -18%; border-radius: 50%;
+  background: radial-gradient(circle, var(--vc) 0%, transparent 62%);
+  animation: vf-bloom 1200ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vf-ray, .vf-ring, .vf-spark, .vf-bloom { animation: none; opacity: 0; }
+}

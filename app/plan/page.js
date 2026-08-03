@@ -11,6 +11,7 @@ import { quoteFor, sessionIntro, praiseFor } from "@/lib/voice";
 import { track, rememberIdentity, EVENTS } from "@/lib/events";
 import { currentScheme, accentFor, deepFor } from "@/lib/theme";
 import TypeOrb from "../TypeOrb";
+import TypeCharacter from "../TypeCharacter";
 import DayView from "./DayView";
 import GymDayView from "./GymDayView";
 
@@ -45,6 +46,7 @@ const [maxes, setMaxes] = useState({});
 const [freestyle, setFreestyle] = useState(false);
 const [doneKeys, setDoneKeys] = useState({});
 const [lastSets, setLastSets] = useState({});
+const [avoided, setAvoided] = useState({});
 
 useEffect(function () {
 async function load() {
@@ -102,6 +104,13 @@ const week = isGymReady(p.goals)
 // logged yet turns the same week into a pool with an obvious next pick, without
 // changing a single exercise, the progression, or how adherence is scored.
 const free = isFreestyle(a ? a.type_id : null);
+// Exercises this person has told us to stop giving them. Keyed lowercase because the
+// plan and the stored preference do not always agree on capitalisation.
+const avoid = {};
+(await supabase.from("exercise_prefs").select("exercise")
+.eq("user_id", user.id)).data?.forEach(function (r) { avoid[(r.exercise || "").toLowerCase()] = true; });
+setAvoided(avoid);
+
 const loggedKeys = {};
 (await supabase.from("exercise_logs").select("day_key")
 .eq("user_id", user.id)
@@ -157,7 +166,19 @@ const tid = typeId || "architect";
 const scheme = currentScheme();
 const accent = accentFor(type, scheme);
 const deep = deepFor(type, scheme);
-const day = days[active] || null;
+// FILTERED HERE, NOT IN THE PLAN BUILDER.
+//
+// buildWeek() still returns the whole prescription and the stored preference is applied on
+// top of it. That keeps one plan per goal rather than one per person, and it means undoing
+// a preference is a row delete rather than a rebuild of somebody's block.
+const rawDay = days[active] || null;
+const day = rawDay && rawDay.exercises
+? Object.assign({}, rawDay, {
+exercises: rawDay.exercises.filter(function (ex) {
+return !avoided[(ex.name || "").toLowerCase()];
+}),
+})
+: rawDay;
 const gym = profile ? isGymReady(profile.goals) : false;
 const blockWeeks = profile ? blockWeeksFor(profile) : BLOCK_WEEKS;
 const weekNo = profile ? currentWeekIn(profile.block_start, blockWeeks) : 1;
@@ -311,7 +332,7 @@ return (
 {showQuote ? (
 <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ background: "rgba(6,8,18,0.94)" }}>
 <div className="w-full max-w-sm rounded-lg p-6 text-center border" style={{ borderColor: accent + "66", background: "#141A2E" }}>
-<div className="flex justify-center mb-3"><TypeOrb typeId={tid} size={72} /></div>
+<div className="flex justify-center mb-3"><TypeCharacter typeId={tid} size={72} variant="face" /></div>
 <p className="font-display text-xs uppercase tracking-wide mb-3" style={{ color: accent }}>{type ? type.name : "Your coach"}</p>
 <p className="font-display text-lg font-normal leading-snug mb-4">{quoteFor(tid, active)}</p>
 {!gym ? <p className="text-xs text-brand-muted mb-5">{sessionIntro(tid, rule.label)}</p> : <p className="text-xs text-brand-muted mb-5">Log it as you go.</p>}
@@ -333,7 +354,7 @@ style={{ borderColor: accent + "66", background: "var(--brand-surface)", color: 
 </a>
 
 <div className="flex items-center gap-3 mb-4">
-<TypeOrb typeId={tid} size={40} />
+<TypeCharacter typeId={tid} size={40} variant="face" />
 <div>
 <p className="font-display text-sm leading-tight">{type ? type.name : "Your plan"}</p>
 <p className="text-xs text-brand-muted leading-tight">
@@ -403,7 +424,8 @@ finished={finished} onFinish={finish} />
 <DayView day={day} active={active} profile={profile} rule={rule} accent={accent} deep={deep}
 tid={tid} homeMode={homeMode} done={done} maxes={maxes} isTestWeek={isTestWeek} lastSets={lastSets}
 holdProgression={cat === "yoga"}
-onComplete={completeSet} onReopen={reopen} finished={finished} onFinish={finish} onStation={logStation} />
+onComplete={completeSet} onReopen={reopen} finished={finished} onFinish={finish} onStation={logStation}
+onAvoid={function (name) { setAvoided(function (a) { return Object.assign({}, a, { [String(name || "").toLowerCase()]: true }); }); }} />
 )}
 </div>
 </main>
