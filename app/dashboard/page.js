@@ -303,8 +303,11 @@ is knowing it is there. */}
 </p>
 ) : <div className="mb-5" />}
 
+{/* Same tab, matching the header link above. This opened with target="_blank", which
+    on a home-screen install throws people out of the standalone app and into browser
+    chrome they did not ask for, with no way back but the back gesture. */}
 {type ? (
-<a href={"/type?id=" + typeId} target="_blank" rel="noopener noreferrer"
+<a href={"/type?id=" + typeId}
 className="rounded-md p-4 mb-3 border block" style={{ borderColor: "color-mix(in srgb, var(--accent) 27%, transparent)", background: BRAND.surface }}>
 <div className="flex items-center gap-2 mb-2">
 <TypeOrb typeId={typeId} size={24} />
