@@ -19,6 +19,34 @@ const BODYWEIGHT = ["push up", "press up", "push-up", "press-up", "pull up", "pu
 
 const TIMED = ["plank", "hold", "hang", "l-sit", "sit hold", "carry", "walk", "wall sit"];
 
+// Endurance work, which needs TWO numbers rather than one.
+//
+// Deliberately narrow, and deliberately does not contain "row". Barbell Row, Bent Over Row
+// and Seated Cable Row are back exercises, and a list that matched them would have started
+// asking people how many kilometres they rowed a barbell. Anything not caught here simply
+// behaves as it did before, which is the right failure direction.
+const ENDURANCE = ["run", "jog", "cycle", "swim", "erg", "bike"];
+
+// Substring matching finds "run" inside "Post-run Stretch", which is not a run. Checked
+// against every exercise name in training.js rather than assumed.
+const NOT_ENDURANCE = ["stretch", "mobility", "warm up", "warm-up", "drill"];
+
+function isEndurance(name) {
+  const n = String(name || "").toLowerCase();
+  if (NOT_ENDURANCE.some(function (x) { return n.indexOf(x) !== -1; })) return false;
+  return ENDURANCE.some(function (c) { return n.indexOf(c) !== -1; });
+}
+
+// The plan's own target, as kilometres. "1km" is 1, "800m" is 0.8, "5k" is 5.
+function targetKm(reps) {
+  const s = String(reps || "").toLowerCase();
+  let m = s.match(/([\d.]+)\s*k/);
+  if (m) return String(Number(m[1]));
+  m = s.match(/([\d.]+)\s*m\b/);
+  if (m) return String(Number(m[1]) / 1000);
+  return "";
+}
+
 function loadType(ex) {
   const reps = String(ex.reps || "").toLowerCase();
   const name = String(ex.name || "").toLowerCase();
@@ -126,7 +154,29 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   // The logged exercise name stays ex.name on purpose, so a lift's history does
   // not fragment across the barbell version and its stand-in. Nothing feeds
   // record_lift_max here because that only fires on kind "weight".
-  const kind = swap ? "reps" : loadType(ex);
+  // A run is not a hold and not a lift: it has a distance AND a duration, and pace is the
+  // number that matters, which is neither of them on its own. Everything the plan measures
+  // in metres becomes cardio, as does anything measured in minutes whose name says it moves.
+  // A run is not a hold and not a lift: it has a distance AND a duration, and pace is the
+  // number that matters, which is neither of them alone.
+  //
+  // WHICH EXERCISES COUNT, AND WHY IT IS NOT A LIST OF NAMES.
+  //
+  // Two name-based passes both failed, in opposite directions. Matching "run" swallowed
+  // "Post-run Stretch". Requiring an endurance word then dropped "400m Repeats", "Rowing
+  // Intervals" and the swim sets called "Main Set", all of which plainly are endurance.
+  //
+  // The prescribed distance is the honest signal. Everything in this app measured in metres
+  // is either endurance work of 100m or more, or it is a sled push at 20 to 50m and burpee
+  // broad jumps at 80m, which are loaded strength work that happens to be measured across
+  // the floor. A hundred metres separates them cleanly and needs no vocabulary at all.
+  //
+  // Minute-measured work still needs the name, because "20 min" alone cannot tell a tempo
+  // run from a plank. That is what ENDURANCE is left doing, and only that.
+  let kind = swap ? "reps" : loadType(ex);
+  const prescribedKm = Number(targetKm(ex.reps) || 0);
+  if (kind === "distance" && prescribedKm >= 0.1) kind = "cardio";
+  if (kind === "time" && isEndurance(ex.name)) kind = "cardio";
   const unit = kind === "time" ? timeUnit(ex.reps) : null;
   // A swapped exercise is being done with whatever is to hand in a park, so no belt.
   const loadable = !swap && kind === "reps" && isLoadable(ex);
@@ -186,6 +236,8 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         reps: kind === "weight" || kind === "reps" ? (targetNumber(ex.reps) || prevReps) : "",
         // A prescribed hold beats the plan's printed target, because the prescription is
         // built from this person's own week one rather than from a sensible average.
+        km: kind === "cardio" ? (targetKm(ex.reps) || (prev && prev.distance_km ? String(prev.distance_km) : "")) : "",
+        mins: kind === "cardio" ? (prev && prev.duration_min ? String(prev.duration_min) : "") : "",
         secs: kind === "time"
           ? (calibrating ? "" : (holdTarget ? String(holdTarget) : (targetTime(ex.reps) || prevSecs)))
           : "",
@@ -344,12 +396,20 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
                   value={v.weight || ""} onChange={function (e) { setField(i, "weight", e.target.value); }} className={field} style={fieldStyle} />
               ) : null}
               {kind === "time" ? (
-                <input type="number" inputMode="numeric" placeholder={UNIT_WORD[unit]}
+                <input type="number" inputMode="decimal" step="any" placeholder={UNIT_WORD[unit]}
                   value={v.secs || ""} onChange={function (e) { setField(i, "secs", e.target.value); }} className={field} style={fieldStyle} />
               ) : null}
               {kind === "distance" ? (
-                <input type="text" placeholder="time or distance"
+                <input type="text" placeholder="distance or time"
                   value={v.text || ""} onChange={function (e) { setField(i, "text", e.target.value); }} className={field} style={fieldStyle} />
+              ) : null}
+              {kind === "cardio" ? (
+                <input type="number" inputMode="decimal" step="any" placeholder="km"
+                  value={v.km || ""} onChange={function (e) { setField(i, "km", e.target.value); }} className={field} style={fieldStyle} />
+              ) : null}
+              {kind === "cardio" ? (
+                <input type="number" inputMode="decimal" step="any" placeholder="minutes"
+                  value={v.mins || ""} onChange={function (e) { setField(i, "mins", e.target.value); }} className={field} style={fieldStyle} />
               ) : null}
               {kind === "weight" || kind === "reps" ? (
                 <input type="number" inputMode="numeric" placeholder="reps"
