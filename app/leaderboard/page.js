@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TYPES, isSolo } from "@/lib/personality";
 import { currentScheme, accentFor } from "@/lib/theme";
@@ -17,6 +18,7 @@ const [rows, setRows] = useState([]);
 const [meId, setMeId] = useState(null);
 const [myType, setMyType] = useState(null);
 const [myKudos, setMyKudos] = useState({}); // to_user -> { emoji, note }
+const router = useRouter();
 const [filter, setFilter] = useState("all"); // all | mine
 const [pickerFor, setPickerFor] = useState(null);
 const [noteFor, setNoteFor] = useState(null);
@@ -35,6 +37,17 @@ const load = async function () {
 const supabase = createClient();
 const res = await supabase.auth.getUser();
 const user = res.data.user;
+// SIGNED OUT USERS DO NOT SEE THIS PAGE.
+//
+// get_leaderboard() used to be callable by the anon role, so a signed-out visitor got the
+// whole board: sixteen real people's screen names, types and scores, readable by anyone
+// who opened dev tools, because the anon key ships in the client bundle by design. That is
+// closed at the database now, in supabase/rpc_permissions.sql.
+//
+// This is the other half of the same fix. Without it the page still renders, calls an RPC
+// it is no longer allowed to call, swallows the error and shows an empty board with no
+// explanation. Protecting the data and behaving sensibly are two different jobs.
+if (!user) { router.push("/login"); return; }
 if (user) {
 setMeId(user.id);
 const a = await supabase.from("assessment_results").select("type_id")
