@@ -4,10 +4,9 @@
 // screenshot for an icon into something that looks and launches like an app:
 // proper icon, no browser chrome, own entry in the app switcher.
 //
-// start_url is "/" rather than "/dashboard" on purpose. app/page.js already
-// redirects a signed-in user to the dashboard and shows the landing page to
-// everyone else, so "/" is correct for both and does not strand a logged-out
-// user on a page that immediately bounces them.
+// start_url is "/" rather than "/dashboard" on purpose. app/page.js sends a signed-in
+// user to the dashboard and everyone else to login, so "/" resolves correctly for
+// both. Pointing it at either destination directly would strand one of the two.
 
 export default function manifest() {
   return {
