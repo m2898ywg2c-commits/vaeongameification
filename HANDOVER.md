@@ -1,14 +1,22 @@
 # Vaeon Fitness — handover
 
-Everything a new session needs to pick up development. Last updated 2026-07-30.
+Everything a new session needs to pick up development. Last updated 2026-08-04.
 
 ---
 
 ## START HERE, if you are a new session
 
-Last worked on 2 August 2026. `next build` passes. Everything below is in the working tree;
-**check with James whether it is committed and pushed**, because at least one round of the
-accent bug was reported as "committed but not changed" and turned out to be a deploy gap.
+Last worked on 4 August 2026. Everything below is in the working tree; **check with James
+whether it is committed and pushed**, because this has now bitten twice. The accent bug was
+reported as "committed but not changed" and was a deploy gap, and on 4 August a build failed
+twice against a commit that predated the fix sitting on his disk. The build log is always
+telling you the truth about what it was given.
+
+**Do not treat a clean `esbuild` run as a build.** `esbuild --outfile=/dev/null` parses a
+file and confirms the syntax. It does not resolve imports, so a file can be well-formed and
+still reference three modules that are not there, which is exactly how the 4 August
+deployment failed. If you cannot run `next build`, at minimum walk every relative and `@/`
+import against the filesystem before you claim anything is verified.
 
 **The single most important fact about this project.** Twelve to fifteen profiles, and only
 four people have ever logged an exercise. The longest anyone has kept it up is three
@@ -17,7 +25,14 @@ not add features without asking whether they get somebody to session three in th
 fortnight, because that is the number that decides whether there is a business here.
 
 **Read `FEATURES.md`** for what exists and **`GUIDE.md`** for how a user is meant to use it.
-Both are current. `CHARACTER-BRIEF.md` is a live piece of work, see below.
+`FEATURES.md` was rewritten on 4 August and marks everything added that day.
+
+**`CHARACTER-BRIEF.md` is now largely historical.** It specifies eight 3D animal mascots,
+generated then redrawn. What actually shipped is a set of stylised robot characters cropped
+out of a poster James generated, at 512px WebP in `public/characters/`. The brief's locked
+style rules and the palette table are still correct and still useful. The animal casting and
+the pilot instructions are not what happened. Do not commission eight animals off the back
+of it without asking him first.
 
 ### Three things that will bite you
 
@@ -43,21 +58,25 @@ are LF. Do not normalise. Check with `file` before and after any scripted edit.
 
 ### What is outstanding, in the order I would do it
 
-1. **Confirm the accent fix actually deployed.** Inspect `<main>` on the dashboard: you want
-   a `<style>` tag inside it containing literal hex. If you see `style="--type-dark:..."` on
-   the main tag instead, that is the second failed attempt still live.
-2. **Web push.** Written, not deployed. Needs VAPID keys, a Vercel env var and a `pg_cron`
+1. **An undo for "not for me".** The delete policy is in `supabase/exercise_prefs.sql` and
+   nothing calls it, so a mis-tap permanently removes a lift from a plan with no route back.
+   Needs a list in Settings. Do this before anyone leans on the feature.
+2. **A `test_week` flag on `set_feedback`.** On testing week there is no prescription, so
+   "too heavy" means "I chose badly", which is a fact about the user rather than the
+   programme. Both currently land in one column and will poison the signal the table exists
+   to collect.
+3. **Web push.** Written, not deployed. Needs VAPID keys, a Vercel env var and a `pg_cron`
    schedule. Instructions are in the header of `supabase/functions/send-reminders/index.ts`.
-   The in-app reminder works for everyone regardless, so this is not blocking.
-3. **Age gate at signup.** Under-18s are on the platform. Needs deciding before the first
+   The in-app reminder works for everyone regardless, so this is not blocking. Note
+   `delete-account` IS deployed, so the functions directory now holds one of each.
+4. **Age gate at signup.** Under-18s are on the platform. Needs deciding before the first
    stranger signs up.
-4. **The 9px and 10px labels** were lifted to a 11px floor and converted to rem, so the text
-   size setting reaches them. Worth another pass with fresh eyes.
-5. **Type characters.** `CHARACTER-BRIEF.md` has the full brief, the locked style rules and
-   real hex for all eight. **James wants one animal and one human of the Hunter generated
-   side by side before committing to a set**, and wants to reconnect Artlist first. There was
-   no Artlist connector visible at the end of the session. Canva IS connected, with the Vaeon
-   brand kit `kAHQwFp29_E`, as a fallback route.
+5. **The Captain and the Monk are 20 degrees apart** in hue, measured on the rendered
+   artwork rather than the hex codes. Tightest pair in the set now the Anchor has moved.
+6. **`metadataBase` is unset.** Breaks Open Graph on the share card the moment
+   `vaeonfitness.com` goes live.
+7. **The landing page** is parked at `app/welcome/page.js`, unlinked and unfinished. It goes
+   back into `app/page.js` when it is ready.
 
 ### Where I would push back on him
 
@@ -67,6 +86,13 @@ thirteenth person to log a session. The six-week test ends around 10 September. 
 end report on 31 August is the first time the app has to prove its own argument**, and
 nobody has ever seen that screen because no block has completed. That is the thing to watch,
 not the next feature.
+
+That said, be fair about where the value came from on 4 August. Almost every genuine bug
+found that day came from his testers rather than from a plan: the chosen training days being
+ignored, the phantom weight revert, hanging leg raises asking for seconds, yoga logging half
+a session. Feedback from sixteen people found more than a day of feature work did. The
+`feedback` table and the new `set_feedback` and `exercise_prefs` tables are the cheapest
+instrument on this project. Read them before building anything.
 
 ---
 
@@ -294,6 +320,40 @@ visibility goes through three `SECURITY DEFINER` functions: `get_leaderboard()`,
 
 Migrations are dated files in `supabase/`. Each carries an APPLIED header. Add new ones
 the same way and update the snapshot, or it drifts.
+
+---
+
+## Recent work (session of 2026-08-04)
+
+Driven almost entirely by tester feedback rather than a roadmap.
+
+**Applied to the live database.** These are not pending, they are done, on project
+`wctsiafaiogyciqnmvad`. The `.sql` files in `supabase/` are the record, not the instruction.
+
+- `set_feedback` and `exercise_prefs`, new tables with RLS and four policies each.
+- `exercise_logs.distance_km`, `duration_min` and `side`, three new columns.
+- `rpc_permissions.sql`. **Read the comment in that file before touching function grants.**
+  `revoke execute ... from anon` reports success and does nothing, because Postgres grants
+  EXECUTE to PUBLIC by default and `anon` inherits it. It has to come off PUBLIC first.
+  Verify with `has_function_privilege()`, never with the statement succeeding.
+- Note: `set_feedback` and `exercise_prefs` had shipped in code days before the tables
+  existed. Both callers swallow failures on purpose, so nothing broke and nothing was
+  collected. Committing a migration file is not running it.
+
+**Deployed.** `delete-account` edge function, `verify_jwt` on. The user id comes from the
+caller's verified JWT and never from the body, or any signed-in user could delete anybody.
+
+**Brand change.** The Anchor moved from `#FFB020` amber to `#AE63F0` violet. It was 14
+degrees from the Hunter in the palette and 6 degrees in the rendered artwork, so three of
+eight types shared one wedge and were indistinguishable as orbs at 24px. `#FFB020` was also
+the app's warning amber in twelve places, so an Anchor's own colour was the colour that told
+them off. Those twelve are untouched. Both posters still show an orange Anchor and are now
+wrong; the shipped render was recoloured by hue rotation rather than regenerated.
+
+**Assets.** `public/characters/` holds sixteen WebP files, a full figure and a face crop for
+each type, about 250KB for the set. Cropped from a poster, so they have their backgrounds
+baked in and cannot be keyed out. That is why `TypeCharacter` frames them in a dark
+medallion: dropped raw onto the light theme they are black rectangles.
 
 ---
 

@@ -162,7 +162,7 @@ function describeSet(row) {
   return bits.join(" ");
 }
 
-export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, holdProgression, onComplete, onReopen, onAvoid }) {
+export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, holdProgression, onComplete, onReopen, onAvoid, logged }) {
   const total = Number(ex.sets) || 1;
   const swap = homeMode && needsGym(ex.name);
   const alt = swap ? homeAlternative(ex.name) : "";
@@ -255,6 +255,16 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   const [fields, setFields] = useState(function () {
     const seed = {};
     for (let i = 0; i < total; i++) {
+      // ALREADY DONE THIS WEEK BEATS THE PRESCRIPTION.
+      //
+      // Reopening a session you finished this morning used to show next week's numbers in
+      // every box, because the prescription always won the prefill. That reads as the app
+      // having thrown your work away. The progression is for the week that has not happened
+      // yet; what is on screen for a week you have already trained should be what you did.
+      //
+      // `logged` is this week's rows for this exercise on this day, from weekLogs. Falls
+      // straight back to the normal precedence when there are none.
+      const doneRow = logged && logged.length ? logged[i] : null;
       const prev = lastSets ? lastSets[i] : null;
       const prevWeight = prev && prev.weight ? String(Number(prev.weight)) : "";
       const prevReps = prev && prev.reps ? String(prev.reps) : "";
@@ -263,12 +273,27 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       seed[i] = {
         // Loadable bodyweight work has no prescription to fall back on, so last time's
         // belt weight is the only sensible starting number.
-        weight: (!calibrating && suggested) ? String(suggested) : prevWeight,
-        reps: kind === "weight" || kind === "reps" ? (targetNumber(ex.reps) || prevReps) : "",
+        weight: doneRow && doneRow.weight !== null && doneRow.weight !== undefined
+          ? String(Number(doneRow.weight))
+          : ((!calibrating && suggested) ? String(suggested) : prevWeight),
+        reps: doneRow && doneRow.reps !== null && doneRow.reps !== undefined
+          ? String(doneRow.reps)
+          : (kind === "weight" || kind === "reps" ? (targetNumber(ex.reps) || prevReps) : ""),
         // A prescribed hold beats the plan's printed target, because the prescription is
         // built from this person's own week one rather than from a sensible average.
-        km: kind === "cardio" ? (targetKm(ex.reps) || (prev && prev.distance_km ? String(prev.distance_km) : "")) : "",
-        mins: kind === "cardio" ? (prev && prev.duration_min ? String(prev.duration_min) : "") : "",
+        // distance_km and duration_min only exist on rows written after 4 August. Older
+        // endurance work went into time_text as free text, so that is read as a fallback
+        // rather than showing an empty box over a session somebody definitely logged.
+        km: kind === "cardio"
+          ? (doneRow && doneRow.distance_km ? String(doneRow.distance_km)
+             : (targetKm(ex.reps) || (prev && prev.distance_km ? String(prev.distance_km) : "")))
+          : "",
+        mins: kind === "cardio"
+          ? (doneRow && doneRow.duration_min ? String(doneRow.duration_min)
+             : (doneRow && doneRow.time_text ? (String(doneRow.time_text).match(/[\d.]+/) || [""])[0]
+             : (prev && prev.duration_min ? String(prev.duration_min)
+             : (prev && prev.time_text ? (String(prev.time_text).match(/[\d.]+/) || [""])[0] : ""))))
+          : "",
         secs: kind === "time"
           ? (calibrating ? "" : (holdTarget ? String(holdTarget) : (targetTime(ex.reps) || prevSecs)))
           : "",

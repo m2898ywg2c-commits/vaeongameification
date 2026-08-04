@@ -1,6 +1,10 @@
 # Vaeon, feature list
 
-As built on 31 July 2026. Everything below is live in the app unless marked otherwise.
+As built on 4 August 2026. Everything below is live in the app unless marked otherwise.
+
+Where a line says NEW or FIXED it landed on 4 August and is not in any earlier version of
+this file. If you are reading this in a handover, those are the ones most likely to be
+unfamiliar.
 
 ---
 
@@ -32,6 +36,10 @@ adherence rather than load.
   the next session they have not done, rather than on today's weekday. Planned types keep
   assigned days.
 - **Leaderboard offer.** Solo types get a plainly worded option to step off it.
+- NEW **A character per type**, three tiers by size. Under 38px the coloured orb, which is
+  the only one of the three that is legible that small and the only one carrying the type
+  letter. From 38px a head-and-shoulders avatar. At 84px and above the full figure. The
+  floor is enforced in `TypeCharacter`, which hands back an orb rather than degrading.
 
 ## Training plans
 
@@ -51,19 +59,39 @@ adherence rather than load.
   actually do and the card retitled accordingly.
 - **Finishers**, one per session, dealt and cycled, deliberately excluded from scoring.
 - **Warm-ups and stretch flows** per session.
+- FIXED **The days you chose are now used.** `buildWeek()` never read `profiles.train_days`.
+  It was written at onboarding, read back into the settings screen so it looked honoured,
+  and thrown away when the plan was built, so everyone got a hardcoded spread. Somebody who
+  picked Monday to Friday got Mon Tue Wed Fri Sat. `slotsFor()` in `lib/training.js` now
+  owns this for both the normal and the Gym ready week, and a byte-identical duplicate of
+  the spread table has been deleted from `lib/gymready.js`.
 
 ## Logging
 
 - **Previous performance on every set.** What you did last time, with how long ago, both as a
   summary and per set.
 - **Smart prefill.** The prescription first, then last time, then the plan target.
-- **Correct units per exercise.** Minutes for runs, seconds for holds, distance where that is
-  what was asked for.
 - **Optional added weight** on loadable bodyweight movements, so a weighted dip records the
   belt rather than just the reps.
 - **Auto-finish** when every exercise is ticked off.
-- **Quick log** for anything done outside the plan.
+- **Quick log** for anything done outside the plan, with delete.
 - **Gym ready freeform blocks** that prefill their exercise names from last week.
+- FIXED **The prescription now beats the name.** Substring matching on the exercise name ran
+  before the rep count, so "hang" made Hanging Leg Raise ask for seconds when the plan had
+  just said three sets of fifteen, and "carry" did the same to a 200m Farmers Carry. Eight
+  exercises were being logged in the wrong unit. Verified against every exercise in
+  `lib/training.js`.
+- NEW **Endurance work records distance and duration as numbers**, in `exercise_logs`
+  `distance_km` and `duration_min`, so pace is derivable. It used to be one free-text box
+  labelled "time or distance". Loaded carries, sleds and broad jumps are excluded by name
+  and keep the free-text box, because nobody wants a pace over fifty metres of sled.
+- NEW **Per-side logging on timed holds.** Twenty four exercises are prescribed "per side"
+  and three set rows recorded half of them. Thirteen timed holds now get an L and an R box
+  and write two rows tagged with `side`. Deliberately not applied to "12 per leg" rep work,
+  where the set is continuous and splitting it doubles the taps for nothing.
+- FIXED **Decimal minutes are typeable.** The time box was `inputMode="numeric"`, which on
+  iOS is the keypad with no decimal point on it, so 23.11 minutes could not be entered at
+  all.
 
 ## Rest timer
 
@@ -72,8 +100,11 @@ adherence rather than load.
   phone, switching apps or navigating away costs it nothing.
 - Turns your accent colour for the final ten seconds.
 - Notification when the rest is up, where the browser allows it.
+- NEW **Screen wake lock while a rest is running**, released the instant it ends. The timer
+  was already immune to the phone locking; what it could not do was stay visible, and ninety
+  seconds is past most auto-lock settings. Works on iOS 16.4 and later, unlike the haptics.
 
-## Adherence and streaks
+## Adherence, streaks and reward
 
 - **Scored on your own pledge**, not a universal target.
 - **Weekly streak** with **one grace week per block**, spent automatically on a missed week
@@ -81,6 +112,13 @@ adherence rather than load.
 - Frozen weeks count toward the streak but never toward achievements.
 - **XP and levels** from session effort and duration.
 - **Achievements** with a watcher that fires as you earn them.
+- NEW **Haptic on each achievement**, one buzz per achievement rather than one per batch.
+  Android only. Safari has never implemented the Vibration API, so on an iPhone this is a
+  silent no-op and cannot be made otherwise. See the header of `lib/haptics.js`.
+- NEW **Session fanfare**, a burst in the user's own two colours behind their character when
+  a session is logged. Four variants chosen by hashing the day key with the type id, so it
+  varies day to day and cannot re-roll mid-animation. Pure CSS keyframes, no library.
+  Reduced motion switches it off.
 
 ## Reporting
 
@@ -89,6 +127,10 @@ adherence rather than load.
 - **Honest trend language**, including stalled, flat and down, not just the good news.
 - **Progress charts** for bodyweight, measurements and lift history.
 - **One-tap roll into the next block** with your new numbers as the baseline.
+- FIXED **Body metrics no longer appear to revert.** The bodyweight placeholder was "78" and
+  a successful save cleared the form, so the grey placeholder appeared and read as the value
+  reverting. A tester saved 60.3 twice, ten seconds apart, because she did not believe it.
+  The data was always correct. The form now keeps what was just saved on screen.
 
 ## Community
 
@@ -98,6 +140,11 @@ adherence rather than load.
 - **Kudos** with a fixed vocabulary of emoji and short lines, deliberately not free text.
 - **Group challenges**: a shared collective target with days remaining, group progress, your
   own contribution, and a hide control.
+- FIXED **The leaderboard is no longer public.** `get_leaderboard()` was callable by the
+  `anon` role, so anybody holding the published anon key got all sixteen rows signed out.
+  Tested, not assumed. Closed at the database and the page now redirects signed-out visitors
+  to login. See `supabase/rpc_permissions.sql`, including the note about why revoking from
+  `anon` alone silently does nothing.
 
 ## Reminders
 
@@ -109,6 +156,25 @@ adherence rather than load.
 - **Two routes.** The dashboard card reaches everyone; web push reaches whoever grants
   permission. *Push needs VAPID keys and a cron schedule before it can send.*
 
+## Feedback collection
+
+All of this is new on 4 August, and all of it is deliberately not a chatbot. The only free
+corner on a phone is already occupied by the rest timer, and a conversation collects rich
+text from the few who would type and nothing from everybody else.
+
+- NEW **Per-exercise load feedback.** Too easy, just right, too hard, one tap on the card as
+  it collapses. Not good/bad: those record a mood, these name the adjustment. One row per
+  exercise per day in `set_feedback`, matching the grain already used for `EXERCISE_LOGGED`.
+- NEW **"Not for me"**, a separate and deliberately quieter control with three fixed reasons:
+  do not fancy it, no kit for it, it hurts. The first two drop the exercise from the plan.
+  The third drops it, says one sentence pointing at a GP or physio, and pointedly does not
+  suggest a replacement, because the app cannot tell a niggle from a tear. Stored in
+  `exercise_prefs` and applied on top of `buildWeek()` rather than inside it, so one plan per
+  goal is preserved and undoing is a row delete.
+- NEW **Floating feedback button** on every signed-in screen. Lifts clear of the rest timer
+  on `/plan` rather than hiding, since that bar reserves 80px. Hidden only where it would be
+  broken: the signed-out routes, where `/feedback` would bounce somebody to login.
+
 ## Appearance and accessibility
 
 - **Light and dark**, dark by default, with a one-tap toggle top left on every screen and a
@@ -116,9 +182,13 @@ adherence rather than load.
 - **Per-type accent for each theme**, so type identity survives the switch and still passes
   contrast either way.
 - **Contrast verified to WCAG AA** on both themes.
-- **Reduced-motion respected** on the splash.
+- **Reduced-motion respected** on the splash and on the session fanfare.
 - **Tabular figures** everywhere, so counting numbers do not shuffle.
 - **Custom icon set**, no emoji, so the app looks the same on every platform.
+- FIXED **The text size control now works.** `ThemeSettings` called `pickText()`, which was
+  never defined. Every tap on Large or Largest threw a ReferenceError and did nothing. It
+  shipped broken in the commit titled "Yoga, password eye and big text" and a build will
+  never catch it, because it is a runtime reference inside a click handler.
 
 ## Platform
 
@@ -127,14 +197,27 @@ adherence rather than load.
 - **Opening splash** on a stale timestamp rather than a session flag, so it does not re-fire
   every time iOS discards the web view.
 - **Service worker** for notifications.
+- FIXED **Home screen icons are on black.** All four carried a `#0F1C31` background, the
+  pre-rebrand navy that `lib/brand.js` says was removed everywhere else. Rebuilt by
+  recovering the mark's per-pixel coverage and recompositing on black, so the anti-aliased
+  edges survive. iOS caches these hard: an existing install keeps the navy one until it is
+  removed and re-added.
+- NEW **`/` is a decision, not a page.** Signed in goes to the dashboard, signed out to
+  login. `start_url` stays `/` because it resolves correctly for both.
 
 ## Trust and admin
 
 - **Data export.** Everything held about you, as JSON, on one button. Satisfies UK GDPR
   Article 20.
+- NEW **Account deletion.** A typed DELETE confirmation, then the `delete-account` edge
+  function. `profiles.id` cascades from `auth.users` and fifteen tables cascade from
+  `profiles`, so one admin call removes the lot. `events` and `feedback` are SET NULL, so
+  they survive anonymised rather than taking the product analytics with them. The user id
+  comes from the caller's own verified JWT and never from the request body, which is the
+  only rule in that file that matters.
 - **Versioned disclaimer**, recording which wording was agreed and when.
-- **Row level security on every table**, with all cross-user visibility going through three
-  audited functions.
+- **Row level security on every table**, with all cross-user visibility going through
+  audited functions. As of 4 August no `SECURITY DEFINER` function is reachable by `anon`.
 - **Product event log** covering the whole funnel from signup to block end, with personality
   type recorded at the time of each event.
 
@@ -142,13 +225,31 @@ adherence rather than load.
 
 ## Not finished
 
+Ordered roughly by how much trouble it causes.
+
+- **No undo for "not for me".** The delete policy exists and nothing calls it, so a mis-tap
+  permanently removes a lift from somebody's plan. Needs a list in settings. Do this before
+  anyone leans on the feature.
+- **No testing-week flag on `set_feedback`.** On testing week there is no prescription, so
+  "too heavy" means "I chose badly", which is a fact about the user rather than the
+  programme. Both land in one column. Needs a `test_week boolean` and one prop passed down.
 - **Web push** is written and needs VAPID keys, a Vercel environment variable and a `pg_cron`
-  schedule. Instructions are in the header of the edge function. The in-app reminder works
-  for everyone regardless.
+  schedule. Instructions are in the header of the edge function. `delete-account` is
+  deployed; `send-reminders` is not.
 - **Age gate at signup.** There are under-18s on the platform. Needs deciding before the
   first stranger signs up.
 - **Legal review of the disclaimer.**
 - **Low-rep testers never progress past their test.** Documented in HANDOVER.md with the
   numbers. Mitigated by naming a rep range; the real fix needs a schema change.
-- **Type sizes.** A lot of 9px and 10px labels, which is below any sensible minimum.
+- **The Captain and the Monk are 20 degrees apart** in hue, the tightest pair in the set now
+  the Anchor has moved off orange. Measured on the rendered artwork, not the hex codes.
+- **`metadataBase` is unset**, so Open Graph URLs resolve against localhost. Breaks the share
+  card the moment a real domain is live.
+- **The landing page is parked** at `app/welcome/page.js`, unlinked and unfinished. Nothing
+  routes to it. It moves back into `app/page.js` when it is ready.
 - **Five database indexes** drafted and unapplied on the original tables.
+- **Type sizes.** A number of 9px and 10px labels, below any sensible minimum.
+- **The character artwork is AI-generated** and probably carries no UK copyright. It is live
+  on the assessment result, the type page and block end. A human redraw is what would fix
+  that, and the Anchor's violet is a hue rotation of an orange render rather than a fresh
+  one.

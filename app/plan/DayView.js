@@ -12,7 +12,7 @@ import { sessionDone } from "@/lib/voice";
 
 const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export default function DayView({ day, active, profile, rule, accent, deep, tid, homeMode, done, maxes, isTestWeek, lastSets, holdProgression, onComplete, onReopen, finished, onFinish, onStation, onAvoid }) {
+export default function DayView({ day, active, profile, rule, accent, deep, tid, homeMode, done, maxes, isTestWeek, lastSets, holdProgression, onComplete, onReopen, finished, onFinish, onStation, onAvoid, loggedThisWeek }) {
 const [openWarmup, setOpenWarmup] = useState(false);
 const [openFlow, setOpenFlow] = useState(false);
 const [stations, setStations] = useState({});
@@ -82,7 +82,8 @@ return (
 weekPct={rule.pct} accent={accent} homeMode={homeMode} done={!!done[i]}
 maxes={maxes} isTestWeek={isTestWeek} holdProgression={holdProgression}
 last={lastSets ? lastSets[(ex.name || "").toLowerCase()] : null}
-onComplete={onComplete} onReopen={onReopen} onAvoid={onAvoid} />
+onComplete={onComplete} onReopen={onReopen} onAvoid={onAvoid}
+logged={loggedThisWeek ? loggedThisWeek[(ex.name || "").toLowerCase()] : null} />
 );
 })}
 

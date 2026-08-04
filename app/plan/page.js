@@ -21,6 +21,21 @@ const TAB_KEY = "vaeon-plan-tab";
 // Monday, local time. Used to work out which of this week's sessions are already done, so
 // a freestyle user can be dropped on the next one they have not touched. Matches the
 // week boundary the dashboard and the leaderboard already use.
+// Which exercises in a day already have logs this week.
+//
+// Matched on the exercise name rather than the index, because a swapped exercise logs
+// under its original name on purpose (see the note in ExerciseCard) and an index would
+// drift the moment the plan changed.
+function doneFor(day, weekLogs) {
+  if (!day || !day.exercises || !weekLogs) return {};
+  const forDay = weekLogs[day.key] || {};
+  const out = {};
+  day.exercises.forEach(function (ex, i) {
+    if (forDay[(ex.name || "").toLowerCase()]) out[i] = true;
+  });
+  return out;
+}
+
 function startOfThisWeek() {
 const d = new Date();
 const day = (d.getDay() + 6) % 7;
@@ -47,6 +62,9 @@ const [freestyle, setFreestyle] = useState(false);
 const [doneKeys, setDoneKeys] = useState({});
 const [lastSets, setLastSets] = useState({});
 const [avoided, setAvoided] = useState({});
+// What has already been logged this week, by day and by exercise. See the note where it
+// is built for why per-exercise completion could not survive a reload without it.
+const [weekLogs, setWeekLogs] = useState({});
 
 useEffect(function () {
 async function load() {
@@ -71,7 +89,7 @@ const map = {};
 // One query beats eight, and at this volume the whole table is smaller than the
 // round trips would be.
 const { data: recentLogs } = await supabase.from("exercise_logs")
-.select("exercise, set_index, weight, reps, time_text, logged_at")
+.select("exercise, set_index, weight, reps, time_text, distance_km, duration_min, side, logged_at")
 .eq("user_id", user.id)
 .order("logged_at", { ascending: false })
 .limit(400);
@@ -111,10 +129,33 @@ const avoid = {};
 .eq("user_id", user.id)).data?.forEach(function (r) { avoid[(r.exercise || "").toLowerCase()] = true; });
 setAvoided(avoid);
 
+// COMPLETION HAS TO SURVIVE CLOSING THE APP.
+//
+// The per-exercise `done` map was React state seeded empty on every load, so a session
+// logged this morning came back looking untouched this evening: every card open, every
+// box prefilled with next week's prescription rather than what was actually done. The
+// rows were in the database the whole time, the screen had just forgotten.
+//
+// This reads the week's work at exercise level rather than day level, so `done` can be
+// rebuilt and a completed exercise can show what was logged instead of what is next.
 const loggedKeys = {};
-(await supabase.from("exercise_logs").select("day_key")
+const wl = {};
+(await supabase.from("exercise_logs")
+.select("day_key, exercise, set_index, weight, reps, time_text, distance_km, duration_min, side")
 .eq("user_id", user.id)
-.gte("logged_at", startOfThisWeek())).data?.forEach(function (r) { loggedKeys[r.day_key] = true; });
+.gte("logged_at", startOfThisWeek())).data?.forEach(function (r) {
+loggedKeys[r.day_key] = true;
+const ex = (r.exercise || "").toLowerCase();
+if (!wl[r.day_key]) wl[r.day_key] = {};
+if (!wl[r.day_key][ex]) wl[r.day_key][ex] = [];
+wl[r.day_key][ex].push(r);
+});
+Object.keys(wl).forEach(function (k) {
+Object.keys(wl[k]).forEach(function (e2) {
+wl[k][e2].sort(function (a, b) { return (a.set_index || 0) - (b.set_index || 0); });
+});
+});
+setWeekLogs(wl);
 
 let idx;
 if (free) {
@@ -140,6 +181,7 @@ setMaxes(map);
 setDays(week);
 setActive(idx);
 setFreestyle(free);
+setDone(doneFor(week[idx], wl));
 setDoneKeys(loggedKeys);
 setLastSets(lastByExercise);
 setLoading(false);
@@ -422,7 +464,7 @@ const label = freestyle
 : (profile.fixed_days === false ? "S" + (i + 1) : d.dayLabel);
 return (
 <button key={d.key} onClick={function () {
-setActive(i); setFinished(false); setDone({});
+setActive(i); setFinished(false); setDone(doneFor(days[i], weekLogs));
 try { window.localStorage.setItem(TAB_KEY, String(i)); } catch (e) {}
 track(supabase, EVENTS.DAY_OPENED, {
 day_key: d.key, index: i, week: weekNo, freestyle: freestyle, already_done: doneAlready,
@@ -446,6 +488,7 @@ finished={finished} onFinish={finish} />
 tid={tid} homeMode={homeMode} done={done} maxes={maxes} isTestWeek={isTestWeek} lastSets={lastSets}
 holdProgression={cat === "yoga"}
 onComplete={completeSet} onReopen={reopen} finished={finished} onFinish={finish} onStation={logStation}
+loggedThisWeek={day ? (weekLogs[day.key] || {}) : {}}
 onAvoid={function (name) { setAvoided(function (a) { return Object.assign({}, a, { [String(name || "").toLowerCase()]: true }); }); }} />
 )}
 </div>
