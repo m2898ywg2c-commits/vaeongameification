@@ -15,8 +15,15 @@ const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export default function DayView({ day, active, profile, rule, accent, deep, tid, homeMode, done, maxes, isTestWeek, lastSets, holdProgression, onComplete, onReopen, finished, onFinish, onStation, onAvoid, loggedThisWeek }) {
 const [openWarmup, setOpenWarmup] = useState(false);
 const [openFlow, setOpenFlow] = useState(false);
+// KEYED BY DAY AND STATION NAME, NOT BY INDEX.
+//
+// Every day has exactly one station, so the index was always 0. DayView is not unmounted
+// when you switch day, it just gets a new `day` prop, so index 0 on Monday and index 0 on
+// Tuesday shared one box and your SkiErg time appeared under Row. Same class of bug as the
+// per-exercise completion that used to vanish on reload.
 const [stations, setStations] = useState({});
 const [loggedStations, setLoggedStations] = useState({});
+function stationKey(c) { return (day ? day.key : "") + "|" + (c && c.name ? c.name : ""); }
 
 // Auto-finish: when every exercise card is collapsed, log the session without
 // making anyone hunt for the button with sweaty hands. Short delay so the last
@@ -99,8 +106,14 @@ Optional. Does not count towards your score, and the session logs without it.
 Log a number if you do it and you will have something to beat next time.
 </p>
 {day.conditioning.map(function (c, i) {
-const v = stations[i] || "";
-const isLogged = !!loggedStations[i];
+const sk = stationKey(c);
+// Already logged this week shows what was done, same rule as the exercise cards.
+const priorRows = loggedThisWeek ? loggedThisWeek[(c.name || "").toLowerCase()] : null;
+const prior = priorRows && priorRows.length ? (priorRows[0].time_text || "") : "";
+const v = stations[sk] !== undefined ? stations[sk] : prior;
+const isLogged = !!loggedStations[sk] || !!prior;
+const rounds = c.log === "rounds" ? (Number(c.rounds) || 5) : 0;
+const doneRounds = rounds ? Number(String(v).match(/^\d+/) || 0) : 0;
 return (
 <div key={i} className="mb-4">
 <div className="flex items-center gap-2">
@@ -108,32 +121,63 @@ return (
 <p className="font-display text-sm">{c.name}</p>
 </div>
 <p className="text-xs text-brand-muted mb-2">{c.target} &middot; {c.note}</p>
+{/* Rounds get ticked off. A time gets typed. See the note on HYROX_STATIONS for why
+    these are not the same question. */}
+{rounds ? (
+<div className="flex gap-1.5 flex-wrap mb-2">
+{Array.from({ length: rounds }).map(function (_, r) {
+const on = r < doneRounds;
+return (
+<button key={r} type="button"
+onClick={function () {
+// Tapping the round you are already on clears back to it, so an over-tap is
+// one tap to undo rather than a reset.
+const next = (r + 1 === doneRounds) ? r : r + 1;
+setStations(function (st) {
+const o = Object.assign({}, st);
+o[sk] = next ? next + "/" + rounds + " rounds" : "";
+return o;
+});
+}}
+className="w-9 h-9 rounded-sm font-display text-xs border"
+style={on
+  ? { borderColor: accent, background: accent, color: "var(--brand-bg)" }
+  : { borderColor: "var(--brand-line)", color: "var(--brand-dim)" }}>
+{r + 1}
+</button>
+);
+})}
+</div>
+) : null}
 <div className="flex gap-2">
+{!rounds ? (
 <input
 type="text"
-placeholder="your time or score"
+placeholder="your time"
 value={v}
 onChange={function (e) {
 const val = e.target.value;
-setStations(function (s) {
-const next = Object.assign({}, s);
-next[i] = val;
+setStations(function (st) {
+const next = Object.assign({}, st);
+next[sk] = val;
 return next;
 });
 }}
 className={field}
 />
+) : null}
 <button
 onClick={function () {
 onStation(c, v);
 if (v) setLoggedStations(function (l) {
 const next = Object.assign({}, l);
-next[i] = true;
+next[sk] = true;
 return next;
 });
 }}
 className="px-5 rounded-md font-display text-sm flex-shrink-0"
-style={{ background: isLogged ? "rgba(61,220,151,0.2)" : accent, color: isLogged ? "#3DDC97" : "#000000" }}
+style={{ background: isLogged ? "rgba(61,220,151,0.2)" : accent, color: isLogged ? "#3DDC97" : "#000000",
+flexGrow: rounds ? 1 : 0 }}
 >
 {isLogged ? "Logged" : "Log"}
 </button>
