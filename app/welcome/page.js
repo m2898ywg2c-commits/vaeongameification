@@ -1,7 +1,7 @@
 import { TYPES } from "@/lib/personality";
-import { BrandLockup } from "./Brand";
-import TypeOrb from "./TypeOrb";
-import Icon from "./Icon";
+import { BrandLockup } from "../Brand";
+import TypeOrb from "../TypeOrb";
+import Icon from "../Icon";
 import { BRAND, TRACK } from "@/lib/brand";
 
 export const metadata = {
