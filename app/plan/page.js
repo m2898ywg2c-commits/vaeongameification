@@ -106,8 +106,21 @@ if (!lastByExercise[key]) lastByExercise[key] = { day: day, sets: [] };
 if (lastByExercise[key].day !== day) return;
 lastByExercise[key].sets.push(r);
 });
+// KEYED BY set_index, NOT BY POSITION IN THE ARRAY.
+//
+// A positional read assumes one row per set. Where duplicates exist, and they do, sets[1]
+// can be the second copy of set one rather than set two, which is how a card ended up
+// showing 60, 25, 25. Collapsing to the newest row per set index makes the read correct
+// even where the underlying data is still messy.
 Object.keys(lastByExercise).forEach(function (k) {
-lastByExercise[k].sets.sort(function (a, b) { return (a.set_index || 0) - (b.set_index || 0); });
+const bySet = {};
+lastByExercise[k].sets.forEach(function (r) {
+const idx = (Number(r.set_index) || 1) - 1;
+if (!bySet[idx]) bySet[idx] = r;
+});
+const out = [];
+Object.keys(bySet).forEach(function (i) { out[Number(i)] = bySet[i]; });
+lastByExercise[k].sets = out;
 });
 // Gym ready users bring their own plan, so the week is empty slots rather than
 // prescribed sessions.
@@ -144,6 +157,9 @@ const wl = {};
 (await supabase.from("exercise_logs")
 .select("day_key, exercise, set_index, weight, reps, time_text, distance_km, duration_min, side")
 .eq("user_id", user.id)
+// Newest first, so the de-duplication below keeps the most recent row per set rather
+// than whichever one Postgres happened to return.
+.order("logged_at", { ascending: false })
 .gte("logged_at", startOfThisWeek())).data?.forEach(function (r) {
 loggedKeys[r.day_key] = true;
 const ex = (r.exercise || "").toLowerCase();
@@ -151,9 +167,18 @@ if (!wl[r.day_key]) wl[r.day_key] = {};
 if (!wl[r.day_key][ex]) wl[r.day_key][ex] = [];
 wl[r.day_key][ex].push(r);
 });
+// Same rule as lastByExercise: slot by set_index so a duplicated row cannot shunt the
+// others along by one.
 Object.keys(wl).forEach(function (k) {
 Object.keys(wl[k]).forEach(function (e2) {
-wl[k][e2].sort(function (a, b) { return (a.set_index || 0) - (b.set_index || 0); });
+const bySet = {};
+wl[k][e2].forEach(function (r) {
+const idx = (Number(r.set_index) || 1) - 1;
+if (!bySet[idx]) bySet[idx] = r;
+});
+const out = [];
+Object.keys(bySet).forEach(function (i) { out[Number(i)] = bySet[i]; });
+wl[k][e2] = out;
 });
 });
 setWeekLogs(wl);
@@ -275,6 +300,20 @@ duration_min: kind === "cardio" && v.mins ? Number(v.mins)
 : (kind === "time" && v.unit === "min" && v.secs ? Number(v.secs) : null),
 });
 }
+// COMPLETING TWICE IS A CORRECTION, NOT TWICE THE WORK.
+//
+// This was a bare insert with no guard, so every tap of "Completed as planned" appended
+// another full set of rows. Live data has a five set bench press with fifteen rows on one
+// day, logged 60/65/70/80/90, then the same again, then 20/25/25/25/25. Somebody reopened
+// the card and finished it again, and the app treated that as a third session.
+//
+// Scoped to the same day rather than the whole week on purpose: a freestyle type genuinely
+// can take the same session twice in a week, and that should still be two entries.
+const dayStart = new Date();
+dayStart.setHours(0, 0, 0, 0);
+await supabase.from("exercise_logs").delete()
+.eq("user_id", user.id).eq("day_key", day.key).eq("exercise", ex.name)
+.gte("logged_at", dayStart.toISOString());
 await supabase.from("exercise_logs").insert(rows);
 
 // One event per exercise, not per set. Sets are a property of the exercise here, and
