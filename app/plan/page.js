@@ -190,12 +190,27 @@ const rule = weeksFor(cat)[weekNo - 1] || weeksFor(cat)[0];
 const homeMode = profile && profile.equipment && profile.equipment !== "gym";
 const noBaselines = profile && !gym && !profile.baseline_bench && !profile.baseline_squat;
 
-async function completeSet(ex, exIdx, fields, total, kind) {
+async function completeSet(ex, exIdx, fields, total, kind, perSide) {
 const { data: { user } } = await supabase.auth.getUser();
 if (user && day) {
 const rows = [];
 for (let i = 0; i < total; i++) {
 const v = fields[i] || {};
+// A per-side hold writes two rows for one set, tagged left and right. Warrior II at
+// 3 x 30 sec per side is six holds, and logging three of them was throwing away the
+// comparison that matters most in yoga.
+if (perSide) {
+[["left", v.secsL], ["right", v.secsR]].forEach(function (pair) {
+if (!pair[1]) return;
+rows.push({
+user_id: user.id, day_key: day.key, exercise: ex.name, set_index: i + 1,
+side: pair[0], weight: null, reps: null,
+time_text: pair[1] + " " + (v.unit || "sec"),
+duration_min: (v.unit === "min") ? Number(pair[1]) : null,
+});
+});
+continue;
+}
 rows.push({
 user_id: user.id, day_key: day.key, exercise: ex.name, set_index: i + 1,
 // Any weight the card collected, not only on prescribed lifts. Weighted dips and

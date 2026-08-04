@@ -33,12 +33,12 @@ const WEEKDAYS = [
 ];
 
 const MEASURES = [
-{ key: "bodyweight", label: "Bodyweight", unit: "kg", placeholder: "78" },
-{ key: "chest", label: "Chest", unit: "cm", placeholder: "100" },
-{ key: "waist", label: "Waist", unit: "cm", placeholder: "86" },
-{ key: "hips", label: "Hips", unit: "cm", placeholder: "98" },
-{ key: "thigh", label: "Thigh", unit: "cm", placeholder: "58" },
-{ key: "arm", label: "Arm", unit: "cm", placeholder: "35" },
+{ key: "bodyweight", label: "Bodyweight", unit: "kg", placeholder: "e.g. 78" },
+{ key: "chest", label: "Chest", unit: "cm", placeholder: "e.g. 100" },
+{ key: "waist", label: "Waist", unit: "cm", placeholder: "e.g. 86" },
+{ key: "hips", label: "Hips", unit: "cm", placeholder: "e.g. 98" },
+{ key: "thigh", label: "Thigh", unit: "cm", placeholder: "e.g. 58" },
+{ key: "arm", label: "Arm", unit: "cm", placeholder: "e.g. 35" },
 ];
 
 export default function SettingsPage() {
@@ -140,7 +140,20 @@ if (!any) { setStatsMsg("Put a number in at least one box first."); return; }
 const supabase = createClient();
 const { error: e } = await supabase.from("body_metrics").insert(row);
 if (e) { setStatsMsg(e.message); return; }
-setStats({});
+// LEAVE WHAT WAS JUST SAVED ON SCREEN.
+//
+// This used to clear the form. The bodyweight placeholder was "78", so an empty box
+// rendered a grey 78 that looks exactly like a bodyweight, and a tester who had just
+// saved 60.3 watched it apparently revert. She saved again ten seconds later. Both rows
+// were correct; only the screen lied.
+//
+// Keeping the values also matches what the loader already does a hundred lines up:
+// "keep last measurements on screen until they are typed over".
+const kept = {};
+MEASURES.forEach(function (m) {
+if (row[m.key] !== undefined && row[m.key] !== null) kept[m.key] = String(row[m.key]);
+});
+setStats(kept);
 setLastStats(row);
 setStatsMsg("Logged. Nice one.");
 setTimeout(function () { setStatsMsg(null); }, 3000);

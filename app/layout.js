@@ -4,6 +4,7 @@ import { THEME_COOKIE, SCHEME_COOKIE, TEXT_COOKIE, resolveScheme, resolveTextSiz
 import "./globals.css";
 import BrandBar from "./Brand";
 import Splash from "./Splash";
+import FeedbackButton from "./FeedbackButton";
 
 // TWO FACES, AND THE REASON MATTERS.
 //
@@ -121,6 +122,9 @@ export default async function RootLayout({ children }) {
         <Splash />
         <BrandBar />
         {children}
+        {/* Every page except the plan screen and the signed-out ones. See the note in
+            the component for why those two exclusions are not arbitrary. */}
+        <FeedbackButton />
       </body>
     </html>
   );

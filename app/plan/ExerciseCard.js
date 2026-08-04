@@ -31,6 +31,12 @@ const ENDURANCE = ["run", "jog", "cycle", "swim", "erg", "bike"];
 // against every exercise name in training.js rather than assumed.
 const NOT_ENDURANCE = ["stretch", "mobility", "warm up", "warm-up", "drill"];
 
+// Measured across a floor, but not endurance. A loaded carry is strength work that happens
+// to travel, and Farmers Carry at 200m clears any sensible distance threshold while being
+// the last thing on earth you would log a pace for. Sleds and broad jumps are under 100m so
+// the threshold already excludes them; this catches the ones that are not.
+const NOT_CARDIO = ["carry", "sled", "broad jump", "farmer", "lunge"];
+
 function isEndurance(name) {
   const n = String(name || "").toLowerCase();
   if (NOT_ENDURANCE.some(function (x) { return n.indexOf(x) !== -1; })) return false;
@@ -47,12 +53,28 @@ function targetKm(reps) {
   return "";
 }
 
+// THE PRESCRIPTION BEATS THE NAME, AND IT DID NOT USED TO.
+//
+// The name lists ran before the rep count, so a substring match could overrule a plain
+// instruction. "hang" is in TIMED and Hanging Leg Raise is prescribed as three sets of
+// fifteen, so the app asked for seconds on an exercise the plan had just counted in reps.
+// "carry" did the same to Farmers Carry at 40m, asking for a duration on a distance.
+//
+// A prescription that says sec, min, metres or a bare number has already answered the
+// question. The name lists are the fallback for the cases where it has not, which is what
+// they were always meant to be.
 function loadType(ex) {
-  const reps = String(ex.reps || "").toLowerCase();
+  const reps = String(ex.reps || "").toLowerCase().trim();
   const name = String(ex.name || "").toLowerCase();
+
   if (reps.indexOf("sec") !== -1 || reps.indexOf("min") !== -1) return "time";
-  if (TIMED.some(function (t) { return name.indexOf(t) !== -1; })) return "time";
   if (reps.indexOf("m") !== -1 && /\d\s*k?m/.test(reps)) return "distance";
+  // A bare rep count settles it. Bodyweight movements get a reps box, everything else
+  // gets a load box too, which is what "3 x 15" has always meant on paper.
+  if (/^\d/.test(reps)) {
+    return BODYWEIGHT.some(function (b) { return name.indexOf(b) !== -1; }) ? "reps" : "weight";
+  }
+  if (TIMED.some(function (t) { return name.indexOf(t) !== -1; })) return "time";
   if (BODYWEIGHT.some(function (b) { return name.indexOf(b) !== -1; })) return "reps";
   return "weight";
 }
@@ -175,9 +197,18 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   // run from a plank. That is what ENDURANCE is left doing, and only that.
   let kind = swap ? "reps" : loadType(ex);
   const prescribedKm = Number(targetKm(ex.reps) || 0);
-  if (kind === "distance" && prescribedKm >= 0.1) kind = "cardio";
+  const loadedCarry = NOT_CARDIO.some(function (c) { return String(ex.name || "").toLowerCase().indexOf(c) !== -1; });
+  if (kind === "distance" && prescribedKm >= 0.1 && !loadedCarry) kind = "cardio";
   if (kind === "time" && isEndurance(ex.name)) kind = "cardio";
   const unit = kind === "time" ? timeUnit(ex.reps) : null;
+  // A HOLD THAT SAYS "PER SIDE" IS TWO NUMBERS, NOT ONE.
+  //
+  // Warrior II is prescribed as 3 x 30 sec per side, which is six holds. Logged as three
+  // boxes it recorded half the session and threw away the only comparison that matters in
+  // yoga, which is how the two sides differ. Reps and loads that say "per leg" are left
+  // alone: a walking lunge is one continuous set and splitting it doubles the taps for
+  // nothing anybody reads.
+  const perSide = kind === "time" && /per side|each side|per leg|each leg/.test(String(ex.reps || "").toLowerCase());
   // A swapped exercise is being done with whatever is to hand in a park, so no belt.
   const loadable = !swap && kind === "reps" && isLoadable(ex);
   const suggested = kind === "weight" ? workingWeight(ex.name, profile, weekPct, maxes) : null;
@@ -239,6 +270,14 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         km: kind === "cardio" ? (targetKm(ex.reps) || (prev && prev.distance_km ? String(prev.distance_km) : "")) : "",
         mins: kind === "cardio" ? (prev && prev.duration_min ? String(prev.duration_min) : "") : "",
         secs: kind === "time"
+          ? (calibrating ? "" : (holdTarget ? String(holdTarget) : (targetTime(ex.reps) || prevSecs)))
+          : "",
+        // Both sides seed from the same prescribed number. They diverge as they are typed,
+        // which is the entire point of asking twice.
+        secsL: kind === "time"
+          ? (calibrating ? "" : (holdTarget ? String(holdTarget) : (targetTime(ex.reps) || prevSecs)))
+          : "",
+        secsR: kind === "time"
           ? (calibrating ? "" : (holdTarget ? String(holdTarget) : (targetTime(ex.reps) || prevSecs)))
           : "",
         // Carried through to completeSet so the log records "20 min" rather
@@ -395,9 +434,17 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
                 <input type="number" inputMode="decimal" placeholder="+kg"
                   value={v.weight || ""} onChange={function (e) { setField(i, "weight", e.target.value); }} className={field} style={fieldStyle} />
               ) : null}
-              {kind === "time" ? (
+              {kind === "time" && !perSide ? (
                 <input type="number" inputMode="decimal" step="any" placeholder={UNIT_WORD[unit]}
                   value={v.secs || ""} onChange={function (e) { setField(i, "secs", e.target.value); }} className={field} style={fieldStyle} />
+              ) : null}
+              {perSide ? (
+                <input type="number" inputMode="decimal" step="any" placeholder={"L " + UNIT_WORD[unit]}
+                  value={v.secsL || ""} onChange={function (e) { setField(i, "secsL", e.target.value); }} className={field} style={fieldStyle} />
+              ) : null}
+              {perSide ? (
+                <input type="number" inputMode="decimal" step="any" placeholder={"R " + UNIT_WORD[unit]}
+                  value={v.secsR || ""} onChange={function (e) { setField(i, "secsR", e.target.value); }} className={field} style={fieldStyle} />
               ) : null}
               {kind === "distance" ? (
                 <input type="text" placeholder="distance or time"
@@ -421,7 +468,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       })}
 
       <button
-        onClick={function () { onComplete(ex, exIdx, fields, total, kind); }}
+        onClick={function () { onComplete(ex, exIdx, fields, total, kind, perSide); }}
         className="w-full py-4 rounded-md font-display text-base"
         style={{ background: accent, color: "var(--brand-bg)" }}
       >
