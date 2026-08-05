@@ -162,7 +162,8 @@ className={"rounded-md border p-4 " + (mine ? "border-white/40 bg-brand-field" :
 {r.screen_name}{mine ? " (you)" : ""}
 </p>
 <p className="text-xs text-brand-muted">
-{t ? t.name : "No type yet"} &middot; {r.done} this block &middot; wk {r.weeks}/{r.block_weeks || 6}
+{t ? t.name : "No type yet"} &middot; {r.done} of {r.pledged} this week
+{r.weeks_kept > 0 ? " · " + r.weeks_kept + (r.weeks_kept === 1 ? " week kept" : " weeks kept") : ""}
 </p>
 </div>
 <div className="text-right">
@@ -248,11 +249,13 @@ return (
 <div className="max-w-md mx-auto">
 <div className="mb-6"><Home accent={myTypeColour} /></div>
 
-<h1 className="font-display text-2xl font-normal mb-2">This block</h1>
+<h1 className="font-display text-2xl font-normal mb-2">This week</h1>
 <p className="text-sm text-brand-muted mb-5">
-Scored on how much of your own pledge you have hit so far this block, not raw counts,
-so someone in week one is compared fairly with someone near the end. Blocks are six
-weeks, or eight if you are following your own plan. Resets when your block does.
+Scored on how much of your own pledge you have hit this week, not raw counts, so
+someone training twice is compared fairly with someone training five times. Everybody
+starts level again on Monday. Weeks kept counts the finished weeks in your block where
+you met your pledge, so consistency still shows without a bad fortnight following you
+around.
 </p>
 
 {/* ---------- Board visibility ----------

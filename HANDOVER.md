@@ -675,3 +675,187 @@ repair pass after generating.
 **Auto-finish** in `DayView` fires when every exercise card is collapsed. It used to
 also require three stations logged, which quietly made an optional extra compulsory.
 Do not reintroduce that coupling.
+
+---
+
+## Added 2026-08-05: duplicate writes, the leaderboard, and week alignment
+
+A sweep found that the logging fixes from 4 August were half applied and the data had
+already re-corrupted. Nineteen of thirty `training_sessions` rows were surplus and the
+leaderboard was running on them.
+
+### What was actually wrong
+
+**`completeSet()` got the delete-then-insert guard on 4 August. `logStation()` and
+`finish()` did not.** Both were still bare inserts. `finish()` had written twelve
+"Chest & Push" rows for a single Tuesday across forty eight minutes; `logStation()` had
+put SkiErg and Row on three rows each with conflicting values, all after the migrations
+that were supposed to have cleared exactly this.
+
+**The guard that was added was racy.** Six identical `400m Repeats` rows were written at
+06:00:38.860988 and .861710, 0.7ms apart: two concurrent calls, both deletes landing before
+either insert. Nothing at the database level was stopping it, because the 4 August work was
+data cleanup with no constraint behind it. "Zero conflicts remaining" stopped being true
+thirteen minutes after the last migration ran.
+
+**The leaderboard was wrong three ways and every input to it was client-writable.** Scores
+exceeded 100 because the cap was applied before the pledge multiplier. `weeks` counted
+rolling sevens from `block_start`, which defaults to the signup date, so a user three weeks
+in carried a three times harder denominator than someone who joined yesterday. The
+denominator used the raw pledge while the bonus floored it at two, so pledging one session
+a week was the cheapest route to a full score. Separately, a plain `PATCH /rest/v1/profiles`
+set your own `block_start`, `block_weeks` and `freeze_credits`. The three `lock_down_*_rpc`
+migrations had secured the read path and left the write path open.
+
+**The Wednesday bug James reported was one cause with two symptoms.** `weekLogs` was loaded
+once and never updated after a write, so switching tab and back called
+`doneFor(day, weekLogs)`, found nothing for today's key, and reopened every card just
+completed. Tuesday stayed collapsed because Tuesday's rows were already in `weekLogs` at
+load. The same stale map fed `loggedThisWeek`, so the reopened cards prefilled from the
+prescription rather than from what was logged, which is why the exercises looked like a
+different week.
+
+### What changed
+
+- `logStation()` and `finish()` now delete before inserting, and all three write paths hold
+  an in-flight lock in a `useRef` map. A ref, not state, because state updates are batched
+  and that is the window being closed.
+- `completeSet()` and `logStation()` update `weekLogs` after writing.
+- **`exercise_logs.log_date` and `training_sessions.session_date`**, with
+  `exercise_logs_one_per_set` and `training_sessions_one_plan_session_per_day`. The session
+  index is **partial, on `day_key is not null`**: Quick Log and the fallback workout insert
+  without a `day_key` and two identical same-day walks are legitimately two rows. Quick Log
+  is also the one path that surfaces insert errors to the user.
+- **The client sends the local date** rather than relying on the UTC default. The delete
+  guards used local midnight while the columns defaulted to the UTC date, so for anyone on
+  BST the two windows did not coincide and a re-complete just after midnight missed the
+  earlier rows and then collided with the index.
+- **The delete no longer runs when there are no rows to put back.** A calibration week seeds
+  the per-side boxes empty and empty sides are skipped, so this could wipe an exercise's
+  history, insert nothing, and tick the card green. Delete and insert errors are now checked
+  and the UI no longer claims success on a failed write.
+- `get_leaderboard()` rewritten: capped at 100, Monday aligned, pledge floored at two in the
+  denominator, commitment demoted to a tiebreak. Verified by recomputing every user's score
+  from raw rows.
+- `profiles` trigger protecting `freeze_credits` and clamping a future `block_start`.
+  `block_start`, `block_weeks` and `block_number` stay writable because four legitimate
+  paths write them (`blockend`, settings twice, onboarding). `block_weeks` is bounded 4 to 12
+  by a CHECK instead. `settle_streak_freezes()` sets `vaeon.system_write` before spending.
+- All 44 RLS policies rewritten with `(select auth.uid())`. `record_lift_max` lost the PUBLIC
+  and anon grants the three lockdown migrations had missed.
+
+### Plan content
+
+- **Battle Ropes replaced with Slam Balls.** Ropes are the one station a normal commercial
+  gym often does not have.
+- **Sled Push & Pull logs distance, not rounds.** It was the odd one out next to SkiErg and
+  Row, which hand you a number to chase.
+- **`spreadDays()` and `varyExercises()` in `buildWeek()`.** Two goals used to mean two
+  nearly identical leg days back to back: hyrox plus strength at four sessions put a five by
+  five back squat on Wednesday and again on Thursday, with RDL and Leg Press alongside.
+  Days are now ordered by least overlap, then anything still repeating is substituted by
+  movement pattern. Verified across 5,880 goal and session-count combinations: zero adjacent
+  repeats, zero exercises appearing three or more times, zero empty days, zero duplicate
+  day titles.
+
+### Week alignment, and why it matters for the six week test
+
+`currentWeekIn()` and `currentWeek()` counted rolling sevens from `block_start`, so a user
+who joined on a Tuesday got a new plan week every Tuesday while `weekLogs`, the dashboard,
+the streak maths and the leaderboard all ran Monday to Sunday. **Both are now Monday
+aligned.** The visible symptom was the plan changing mid-week. The one that matters for the
+test is that adherence was being measured against a boundary the prescription did not share,
+so week four of the plan straddled weeks four and five of every number used to judge it.
+
+### Still open
+
+- **The plan page changes are not deployed.** Every `training_sessions` row still has a null
+  `day_key`, so the partial index currently indexes nothing. First thing to confirm after a
+  deploy: a new row arrives with a non-null `day_key`.
+- **`weekLogs` loses the left side of per-side holds.** Both the loader and the post-write
+  update key by `set_index`, and a per-side set writes two rows sharing one index, so left is
+  overwritten by right. The database is correct, the in-memory map is not. Yoga prefill only.
+- **Gym ready users can wipe a block by naming two blocks the same.** `GymDayView` collects
+  free-text titles and calls `completeSet` per block, so two blocks with one title mean the
+  second delete removes the first one's rows.
+- **A legitimate block restart still resets the leaderboard divisor to one**, which makes a
+  full score easier. Not an exploit, it is the restart feature, but a weekly leaderboard
+  would remove the lever entirely and would also fix the thirteen-of-seventeen-on-zero
+  problem. Product decision, not taken.
+- **The mechanical RLS rewrite recreates every policy as PERMISSIVE.** None were RESTRICTIVE,
+  so nothing was lost, but do not reuse that script as-is.
+
+---
+
+## Added 2026-08-05, later: weekly leaderboard and a testing week that can be trusted
+
+### The board is now weekly
+
+`get_leaderboard()` scores sessions **this Monday week** against your pledge, capped at 100.
+Two reasons, and the second matters more.
+
+The block board divided by weeks elapsed since `block_start`, which is client-writable and
+which restarting a block legitimately resets to one. That made a full score easier and there
+was no way to close it without penalising a genuine restart.
+
+The product reason: thirteen of seventeen people were sitting on 0.0, several looking at a
+zero they earned a fortnight ago and could not move. This app's own copy says shame after a
+lapse predicts deleting it, so a board that permanently ranks people by a bad fortnight was
+the most demotivating surface in the product. Everybody starts level on Monday.
+
+`weeks_kept` carries the consistency signal instead: completed weeks in the current block
+where the pledge was met. No client write changes what happened in a finished week. Returned
+columns changed, so `app/leaderboard/page.js` was updated with it (it was the only consumer,
+and `r.weeks` / `r.block_weeks` would have rendered undefined).
+
+### The testing week
+
+The known-not-fixed item from 31 July, now understood properly. **The tempting fix was
+wrong and was rejected on the numbers.**
+
+Anchoring week one to the tested load so the ladder climbs past it was modelled across five
+realistic tests. It prescribes a week six load **above the lifter's true one-rep max in four
+of the five**, including for somebody who tested correctly at eight reps. It is not a fix,
+it is an injury.
+
+The ladder is not broken. If you can lift 80kg three times your one-rep max is about 85kg,
+90 percent of that is 76kg, and a correct six week block never asks you to beat that triple.
+That is the ladder being right about a test that was too heavy.
+
+So the fix is at the point of testing:
+
+- **`estimateMax()` is now rep-aware.** Brzycki at five reps and under, Epley above. Epley
+  alone drifts high on short sets, which is what fed the problem. They agree closely in the
+  8 to 10 range the testing week actually asks for, so nothing changes for anyone who
+  followed the instruction.
+- **`testQuality(weight, reps)`** returns null for a usable test and, for anything outside
+  6 to 12 reps, a reason plus a suggested load. Wired into `completeSet` and shown as a card
+  on the plan page. It does not block: the set is logged and the number stands if they meant
+  it. It is the difference between the app knowing the block will feel light and the user
+  finding out in week six.
+- **`lift_maxes.tested_load`, `tested_reps`, `tested_at`** and a new `record_lift_test()`
+  RPC, used in place of `record_lift_max()` during the testing week. `est_max` keeps its
+  `greatest()` rule; the test details always reflect the most recent test, because "how did
+  you arrive at this" should not be frozen at whichever attempt was heaviest.
+
+Verified behaviour:
+
+| test | est 1RM | week 6 | beats the test | flagged |
+|---|---|---|---|---|
+| 60 x 8 | 76.0 | 67.5 | week 5 | usable |
+| 70 x 10 | 93.3 | 85 | week 3 | usable |
+| 100 x 5 | 112.5 | 102.5 | week 6 | too heavy, try 85kg |
+| 80 x 3 | 84.7 | 75 | never | too heavy, try 62.5kg |
+| 50 x 15 | 75.0 | 67.5 | week 1 | too light |
+
+### Still open after this pass
+
+- **Nothing is deployed.** All of today's client work is in the working tree only.
+- Turn on **leaked password protection** in the Supabase auth settings. It is the one
+  security advisor warning that is not intentional, and it is a toggle.
+- The four remaining `authenticated_security_definer_function_executable` warnings are
+  correct by design: `current_challenge`, `get_leaderboard`, `get_my_kudos` and
+  `settle_streak_freezes` all exist to be called by signed-in users and all scope internally
+  on `auth.uid()` or opt-in.
+- The per-side `weekLogs` overwrite and the gym-ready same-title block wipe, both described
+  in the previous section, are still open.

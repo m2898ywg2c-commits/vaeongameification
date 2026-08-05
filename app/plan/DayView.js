@@ -114,6 +114,10 @@ const v = stations[sk] !== undefined ? stations[sk] : prior;
 const isLogged = !!loggedStations[sk] || !!prior;
 const rounds = c.log === "rounds" ? (Number(c.rounds) || 5) : 0;
 const doneRounds = rounds ? Number(String(v).match(/^\d+/) || 0) : 0;
+// A sled is measured in metres. It used to be ticked off in rounds, which made it the odd
+// one out next to SkiErg and Row: those hand you a number to beat and five ticks tell you
+// nothing about the load or the floor you pushed it on.
+const distance = c.log === "distance";
 return (
 <div key={i} className="mb-4">
 <div className="flex items-center gap-2">
@@ -153,7 +157,8 @@ style={on
 {!rounds ? (
 <input
 type="text"
-placeholder="your time"
+inputMode={distance ? "numeric" : "text"}
+placeholder={distance ? (c.target_m ? "metres, e.g. " + c.target_m : "metres") : "your time"}
 value={v}
 onChange={function (e) {
 const val = e.target.value;

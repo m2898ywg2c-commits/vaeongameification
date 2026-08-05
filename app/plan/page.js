@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TYPES, isFreestyle } from "@/lib/personality";
 import { buildWeek, primaryCategory, defaultSessionType } from "@/lib/training";
-import { currentWeek, weeksFor, BLOCK_WEEKS, estimateMax } from "@/lib/progression";
+import { currentWeek, weeksFor, BLOCK_WEEKS, estimateMax, testQuality } from "@/lib/progression";
 import { isGymReady, buildGymWeek, blockWeeksFor, currentWeekIn } from "@/lib/gymready";
 import { quoteFor, sessionIntro, praiseFor } from "@/lib/voice";
 import { track, rememberIdentity, EVENTS } from "@/lib/events";
@@ -36,6 +36,23 @@ function doneFor(day, weekLogs) {
   return out;
 }
 
+// THE DELETE WINDOW AND THE UNIQUE INDEX HAVE TO AGREE ON WHAT A DAY IS.
+//
+// The guards used local midnight while log_date and session_date default to the UTC date.
+// For anyone not on UTC, which right now is every user in the UK on BST, those are
+// different windows. Re-completing an exercise between midnight and 1am local wrote into
+// yesterday's UTC date, so the delete missed the earlier rows and the insert then collided
+// with the unique index.
+//
+// Sending the local day explicitly makes the delete and the constraint key on the exact
+// same value, and removes the guesswork entirely.
+function localDay() {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return d.getFullYear() + "-" + m + "-" + day;
+}
+
 function startOfThisWeek() {
 const d = new Date();
 const day = (d.getDay() + 6) % 7;
@@ -62,9 +79,22 @@ const [freestyle, setFreestyle] = useState(false);
 const [doneKeys, setDoneKeys] = useState({});
 const [lastSets, setLastSets] = useState({});
 const [avoided, setAvoided] = useState({});
+// Raised when a testing week set lands outside the rep range the block can be built from.
+// Not a blocker: the set is logged either way and the number stands if they mean it. This
+// is the difference between the app knowing the block will feel light and the user finding
+// out in week six.
+const [testWarning, setTestWarning] = useState(null);
 // What has already been logged this week, by day and by exercise. See the note where it
 // is built for why per-exercise completion could not survive a reload without it.
 const [weekLogs, setWeekLogs] = useState({});
+// WRITES IN FLIGHT, SO A DOUBLE TAP CANNOT BECOME A DOUBLE ROW.
+//
+// completeSet deletes the day's rows for an exercise and then inserts. Two taps close
+// together ran both deletes before either insert, so both inserts survived and the day
+// got two identical batches. Live data has six 400m Repeats rows written 0.7ms apart.
+// A ref rather than state on purpose: state updates are batched and asynchronous, which
+// is precisely the window this is trying to close.
+const writing = useRef({});
 
 useEffect(function () {
 async function load() {
@@ -259,6 +289,10 @@ const homeMode = profile && profile.equipment && profile.equipment !== "gym";
 const noBaselines = profile && !gym && !profile.baseline_bench && !profile.baseline_squat;
 
 async function completeSet(ex, exIdx, fields, total, kind, perSide) {
+const lockKey = (day ? day.key : "") + "|" + (ex && ex.name ? ex.name : "");
+if (writing.current[lockKey]) return;
+writing.current[lockKey] = true;
+try {
 const { data: { user } } = await supabase.auth.getUser();
 if (user && day) {
 const rows = [];
@@ -309,12 +343,51 @@ duration_min: kind === "cardio" && v.mins ? Number(v.mins)
 //
 // Scoped to the same day rather than the whole week on purpose: a freestyle type genuinely
 // can take the same session twice in a week, and that should still be two entries.
-const dayStart = new Date();
-dayStart.setHours(0, 0, 0, 0);
-await supabase.from("exercise_logs").delete()
+// NOTHING IS DELETED UNLESS THERE IS SOMETHING TO PUT BACK.
+//
+// A calibration week seeds the per-side boxes empty, and empty sides are skipped when
+// rows are built, so this could reach the delete with rows = []. It then wiped the day's
+// history for that exercise, inserted nothing, and ticked the card green.
+if (!rows.length) return;
+
+const today = localDay();
+const del = await supabase.from("exercise_logs").delete()
 .eq("user_id", user.id).eq("day_key", day.key).eq("exercise", ex.name)
-.gte("logged_at", dayStart.toISOString());
-await supabase.from("exercise_logs").insert(rows);
+.eq("log_date", today);
+if (del.error) { setPraise("Could not save, try again"); setTimeout(function () { setPraise(null); }, 2200); return; }
+
+const ins = await supabase.from("exercise_logs").insert(
+rows.map(function (r) { return Object.assign({}, r, { log_date: today }); })
+);
+// The delete and the insert are two round trips, not one transaction. If the insert fails
+// the old rows are already gone, so the very least this can do is stop telling the user it
+// worked and leave the card open so they can send it again.
+if (ins.error) { setPraise("Could not save, try again"); setTimeout(function () { setPraise(null); }, 2200); return; }
+
+// THE SCREEN HAS TO LEARN WHAT WAS JUST WRITTEN.
+//
+// weekLogs was loaded once and never updated after a write, so the database and the
+// screen disagreed for the rest of the session. Switching tab and back called
+// doneFor(day, weekLogs), found nothing for today's day key, and reopened every card
+// that had just been completed. Tuesday stayed collapsed because Tuesday's rows were
+// already in weekLogs when the page loaded; Wednesday's never got there.
+//
+// The same stale map fed loggedThisWeek, so the reopened cards prefilled from the
+// prescription instead of from what was logged, which is why the exercises came back
+// looking like a different week's numbers.
+setWeekLogs(function (wl) {
+const next = Object.assign({}, wl);
+const forDay = Object.assign({}, next[day.key] || {});
+const bySet = [];
+rows.forEach(function (r) { bySet[(Number(r.set_index) || 1) - 1] = r; });
+forDay[(ex.name || "").toLowerCase()] = bySet;
+next[day.key] = forDay;
+return next;
+});
+setDoneKeys(function (k) {
+if (k[day.key]) return k;
+return Object.assign({}, k, { [day.key]: true });
+});
 
 // One event per exercise, not per set. Sets are a property of the exercise here, and
 // counting them separately would make a five-set squat look like five times the
@@ -354,15 +427,29 @@ return next;
 
 if (kind === "weight") {
 let best = 0;
+let bestLoad = 0;
+let bestReps = 0;
 for (let i = 0; i < total; i++) {
 const v = fields[i] || {};
 if (v.weight) {
 const est = estimateMax(v.weight, v.reps);
-if (est > best) best = est;
+if (est > best) { best = est; bestLoad = Number(v.weight); bestReps = Number(v.reps) || 0; }
 }
 }
 if (best > 0) {
+// The testing week records HOW the test was done, not just what it implies. A three rep
+// test and an eight rep test produce similar estimates and are not similar tests, and
+// with only the estimate stored the app could not tell somebody their block was about to
+// be built on a number it cannot use.
+if (isTestWeek) {
+await supabase.rpc("record_lift_test", {
+p_exercise: ex.name, p_est: best, p_load: bestLoad, p_reps: bestReps,
+});
+const q = testQuality(bestLoad, bestReps);
+if (q) setTestWarning({ exercise: ex.name, message: q.message });
+} else {
 await supabase.rpc("record_lift_max", { p_exercise: ex.name, p_est: best });
+}
 setMaxes(function (m) {
 const next = Object.assign({}, m);
 const key = (ex.name || "").toLowerCase();
@@ -381,6 +468,9 @@ const next = Object.assign({}, d);
 next[exIdx] = true;
 return next;
 });
+} finally {
+writing.current[lockKey] = false;
+}
 }
 
 function reopen(exIdx) {
@@ -391,33 +481,93 @@ return next;
 });
 }
 
+// THE SAME CORRECTION RULE THE EXERCISE CARDS GOT, WHICH THIS NEVER RECEIVED.
+//
+// completeSet was fixed to delete before inserting so that re-completing is a correction.
+// This function was left as a bare insert, so every tap of Log appended another row. Live
+// data has SkiErg and Row sitting at three rows each for one day, with conflicting values,
+// all written after the migrations that were supposed to have cleared exactly this.
 async function logStation(station, value) {
 if (!value) return;
+const lockKey = (day ? day.key : "") + "|station|" + (station && station.name ? station.name : "");
+if (writing.current[lockKey]) return;
+writing.current[lockKey] = true;
+try {
 const { data: { user } } = await supabase.auth.getUser();
 if (user && day) {
-await supabase.from("exercise_logs").insert({
+const today = localDay();
+const del = await supabase.from("exercise_logs").delete()
+.eq("user_id", user.id).eq("day_key", day.key).eq("exercise", station.name)
+.eq("log_date", today);
+if (del.error) { setPraise("Could not save, try again"); setTimeout(function () { setPraise(null); }, 2200); return; }
+// A distance station stores metres in its own column as well as the readable string,
+// so a sled is queryable next to the rest of the endurance work rather than being a
+// sentence nothing can add up.
+const metres = station.log === "distance" ? Number(String(value).replace(/[^\d.]/g, "")) : null;
+const row = {
 user_id: user.id, day_key: day.key, exercise: station.name, set_index: 1,
-weight: null, reps: null, time_text: value,
+weight: null, reps: null,
+time_text: metres ? metres + " m" : value,
+distance_km: metres ? metres / 1000 : null,
+log_date: today,
+};
+const ins = await supabase.from("exercise_logs").insert(row);
+if (ins.error) { setPraise("Could not save, try again"); setTimeout(function () { setPraise(null); }, 2200); return; }
+setWeekLogs(function (wl) {
+const next = Object.assign({}, wl);
+const forDay = Object.assign({}, next[day.key] || {});
+forDay[(station.name || "").toLowerCase()] = [row];
+next[day.key] = forDay;
+return next;
 });
 }
 setPraise("Logged");
 setTimeout(function () { setPraise(null); }, 1400);
+} finally {
+writing.current[lockKey] = false;
+}
 }
 
+// ONE FINISHED SESSION PER DAY, NOT ONE PER TAP.
+//
+// This was a bare insert. Live data has twelve "Chest & Push" rows for a single Tuesday,
+// written across forty eight minutes. training_sessions is what the leaderboard counts,
+// what the challenge totals, and what the streak maths reads, so every stray tap inflated
+// a score, a streak and the adherence numbers the whole six week test depends on.
+//
+// day_key rather than the title, because two goals can produce two sessions that share a
+// name and those are genuinely two different sessions.
 async function finish() {
+const lockKey = "finish|" + (day ? day.key : "");
+if (writing.current[lockKey]) return;
+writing.current[lockKey] = true;
+try {
 const { data: { user } } = await supabase.auth.getUser();
 if (user && day) {
-await supabase.from("training_sessions").insert({
+const today = localDay();
+await supabase.from("training_sessions").delete()
+.eq("user_id", user.id).eq("day_key", day.key)
+.eq("session_date", today);
+const ins = await supabase.from("training_sessions").insert({
 user_id: user.id,
+day_key: day.key,
+session_date: today,
 session_type: gym ? "Strength" : defaultSessionType(profile.goals, day.key),
 duration_min: 60, effort: 3, note: gym ? "Own plan" : day.title,
 });
+// A failed finish must not show the fanfare. This one is not destructive (there was
+// nothing to lose if the row never existed) but claiming a session that is not in the
+// database is how adherence numbers drift away from what people actually did.
+if (ins.error) { setPraise("Could not save, try again"); setTimeout(function () { setPraise(null); }, 2200); return; }
 track(supabase, EVENTS.SESSION_LOGGED, {
 gym: gym, day_key: day.key, week: weekNo, block: profile.block_number || 1,
 exercises_logged: count,
 });
 }
 setFinished(true);
+} finally {
+writing.current[lockKey] = false;
+}
 }
 
 if (loading) {
@@ -448,6 +598,24 @@ style={{ background: accent, color: "var(--brand-bg)" }}>Ready</button>
 {praise ? (
 <div className="fixed left-0 right-0 bottom-8 z-40 flex justify-center pointer-events-none">
 <div className="px-6 py-3 rounded-sm font-display shadow-lg" style={{ background: accent, color: "var(--brand-bg)" }}>{praise}</div>
+</div>
+) : null}
+
+{/* The testing week is the one session that sets the other five weeks, and it is the
+    only one where getting it wrong is invisible until the block is nearly over. This says
+    so at the moment it happens, with the load to try, and does not block anything: the set
+    is already logged and the number stands if they meant it. Worded as information rather
+    than correction, because nothing in this app scolds. */}
+{testWarning ? (
+<div className="rounded-md border p-4 mb-4" style={{ borderColor: accent + "66", background: accent + "12" }}>
+<p className="font-display text-sm mb-1" style={{ color: accent }}>
+About your {testWarning.exercise} test
+</p>
+<p className="text-xs text-brand-muted mb-3">{testWarning.message}</p>
+<button type="button" onClick={function () { setTestWarning(null); }}
+className="text-xs font-display underline" style={{ color: accent }}>
+Got it
+</button>
 </div>
 ) : null}
 
