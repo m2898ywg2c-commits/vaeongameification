@@ -92,6 +92,33 @@ adherence rather than load.
 - FIXED **Decimal minutes are typeable.** The time box was `inputMode="numeric"`, which on
   iOS is the keypad with no decimal point on it, so 23.11 minutes could not be entered at
   all.
+- FIXED **Completing an exercise twice no longer logs it twice.** `completeSet()` was a bare
+  insert, so every tap appended another full batch. 37 of 151 live rows were surplus, back
+  to 29 July. It now replaces that day's rows for that exercise. See the 4 August section of
+  HANDOVER.md for the three migrations that cleaned up the existing data.
+- FIXED **Completion survives closing the app.** The per-exercise done map was React state
+  seeded empty on every load, so a session logged in the morning looked untouched by
+  evening. It is rebuilt from the week's logs and holds until the week rolls over.
+- FIXED **A week you have already trained shows what you did**, not next week's progression.
+  Where an exercise has logs for this week on this day, those win the prefill.
+- FIXED **Reads key on `set_index`, not array position.** With duplicate rows present, a
+  positional read showed set one's second copy as set two, which is how a card displayed
+  60, 25, 25.
+
+## HYROX stations
+
+- **One station per session**, dealt from a pool of five and cycled.
+- NEW **The pool rotates across weeks, not just within one.** The deal used to start at zero
+  on every build, so a four session week dealt the same four stations every week and
+  `Weighted Lunge Walk`, fifth of five, was unreachable for an entire block. Week one gives
+  Ski, Row, Ropes, Sled; week two gives Row, Ropes, Sled, Lunge Walk.
+- NEW **Two ways to log, because they are not the same question.** A SkiErg or a Row is one
+  number you chase and beat. Battle ropes, the sled and the lunge walk are rounds you tick
+  off as you finish them. Asking for "your time or score" on the second kind produced an
+  empty box people sensibly ignored.
+- FIXED **A station score no longer copies across days.** State was keyed by index, every day
+  has exactly one station so the index was always 0, and DayView is not unmounted on a day
+  change. Monday's box and Tuesday's box were the same box.
 
 ## Rest timer
 
@@ -248,6 +275,14 @@ Ordered roughly by how much trouble it causes.
 - **The landing page is parked** at `app/welcome/page.js`, unlinked and unfinished. Nothing
   routes to it. It moves back into `app/page.js` when it is ready.
 - **Five database indexes** drafted and unapplied on the original tables.
+- **Two log conflicts need a person to decide.** Hampo-1978's Weighted Dips reads 3 reps
+  where an earlier batch said 10; CatFisher's Plank reads 20 sec where an earlier said 45.
+  Both may be the same prefill bug that cost the bench numbers.
+- **`lift_maxes` is never recalculated.** `record_lift_max` only moves up, so a max survives
+  its source rows being deleted and still drives the prescription. Currently consistent, but
+  nothing enforces that.
+- **No backups.** Supabase free plan. A day of data surgery on real training history was
+  done with no safety net.
 - **Type sizes.** A number of 9px and 10px labels, below any sensible minimum.
 - **The character artwork is AI-generated** and probably carries no UK copyright. It is live
   on the assessment result, the type page and block end. A human redraw is what would fix

@@ -75,8 +75,13 @@ are LF. Do not normalise. Check with `file` before and after any scripted edit.
    artwork rather than the hex codes. Tightest pair in the set now the Anchor has moved.
 6. **`metadataBase` is unset.** Breaks Open Graph on the share card the moment
    `vaeonfitness.com` goes live.
-7. **The landing page** is parked at `app/welcome/page.js`, unlinked and unfinished. It goes
-   back into `app/page.js` when it is ready.
+7. **The landing page** is parked at `app/welcome/page.js`, unlinked and unfinished. Nothing
+   routes to it and `/` now redirects: signed in to the dashboard, signed out to `/login`.
+   It goes back into `app/page.js` when it is ready. Its imports are `../`, not `./`, which
+   is what broke two deploys on 4 August when it moved a directory deeper.
+8. **Two log conflicts need a person**, listed at the end of the 4 August session notes.
+9. **Consider paying for Supabase.** Free plan means no daily backups, and a day of data
+   surgery on somebody's training history was done without a safety net.
 
 ### Where I would push back on him
 
@@ -354,6 +359,73 @@ wrong; the shipped render was recoloured by hue rotation rather than regenerated
 each type, about 250KB for the set. Cropped from a poster, so they have their backgrounds
 baked in and cannot be keyed out. That is why `TypeCharacter` frames them in a dark
 medallion: dropped raw onto the light theme they are black rectangles.
+
+Home screen icons were rebuilt on black. All four carried `#0F1C31`, the pre-rebrand navy.
+**iOS caches these hard**: an existing install keeps the old one until it is removed and
+re-added, so testers will need telling rather than assuming it did not work.
+
+### The logging bugs, second half of the day
+
+All four found by testers inside one evening. All four were long-standing, none were new.
+
+**Duplicate exercise_logs, the worst of them.** `completeSet()` did a bare insert with no
+guard, so every tap of "Completed as planned" appended another full batch of rows. 37 of 151
+rows were surplus, going back to 29 July, across three users. A five set bench press had
+fifteen rows. It now deletes that day's rows for that exercise before inserting, so a
+re-complete is a correction rather than an addition. Scoped to the calendar day, not the
+week, because a freestyle type can genuinely take the same session twice in a week.
+
+**Both read paths keyed on array position rather than `set_index`.** With duplicates present
+`sets[1]` could be the second copy of set one, which is how a card displayed 60, 25, 25.
+`lastByExercise` and `weekLogs` both now slot by `set_index` and keep the newest row per set.
+
+**Per-exercise completion never survived a reload.** The `done` map was React state seeded
+empty on every load and explicitly wiped on tab change, so a session logged in the morning
+looked untouched by evening. It is now rebuilt from `weekLogs`, which reads the week at
+exercise level rather than day level. Related: an exercise already logged this week now
+prefills from what was logged rather than from the prescription, because showing next week's
+progression over a week you have already trained reads as the app having lost your work.
+
+**The read path never learned about the columns the write path gained.** `distance_km`,
+`duration_min` and `side` were added and written the same day, and the `select` was not
+updated, so logged endurance work displayed nothing. There is a `time_text` fallback for
+rows written before those columns existed.
+
+### HYROX stations
+
+- `stations[i]` was DayView local state keyed by index. Every day has one station so the
+  index is always 0, and DayView is not unmounted on a day change, so Monday's box and
+  Tuesday's box were the same box. Now keyed by day key plus station name.
+- Stations gained `log: "time"` or `log: "rounds"`. A SkiErg or Row is one number you chase.
+  Ten thirty-second rope intervals and a sled are not, and asking for "your time or score"
+  on those produced an empty box people sensibly ignored. Rounds tick off; tapping the round
+  you are on clears back to it.
+- `dealt` started at zero on every build, so a four session week dealt the same four
+  stations every week and `Weighted Lunge Walk`, fifth of five, was unreachable for a whole
+  block. It now offsets by week number and the pool walks.
+
+### Data migrations, and what they cost
+
+Three ran, in this order, and **none of it is recoverable**: the project is on the Supabase
+free plan, so there are no daily backups.
+
+1. `dedupe_identical_exercise_log_rows` removed byte-identical repeats only. 17 rows.
+2. `exercise_logs_newest_wins` resolved the remaining conflicting batches. James chose the
+   rule. 20 rows. **It deleted the correct data on his bench**: 60/65/70/80/90 lost to
+   20/25/25/25/25 logged sixty seconds later by the prefill bug above.
+3. `restore_hampo_bench_and_incline_weights` put those weights back by UPDATE, since the rep
+   counts matched and only the weights ever disagreed.
+
+151 rows to 114, zero conflicts remaining.
+
+**`lift_maxes` is deliberately NOT recalculated by any of this.** `record_lift_max` upserts
+with `greatest()` and only ever moves up, so a max survives its source rows being deleted.
+It happens to agree now, 114kg estimated from 90x8, but a future cleanup could easily leave
+a max that nothing in the logs supports and it would still drive the prescription.
+
+**Still unresolved, needs a human:** Hampo-1978's Weighted Dips reads 3 reps where an earlier
+batch said 10. CatFisher's Plank reads 20 sec where an earlier batch said 45. Both have the
+same shape as the bench and may be the same bug. Nobody has said which is real.
 
 ---
 
