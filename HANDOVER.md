@@ -1142,3 +1142,48 @@ Leg Press volume against 100 x 15: 100, 102.5, 107.5, 100, 112.5, 115.
 counts, both intensities, all six weeks: zero prescriptions strictly beaten by logged
 performance. This is the check that should have existed from the start, and it is the one that
 would have caught all four of today's errors on this function in a single run.
+
+### Correction: the floor had to compare effort, not the number on the bar
+
+Reported as "still, reps from Wednesday are lower with the same weights as Friday".
+
+The previous floor guaranteed the **weight** was never below what had been lifted. It floored
+Friday at 90kg because 90kg had been logged. But the logged set was 90kg x **10** and the
+prescription was 90kg x **8**: same bar, two fewer reps, plainly easier. Matching the weight is
+not enough. Fewer reps has to mean more weight.
+
+`floorFromHistory` now puts both sides on a common footing. Every logged set converts to an
+estimated max, the best is taken, and that converts back to a load at the rep count being
+prescribed. 90 x 10 is an estimated 120, which at eight reps is 95kg. **95 x 8 is the genuine
+equivalent of 90 x 10**, and that is the floor.
+
+Rounded **up** to the nearest 2.5kg, never down. Rounding to nearest left the floor fractions
+of a percent below the effort it existed to guarantee (90 x 10 floored to 112.5 for a triple,
+which is a whisker easier than the set it came from). A floor that can dip under the thing it
+is flooring is not a floor.
+
+Two knock-on changes fell out of this:
+
+**The ladder spread came down from 1.17 to 1.10.** The scale used to decide both where the
+block starts and how far it climbs. The floor now sets the start, so the scale only carries
+the shape. Anchored to a week one that already equals a maximal effort, the old spread
+projected a twenty percent gain in six weeks. Nobody adds twenty percent in six weeks, and a
+final week that is fantasy is as useless as a first week that is too light. Now 0.94 to 1.06.
+
+**The deload is exempt from the hard clamp.** Week four is a deliberate, labelled, one week
+reduction and is the only week allowed under the floor. Clamping it too flattened it into a
+repeat of week one and left the block with no recovery week at all.
+
+His block, every figure measured against the 90 x 10 he actually did:
+
+| Back Squat | wk1 | wk2 | wk3 | wk4 | wk5 | wk6 |
+|---|---|---|---|---|---|---|
+| heavy, 5 reps | 107.5 | 110 | 112.5 | 105 | 115 | 117.5 |
+| effort vs his session | +1% | +3% | +5% | -2% | +8% | +10% |
+| volume, 8 reps | 95 | 95 | 97.5 | 92.5 | 100 | 102.5 |
+| effort vs his session | +0% | +0% | +3% | -2% | +6% | +8% |
+
+**Invariant, now tested properly:** 768 combinations of logged history against prescribed rep
+counts, both intensities, all six weeks. Zero non-deload prescriptions easier than the logged
+effort. The earlier version of this test compared weights and passed while the bug was live,
+which is why it did not catch it. Comparing effort is the only version worth having.
