@@ -14,6 +14,9 @@ import TypeOrb from "../TypeOrb";
 import TypeCharacter from "../TypeCharacter";
 import DayView from "./DayView";
 import GymDayView from "./GymDayView";
+import BlockReview from "./BlockReview";
+
+const REVIEW_KEY = "vaeon-block-review-week";
 
 const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const TAB_KEY = "vaeon-plan-tab";
@@ -84,6 +87,9 @@ const [avoided, setAvoided] = useState({});
 // is the difference between the app knowing the block will feel light and the user finding
 // out in week six.
 const [testWarning, setTestWarning] = useState(null);
+// The end of week review. Shown once per week, on the first visit after the week rolls
+// over, and only when there is a week's work behind it to review.
+const [showReview, setShowReview] = useState(false);
 // What has already been logged this week, by day and by exercise. See the note where it
 // is built for why per-exercise completion could not survive a reload without it.
 const [weekLogs, setWeekLogs] = useState({});
@@ -231,6 +237,18 @@ const saved = Number(window.localStorage.getItem(TAB_KEY));
 if (!isNaN(saved) && saved >= 0 && saved < week.length) idx = saved;
 } catch (e) {}
 }
+// THE REVIEW FIRES ON THE WEEK ROLLING OVER, NOT ON A DATE.
+//
+// Shown once per block week, on the first plan visit after the number changes, and only
+// when there is a finished week behind it and a max to project from. Dismissal is stored
+// per week rather than as a boolean, so next week's review still appears.
+const wkNow = currentWeekIn(p.block_start, blockWeeksFor(p));
+if (wkNow > 1 && Object.keys(map).length) {
+try {
+if (Number(window.localStorage.getItem(REVIEW_KEY)) !== wkNow) setShowReview(true);
+} catch (e) {}
+}
+
 setProfile(p);
 setTypeId(a ? a.type_id : null);
 setMaxes(map);
@@ -606,6 +624,15 @@ style={{ background: accent, color: "var(--brand-bg)" }}>Ready</button>
     so at the moment it happens, with the load to try, and does not block anything: the set
     is already logged and the number stands if they meant it. Worded as information rather
     than correction, because nothing in this app scolds. */}
+{showReview && !gym ? (
+<BlockReview days={days} profile={profile} maxes={maxes} lastSets={lastSets}
+weekNo={weekNo} blockWeeks={blockWeeks} ladder={weeksFor(cat)} accent={accent}
+onDismiss={function () {
+setShowReview(false);
+try { window.localStorage.setItem(REVIEW_KEY, String(weekNo)); } catch (e) {}
+}} />
+) : null}
+
 {testWarning ? (
 <div className="rounded-md border p-4 mb-4" style={{ borderColor: accent + "66", background: accent + "12" }}>
 <p className="font-display text-sm mb-1" style={{ color: accent }}>

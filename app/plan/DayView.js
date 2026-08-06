@@ -84,8 +84,18 @@ return <p key={i} className="text-sm text-brand-muted mb-1">&middot; {w}</p>;
 ) : null}
 
 {day.exercises.map(function (ex, i) {
+// KEYED BY DAY AND EXERCISE, NOT BY POSITION.
+//
+// With key={i} React reused the same ExerciseCard instance across a day change, and
+// ExerciseCard seeds its input boxes in a useState initialiser that only runs on mount.
+// So Friday's Back Squat inherited Thursday's Bench Press numbers, Romanian Deadlift
+// inherited Weighted Dips, and Leg Press inherited Barbell Row: every box one day stale,
+// matched by position in the list. Every label around them recomputed from props and was
+// correct, which is exactly why the card looked right and read wrong.
+//
+// Same bug and same fix as the HYROX stations further down this file.
 return (
-<ExerciseCard key={i} ex={ex} exIdx={i} dayKey={day.key} profile={profile}
+<ExerciseCard key={day.key + "|" + ex.name} ex={ex} exIdx={i} dayKey={day.key} profile={profile}
 weekPct={rule.pct} accent={accent} homeMode={homeMode} done={!!done[i]}
 maxes={maxes} isTestWeek={isTestWeek} holdProgression={holdProgression}
 last={lastSets ? lastSets[(ex.name || "").toLowerCase()] : null}

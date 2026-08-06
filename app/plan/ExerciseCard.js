@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { workingWeight, workingHold, increaseHint } from "@/lib/progression";
+import { workingWeight, workingSets, blockProjection, workingHold, increaseHint } from "@/lib/progression";
 import { formTip, coachTip, homeAlternative, needsGym } from "@/lib/exercisedb";
 import { BRAND } from "@/lib/brand";
 import Icon from "../Icon";
@@ -211,7 +211,15 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   const perSide = kind === "time" && /per side|each side|per leg|each leg/.test(String(ex.reps || "").toLowerCase());
   // A swapped exercise is being done with whatever is to hand in a park, so no belt.
   const loadable = !swap && kind === "reps" && isLoadable(ex);
-  const suggested = kind === "weight" ? workingWeight(ex.name, profile, weekPct, maxes) : null;
+  // A ramp, not one number repeated. See workingSets in lib/progression.js: the top set is
+  // the prescription and the earlier sets climb to it, which is how the printed programme
+  // was always meant to be read and how everybody actually lifts.
+  const suggestedSets = kind === "weight" ? workingSets(ex.name, profile, weekPct, maxes, total, ex.intensity) : null;
+  const suggested = suggestedSets ? suggestedSets[suggestedSets.length - 1] : null;
+  // Where this lift ends up if the block is followed. Shown so the ramp reads as a plan
+  // rather than as the app being stingy in week one.
+  const projection = kind === "weight" ? blockProjection(ex.name, profile, maxes, total, null, ex.intensity) : null;
+  const finalTop = projection ? projection[projection.length - 1].top : null;
   const hasRealMax = !!(maxes && maxes[(ex.name || "").toLowerCase()]);
 
   // YOGA HOLDS PROGRESS LIKE WEIGHTS DO, IN SECONDS.
@@ -275,7 +283,7 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         // belt weight is the only sensible starting number.
         weight: doneRow && doneRow.weight !== null && doneRow.weight !== undefined
           ? String(Number(doneRow.weight))
-          : ((!calibrating && suggested) ? String(suggested) : prevWeight),
+          : ((!calibrating && suggestedSets && suggestedSets[i]) ? String(suggestedSets[i]) : prevWeight),
         reps: doneRow && doneRow.reps !== null && doneRow.reps !== undefined
           ? String(doneRow.reps)
           : (kind === "weight" || kind === "reps" ? (targetNumber(ex.reps) || prevReps) : ""),
@@ -410,8 +418,32 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
 
       {suggested && !calibrating ? (
         <div className="rounded-md px-3 py-2 mb-3" style={{ background: accent + "1A" }}>
-          <p className="font-display text-sm" style={{ color: accent }}>Today: {suggested}kg</p>
-          <p className="text-[0.75rem] text-brand-muted">{hasRealMax ? "From your logged max. " : ""}{increaseHint(ex.name)}</p>
+          <p className="font-display text-sm" style={{ color: accent }}>
+            Today: {suggestedSets.length > 1
+              ? suggestedSets.join(" · ") + "kg"
+              : suggested + "kg"}
+          </p>
+          <p className="text-[0.75rem] text-brand-muted">
+            {suggestedSets.length > 1 ? "Building to " + suggested + "kg on the last set. " : ""}
+            {hasRealMax ? "From your logged max. " : ""}{increaseHint(ex.name)}
+          </p>
+          {/* You are doing this lift twice this week on purpose, and the two days are not the
+              same session. Saying which is which stops the lighter one reading as a mistake. */}
+          {ex.intensity ? (
+            <p className="text-[0.75rem] mt-1 text-brand-muted">
+              {ex.intensity === "heavy"
+                ? "Heavy day. The lighter, higher rep session is later this week."
+                : "Volume day. Your heavy session for this lift is the other one this week."}
+            </p>
+          ) : null}
+          {/* The whole point of a block is that week one is supposed to feel light. Saying
+              where it ends turns a modest first week from the app being cautious into the
+              first rung of something. The deload week is not hidden either. */}
+          {finalTop && finalTop > suggested ? (
+            <p className="text-[0.75rem] mt-1" style={{ color: accent }}>
+              Week 6 of this block: {finalTop}kg
+            </p>
+          ) : null}
         </div>
       ) : null}
 

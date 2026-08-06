@@ -163,6 +163,7 @@ className={"rounded-md border p-4 " + (mine ? "border-white/40 bg-brand-field" :
 </p>
 <p className="text-xs text-brand-muted">
 {t ? t.name : "No type yet"} &middot; {r.done} of {r.pledged} this week
+{r.extra > 0 ? " +" + r.extra : ""}
 {r.weeks_kept > 0 ? " · " + r.weeks_kept + (r.weeks_kept === 1 ? " week kept" : " weeks kept") : ""}
 </p>
 </div>

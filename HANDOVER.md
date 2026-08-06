@@ -859,3 +859,128 @@ Verified behaviour:
   on `auth.uid()` or opt-in.
 - The per-side `weekLogs` overwrite and the gym-ready same-title block wipe, both described
   in the previous section, are still open.
+
+---
+
+## Added 2026-08-06: the prefill bug, per-set overload, and the block review
+
+### Every input box was one day stale, matched by position
+
+James reported Back Squat prefilling numbers he had never squatted, Romanian Deadlift with no
+target at all, and Leg Press making no sense against what he lifted. All three were one bug.
+
+`DayView` rendered `<ExerciseCard key={i}>`, the array index. `ExerciseCard` seeds its input
+boxes in a `useState` initialiser, which runs **only on mount**. React sees the same key
+across a day change and reuses the component, so the boxes kept the previous day's values
+while every label around them recomputed from props and stayed correct. That is why the
+cards looked right and read wrong.
+
+Matched exactly against his data:
+
+| Friday card (st-squat) | index | showed | which is Thursday's (st-bench) |
+|---|---|---|---|
+| Back Squat | 0 | 80, 90, 90 x 5 | Barbell Bench Press |
+| Romanian Deadlift | 2 | 0, 0, 0 x 5, 5, 8 | Weighted Dips |
+| Leg Press | 3 | 40, 50, 50 x 10 | Barbell Row |
+
+Now keyed `day.key + "|" + ex.name`. **This is the same bug and the same fix as the HYROX
+stations, which were repaired on 4 August in the same file.** The exercise cards were missed.
+Worth checking any other `key={i}` on a component holding seeded state.
+
+### "8 of 4 this week"
+
+A true number reading as a broken one: `done` was the raw session count while the score was
+already capped, so the two disagreed on screen. `get_leaderboard` now returns `done` capped
+at the pledge and the overshoot separately as `extra`, so the card reads "4 of 4 this week
++2". This is now the same definition of a full week that `settle_streak_freezes` and
+`weeks_kept` use, which is what James asked for.
+
+Two pre-deploy rows with a null `day_key` were also cleared: each duplicated a session
+recorded properly the same day with a `day_key`. The genuine 4 August session and the old
+20 July quick log were matched on note and date and left alone.
+
+### Progressive overload on every set
+
+`workingWeight()` returned one number and the card put it in all five boxes, so a five by
+five squat read "85, 85, 85, 85, 85". Nobody lifts like that. James logged 60, 65, 70, 80, 90.
+
+`workingSets()` now returns a ramp: the top set is the prescription and earlier sets climb to
+it from 70 percent. Week one for his squat comes out **60, 65, 72.5, 77.5, 85** against the
+60, 65, 70, 80, 90 he actually did, which is about as good a check as this gets.
+
+`blockProjection()` returns the top set for all six weeks, so the card shows "Week 6 of this
+block: 107.5kg" under the prescription. Week one is supposed to feel light and now says why.
+
+### The end of week review
+
+`app/plan/BlockReview.js`. Fires on the block week rolling over, once per week, dismissal
+stored per week number so next week's still appears. Shows every lift as last week's top set
+against where week six lands, then flags what is reading easy or hard via `readsAs()`.
+
+**No switch-exercise button, deliberately.** A lift reading hard for one week is almost always
+the programme working, and an app that answers a hard week by suggesting you drop the movement
+teaches people to trade difficulty for novelty. "Not for me" already exists on the card itself
+as a considered decision.
+
+`readsAs()` compares the prescribed top set with the heaviest logged, and nothing else,
+because reps and bar speed are not in the data. Three answers, wide thresholds, worded as a
+prompt to look rather than a verdict.
+
+### Worth knowing before the block starts properly
+
+- **His bench test was 100kg for 5, which `testQuality()` flags as too heavy.** Week six tops
+  at 102.5kg, so he barely beats the test. This is the low-rep problem working as documented,
+  and it is now visible at the point of testing rather than in week six.
+- **Wednesday and Friday share Back Squat, Romanian Deadlift and Leg Press.** Not adjacent, so
+  the variance pass allows it, and squatting twice a week is good programming. But Friday is
+  currently Wednesday minus two exercises, and both days prescribe the identical ramp. Real
+  programmes vary intensity between a week's two squat days (a heavy day and a lighter,
+  higher-rep day). Tightening `varyExercises` to cap shared exercises against **any** earlier
+  day in the week, not just the previous one, is the obvious next step and was not done.
+- Still not deployed.
+
+---
+
+## Added 2026-08-06, later: heavy and volume days
+
+The last gap in the block. After the variance pass, James's week still put Back Squat,
+Romanian Deadlift and Leg Press on both Wednesday and Friday with an identical prescription.
+Squatting twice a week is good programming. Squatting the same weight for the same reps
+twice is one session run twice, and the second one is where people go flat.
+
+`assignIntensity()` in `lib/training.js` tags a repeated lift `heavy` on the day prescribing
+the most sets (ties to the earlier day) and `light` on the other. The light day carries more
+reps at a lighter bar. `LIGHT_DAY_LOAD` in `lib/progression.js` is 0.80, and `workingSets()`
+and `blockProjection()` both take the intensity, so the split runs through all six weeks
+rather than being a week one cosmetic.
+
+His week now reads:
+
+| lift | heavy day | volume day |
+|---|---|---|
+| Back Squat | Wed 5 x 5, top 85kg | Fri 5 x 8, top 67.5kg |
+| Romanian Deadlift | Wed 4 x 8, top 85kg | Fri 3 x 10, top 67.5kg |
+| Leg Press | Wed 3 x 15, top 105kg | Fri 3 x 15, top 85kg |
+| Barbell Bench Press | Tue 5 x 5, top 80kg | Thu 5 x 8, top 65kg |
+
+Two things it deliberately does not do.
+
+**Only bare rep counts are split.** A plank labelled "heavy day" is nonsense, so anything
+prescribed in seconds, metres or "per side" is left exactly as authored and never tagged.
+`splittable()` enforces this.
+
+**Rep counts snap to values people actually write.** Plain +3 produced elevens and thirteens,
+which look like a bug even when the arithmetic is right. `TIDY_REPS` snaps to 6, 8, 10, 12 or
+15, and `Math.max(best, n)` guarantees the volume day never prescribes fewer reps than the
+heavy day. Verified against every rep count that exists in the content: 3→6, 5→8, 6→8, 8→10,
+10→12, 12→15, 15→15, and 20, 25, 40 pass through untouched.
+
+`BlockReview` lists a split lift once, on its heavy day. Two rows for one movement showing
+two different numbers reads as a contradiction in a summary.
+
+Swept across all 5,880 realistic goal and session-count combinations: 0 adjacent repeats,
+0 exercises appearing three or more times, 0 empty days, 0 duplicate day titles, 5,496
+intensity tags across 1,200 weeks, and **0 light days without a matching heavy day**, which
+is the invariant that matters. Build clean, 20 routes.
+
+Still not deployed.
