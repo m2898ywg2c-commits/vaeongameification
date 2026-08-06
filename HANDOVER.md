@@ -1108,3 +1108,37 @@ the end of week review flags anything coming in under target.
 prescription against what he had actually lifted.** The pattern worth keeping: numbers derived
 from a model are only testable against real logged performance, never against whether they
 look reasonable in isolation.
+
+### Correction: a floor, because periodisation theory does not outrank arithmetic
+
+Reported as "still no good, Wednesday was 90 and 10 reps, Friday ends on 87.5 on 8".
+
+He was right and the previous two corrections had both missed the actual point. 87.5kg for 8
+is less weight AND fewer reps than 90kg for 10. There is no model, no taper and no first-week
+argument under which that is harder. A week one is allowed to be easier. It is not allowed to
+be **strictly dominated on both axes** by a session the person has already completed, because
+that is not periodisation, it is the app not knowing what you did.
+
+`floorFromHistory(loggedSets, prescribedReps)` returns the heaviest load already completed for
+that many reps **or more**, since doing something for more reps proves at least that much for
+fewer. Taken from the most recent session for the lift, which the plan page already loads.
+
+The first attempt clamped each week at the floor independently and produced Leg Press at
+100, 100, 100, 100, 105, 107.5: a wall with a bump on the end. The block is now **anchored**
+instead. If the floor says week one starts at 100kg, the whole block shifts up so it begins
+there and still climbs. The lift is capped at ten percent so a single fluke set in the history
+cannot drag a block somewhere unsafe, with the hard clamp kept underneath as a backstop.
+
+His block now, against a logged 90kg x 10:
+
+| Back Squat | wk1 | wk2 | wk3 | wk4 | wk5 | wk6 |
+|---|---|---|---|---|---|---|
+| heavy, 5 reps | 97.5 | 102.5 | 107.5 | 95 | 110 | 115 |
+| volume, 8 reps | 90 | 92.5 | 97.5 | 90 | 100 | 105 |
+
+Leg Press volume against 100 x 15: 100, 102.5, 107.5, 100, 112.5, 115.
+
+**Invariant now under test.** 672 combinations of logged history against prescribed rep
+counts, both intensities, all six weeks: zero prescriptions strictly beaten by logged
+performance. This is the check that should have existed from the start, and it is the one that
+would have caught all four of today's errors on this function in a single run.

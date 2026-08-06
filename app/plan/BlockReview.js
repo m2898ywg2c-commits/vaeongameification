@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { blockProjection, readsAs, repsFrom } from "@/lib/progression";
+import { blockProjection, readsAs, repsFrom, floorFromHistory } from "@/lib/progression";
 
 // THE END OF WEEK REVIEW.
 //
@@ -46,7 +46,12 @@ export default function BlockReview({ days, profile, maxes, lastSets, weekNo, bl
       if (seen[key]) return;
       seen[key] = true;
       const total = Number(ex.sets) || 1;
-      const proj = blockProjection(ex.name, profile, maxes, total, ladder, ex.intensity, repsFrom(ex.reps));
+      const prescribedReps = repsFrom(ex.reps);
+      const rowsForFloor = lastSets && lastSets[key] ? lastSets[key].sets || [] : [];
+      // Same floor the card uses, so the review cannot promise a week six number the plan
+      // itself would refuse to prescribe.
+      const floor = floorFromHistory(rowsForFloor, prescribedReps);
+      const proj = blockProjection(ex.name, profile, maxes, total, ladder, ex.intensity, prescribedReps, floor);
       if (!proj) return;
 
       // The week that has just finished, which is the one there is evidence for.

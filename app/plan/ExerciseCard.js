@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { workingSets, blockProjection, workingHold, increaseHint, repsFrom } from "@/lib/progression";
+import { workingSets, blockProjection, workingHold, increaseHint, repsFrom, floorFromHistory } from "@/lib/progression";
 import { formTip, coachTip, homeAlternative, needsGym } from "@/lib/exercisedb";
 import { BRAND } from "@/lib/brand";
 import Icon from "../Icon";
@@ -218,11 +218,16 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   // not the same percentage of the same max, and pretending otherwise was prescribing below
   // what this person already lifts on some movements and well above it on others.
   const prescribedReps = repsFrom(ex.reps);
-  const suggestedSets = kind === "weight" ? workingSets(ex.name, profile, weekPct, maxes, total, ex.intensity, prescribedReps) : null;
+  // The heaviest load already completed for this many reps or more. The prescription is never
+  // allowed below it: fewer reps has to mean the same bar or heavier, or the plan is asking
+  // for a session this person has already beaten. Computed from `last`, which is the most
+  // recent session for this lift and is already loaded.
+  const historyFloor = !swap && last && last.sets ? floorFromHistory(last.sets, prescribedReps) : null;
+  const suggestedSets = kind === "weight" ? workingSets(ex.name, profile, weekPct, maxes, total, ex.intensity, prescribedReps, historyFloor) : null;
   const suggested = suggestedSets ? suggestedSets[suggestedSets.length - 1] : null;
   // Where this lift ends up if the block is followed. Shown so the ramp reads as a plan
   // rather than as the app being stingy in week one.
-  const projection = kind === "weight" ? blockProjection(ex.name, profile, maxes, total, null, ex.intensity, prescribedReps) : null;
+  const projection = kind === "weight" ? blockProjection(ex.name, profile, maxes, total, null, ex.intensity, prescribedReps, historyFloor) : null;
   const finalTop = projection ? projection[projection.length - 1].top : null;
   const hasRealMax = !!(maxes && maxes[(ex.name || "").toLowerCase()]);
 
