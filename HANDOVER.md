@@ -984,3 +984,64 @@ intensity tags across 1,200 weeks, and **0 light days without a matching heavy d
 is the invariant that matters. Build clean, 20 routes.
 
 Still not deployed.
+
+---
+
+## Added 2026-08-06, corrected: the prescription was rep-blind
+
+James reported that Friday's volume day was carrying over less than he had lifted on
+Wednesday. He was right, and the cause was worse than the symptom.
+
+`workingWeight()` multiplied an estimated one-rep max by the week's percentage and **ignored
+the prescribed rep count entirely**. A percentage of a one-rep max means nothing until you
+say how many times you intend to lift it, so the same formula failed in opposite directions
+depending on the exercise:
+
+| lift | he logged | old week 6 | verdict |
+|---|---|---|---|
+| Back Squat, volume day, 8 reps | 90kg x 10 | 85kg | below what he already did |
+| Leg Press, heavy day, 15 reps | 100kg x 15 | **135kg** | thirty five percent beyond his test |
+
+Low-rep lifts came out far too light, high-rep lifts came out impossible, and the flat
+`LIGHT_DAY_LOAD = 0.80` stacked on top of the first failure to produce the number he
+reported.
+
+### The fix
+
+`repPct(reps)` is the **exact inverse of `estimateMax()`**, so the model round-trips: lift W
+for R reps and full effort prescribes W for R reps back. Verified exact on every lift in his
+log (90x10, 100x15, 100x5, 60x8, 50x6).
+
+`weekFactor(pct)` rescales the ladder from "fraction of a one-rep max" to "fraction of what
+you proved in the test", mapping the deload to 0.80 and week six to 1.05. Without this the
+rep-aware base could only ever equal the test and the block could not overload at all.
+
+`LIGHT_DAY_LOAD` dropped from 0.80 to 0.95. The twenty percent cut existed to make the volume
+day easier when both days were prescribed from the same rep-blind number. Now the volume day
+is lighter for the correct reason, because it asks for more reps, and only needs a small trim
+to stay submaximal.
+
+`repsFrom()` parses the prescription, so "12 per leg" reads as twelve and "45 sec" never
+reaches the load maths at all.
+
+### His block after the correction
+
+| lift | day | week 1 top | week 6 top | his test |
+|---|---|---|---|---|
+| Back Squat | heavy, 5 reps | 90kg | 112.5kg | 90 x 10 |
+| Back Squat | volume, 8 reps | 75kg | 95kg | 90 x 10 |
+| Leg Press | heavy, 15 reps | 85kg | 105kg | 100 x 15 |
+| Leg Press | volume, 15 reps | 80kg | 100kg | 100 x 15 |
+| Romanian Deadlift | heavy, 8 reps | 80kg | 100kg | 90 x 10 |
+| Barbell Bench Press | heavy, 5 reps | 85kg | 107.5kg | 100 x 5 |
+
+Every week six figure now sits above the tested performance once converted to a common rep
+basis, and no figure asks for something the lifter has not demonstrated a path to.
+
+**The lesson worth keeping: any prescription derived from a one-rep max must carry the rep
+count with it.** Three separate reports (leg press making no sense, the volume day going
+backwards, and the original low-rep testing problem) were all this same omission.
+
+Sweep after the change: 5,880 combinations, 0 adjacent repeats, 0 over-frequency, 0 empty
+days, 0 duplicate titles, 0 light days without a heavy day. Build clean, 20 routes.
+Still not deployed.

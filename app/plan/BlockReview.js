@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { workingSets, blockProjection, readsAs } from "@/lib/progression";
+import { blockProjection, readsAs, repsFrom } from "@/lib/progression";
 
 // THE END OF WEEK REVIEW.
 //
@@ -46,7 +46,7 @@ export default function BlockReview({ days, profile, maxes, lastSets, weekNo, bl
       if (seen[key]) return;
       seen[key] = true;
       const total = Number(ex.sets) || 1;
-      const proj = blockProjection(ex.name, profile, maxes, total, ladder, ex.intensity);
+      const proj = blockProjection(ex.name, profile, maxes, total, ladder, ex.intensity, repsFrom(ex.reps));
       if (!proj) return;
 
       // The week that has just finished, which is the one there is evidence for.

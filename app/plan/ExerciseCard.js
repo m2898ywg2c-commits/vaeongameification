@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { workingWeight, workingSets, blockProjection, workingHold, increaseHint } from "@/lib/progression";
+import { workingSets, blockProjection, workingHold, increaseHint, repsFrom } from "@/lib/progression";
 import { formTip, coachTip, homeAlternative, needsGym } from "@/lib/exercisedb";
 import { BRAND } from "@/lib/brand";
 import Icon from "../Icon";
@@ -214,11 +214,15 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   // A ramp, not one number repeated. See workingSets in lib/progression.js: the top set is
   // the prescription and the earlier sets climb to it, which is how the printed programme
   // was always meant to be read and how everybody actually lifts.
-  const suggestedSets = kind === "weight" ? workingSets(ex.name, profile, weekPct, maxes, total, ex.intensity) : null;
+  // The prescribed rep count drives the load now. A five rep set and a fifteen rep set are
+  // not the same percentage of the same max, and pretending otherwise was prescribing below
+  // what this person already lifts on some movements and well above it on others.
+  const prescribedReps = repsFrom(ex.reps);
+  const suggestedSets = kind === "weight" ? workingSets(ex.name, profile, weekPct, maxes, total, ex.intensity, prescribedReps) : null;
   const suggested = suggestedSets ? suggestedSets[suggestedSets.length - 1] : null;
   // Where this lift ends up if the block is followed. Shown so the ramp reads as a plan
   // rather than as the app being stingy in week one.
-  const projection = kind === "weight" ? blockProjection(ex.name, profile, maxes, total, null, ex.intensity) : null;
+  const projection = kind === "weight" ? blockProjection(ex.name, profile, maxes, total, null, ex.intensity, prescribedReps) : null;
   const finalTop = projection ? projection[projection.length - 1].top : null;
   const hasRealMax = !!(maxes && maxes[(ex.name || "").toLowerCase()]);
 
