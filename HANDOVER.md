@@ -1073,3 +1073,38 @@ bar. A second discount on top was always double-counting.
 
 **Rule worth keeping: check a block by its start-to-finish gain, not by whether each week's
 number looks sensible.** Two compounding multipliers can each be defensible and still cancel.
+
+### Correction: the block started far too low
+
+Reported as "this is still low, Wednesday went up to 90". Correct, and this one was a
+judgement error rather than an arithmetic one.
+
+`weekFactor` mapped week one to 0.85 of demonstrated capacity. That scale is written for a
+testing week that produces a near-maximal single, which is the classic 70-to-90-percent
+ladder assumption. **This app does not ask for that.** It asks for a working set of 8 to 10
+stopping two short, and James delivered a full five set session ramping to 90kg x 10.
+Opening the next week at 85 percent of that told a man who had just done five sets of ten to
+go and do less. Nobody follows a plan that starts by demoting them.
+
+Rescaled to 0.88 at the deload and 1.08 at week six. Week one now lands just under
+demonstrated capacity, which reads as a start rather than a step back.
+
+| Back Squat, heavy day, 5 reps | top set | vs his 90 x 10 test |
+|---|---|---|
+| week 1 | 97.5kg | -9% |
+| week 3 | 107.5kg | +1% |
+| week 4 | 95kg | -11% (deload) |
+| week 6 | 115kg | +8% |
+
+The volume day tracks the same shape at 87.5kg to 102.5kg, and Leg Press runs 92.5kg to
+107.5kg against his 100 x 15.
+
+Eight percent across a block is ambitious for a true intermediate and about right for a first
+structured block. The safety net was already written and is the reason this is the right side
+to err on: every card says hold the weight and add a rep if a lift stalls, and `readsAs()` in
+the end of week review flags anything coming in under target.
+
+**Three corrections in one day on the same function, each found by James checking a
+prescription against what he had actually lifted.** The pattern worth keeping: numbers derived
+from a model are only testable against real logged performance, never against whether they
+look reasonable in isolation.
