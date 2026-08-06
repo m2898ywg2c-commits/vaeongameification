@@ -1045,3 +1045,31 @@ backwards, and the original low-rep testing problem) were all this same omission
 Sweep after the change: 5,880 combinations, 0 adjacent repeats, 0 over-frequency, 0 empty
 days, 0 duplicate titles, 0 light days without a heavy day. Build clean, 20 routes.
 Still not deployed.
+
+### Correction, same day: the volume day was not progressing at all
+
+Reported as "deployed but not updated". The deploy had in fact landed (the numbers on screen
+matched the rep-aware model exactly), but checking them against the tested capacity exposed
+a worse problem than a stale build.
+
+`LIGHT_DAY_LOAD` was 0.95 and the week six factor is 1.05. **1.05 x 0.95 = 0.9975**, so the
+volume day finished the block 0.2 percent BELOW where it started. Six weeks of training, on
+half the sessions, prescribing no progress whatsoever.
+
+Every individual number looked plausible, which is why it survived two reviews and an
+independent audit. It was only visible by computing the gain across the block rather than
+reading any single week.
+
+`LIGHT_DAY_LOAD` is now 1.0, and the constant is kept only to document why there is no flat
+trim: **the rep count is the trim.** The volume day is already lighter because it asks for
+eight or ten reps instead of five, and the rep-aware base turns that into a genuinely lighter
+bar. A second discount on top was always double-counting.
+
+| lift | day | wk1 top | wk6 top | gain across block |
+|---|---|---|---|---|
+| Back Squat | heavy, 5 reps | 90kg | 112.5kg | +5.5% |
+| Back Squat | volume, 8 reps | 80kg | 100kg | +5.6% |
+| Leg Press | volume, 15 reps | 85kg | 105kg | +5.0% |
+
+**Rule worth keeping: check a block by its start-to-finish gain, not by whether each week's
+number looks sensible.** Two compounding multipliers can each be defensible and still cancel.
