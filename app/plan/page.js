@@ -7,9 +7,10 @@ import { TYPES, isFreestyle } from "@/lib/personality";
 import { buildWeek, primaryCategory, defaultSessionType } from "@/lib/training";
 import { currentWeek, weeksFor, BLOCK_WEEKS, estimateMax, testQuality } from "@/lib/progression";
 import { isGymReady, buildGymWeek, blockWeeksFor, currentWeekIn } from "@/lib/gymready";
-import { quoteFor, sessionIntro, praiseFor } from "@/lib/voice";
+import { quoteFor, sessionIntro, praiseFor, nextQuoteRotation } from "@/lib/voice";
 import { track, rememberIdentity, EVENTS } from "@/lib/events";
 import { currentScheme, accentFor, deepFor } from "@/lib/theme";
+import { startOfThisWeekISO } from "@/lib/week";
 import TypeOrb from "../TypeOrb";
 import TypeCharacter from "../TypeCharacter";
 import DayView from "./DayView";
@@ -21,9 +22,6 @@ const REVIEW_KEY = "vaeon-block-review-week";
 const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const TAB_KEY = "vaeon-plan-tab";
 
-// Monday, local time. Used to work out which of this week's sessions are already done, so
-// a freestyle user can be dropped on the next one they have not touched. Matches the
-// week boundary the dashboard and the leaderboard already use.
 // Which exercises in a day already have logs this week.
 //
 // Matched on the exercise name rather than the index, because a swapped exercise logs
@@ -56,12 +54,10 @@ function localDay() {
   return d.getFullYear() + "-" + m + "-" + day;
 }
 
+// The week's logs are scoped by this. Same boundary as the leaderboard, the streak maths
+// and the plan week counter, because they all now come from lib/week.js.
 function startOfThisWeek() {
-const d = new Date();
-const day = (d.getDay() + 6) % 7;
-d.setHours(0, 0, 0, 0);
-d.setDate(d.getDate() - day);
-return d.toISOString();
+return startOfThisWeekISO();
 }
 
 export default function PlanPage() {
@@ -90,6 +86,10 @@ const [testWarning, setTestWarning] = useState(null);
 // The end of week review. Shown once per week, on the first visit after the week rolls
 // over, and only when there is a week's work behind it to review.
 const [showReview, setShowReview] = useState(false);
+// Advanced once per visit, so the Ready card shows a different line each time you open your
+// training rather than the same one all day. Read in a lazy initialiser so it bumps on mount
+// and not on every re-render, which would change the quote mid-session as you log sets.
+const [quoteRotation] = useState(function () { return nextQuoteRotation(); });
 // What has already been logged this week, by day and by exercise. See the note where it
 // is built for why per-exercise completion could not survive a reload without it.
 const [weekLogs, setWeekLogs] = useState({});
@@ -605,7 +605,7 @@ return (
 <div className="w-full max-w-sm rounded-lg p-6 text-center border" style={{ borderColor: accent + "66", background: "#141A2E" }}>
 <div className="flex justify-center mb-3"><TypeCharacter typeId={tid} size={72} variant="face" /></div>
 <p className="font-display text-xs uppercase tracking-wide mb-3" style={{ color: accent }}>{type ? type.name : "Your coach"}</p>
-<p className="font-display text-lg font-normal leading-snug mb-4">{quoteFor(tid, active)}</p>
+<p className="font-display text-lg font-normal leading-snug mb-4">{quoteFor(tid, active, quoteRotation)}</p>
 {!gym ? <p className="text-xs text-brand-muted mb-5">{sessionIntro(tid, rule.label)}</p> : <p className="text-xs text-brand-muted mb-5">Log it as you go.</p>}
 <button onClick={function () { setShowQuote(false); }} className="w-full py-4 rounded-md font-display"
 style={{ background: accent, color: "var(--brand-bg)" }}>Ready</button>

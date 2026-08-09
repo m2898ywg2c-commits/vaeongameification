@@ -20,15 +20,13 @@ import { EVENTS } from "@/lib/events";
 import { occasionFor } from "@/lib/reminders";
 import { cookies } from "next/headers";
 import { THEME_COOKIE, SCHEME_COOKIE, resolveScheme, accentFor, deepFor } from "@/lib/theme";
+import { startOfWeek as weekStart } from "@/lib/week";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+// One definition, in lib/week.js. See the note there for why this is not open-coded.
 function startOfWeek() {
-const d = new Date();
-const day = (d.getDay() + 6) % 7;
-d.setHours(0, 0, 0, 0);
-d.setDate(d.getDate() - day);
-return d.toISOString();
+return weekStart(new Date()).toISOString();
 }
 
 export default async function DashboardPage({ searchParams }) {

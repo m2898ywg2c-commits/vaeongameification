@@ -7,14 +7,11 @@ import { liftTrends, trendSummary } from "@/lib/progression";
 import { TYPES } from "@/lib/personality";
 import Home from "../Home";
 import { track, EVENTS } from "@/lib/events";
+import { startOfWeek } from "@/lib/week";
 
-// Monday-start week key, matching lib/progression.js
+// Week key. The boundary itself lives in lib/week.js so every screen agrees on it.
 function weekStart(d) {
-  const date = new Date(d);
-  const day = (date.getDay() + 6) % 7;
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() - day);
-  return date.getTime();
+  return startOfWeek(d).getTime();
 }
 
 function shortDate(ms) {

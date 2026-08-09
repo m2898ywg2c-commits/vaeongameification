@@ -1187,3 +1187,56 @@ His block, every figure measured against the 90 x 10 he actually did:
 counts, both intensities, all six weeks. Zero non-deload prescriptions easier than the logged
 effort. The earlier version of this test compared weights and passed while the bug was live,
 which is why it did not catch it. Comparing effort is the only version worth having.
+
+---
+
+## Added 2026-08-09: Sunday weeks, and a quote that changes
+
+### The week now starts on Sunday
+
+Requested. The interesting part is not the day, it is that **the boundary existed in ten
+independent copies**: seven `(d.getDay() + 6) % 7` in app/ and lib/, and three
+`date_trunc('week', ...)` in Postgres. Every one had to agree and nothing enforced it. The
+plan week rolling over on a different day from the leaderboard was already fixed by hand once;
+ten copies is how that comes back.
+
+**`lib/week.js`** is now the only definition on the app side, exporting `WEEK_STARTS_ON`,
+`startOfWeek`, `startOfThisWeekISO`, `weeksBetween` and `dayIndexInWeek`. All seven call sites
+import it: `app/dashboard`, `app/progress`, `app/plan`, `lib/plan.js`, `lib/progression.js`
+(two places) and `lib/gymready.js`. `mondayOf()` is gone.
+
+**`public.week_start(date)`** is the matching definition in Postgres, used by
+`get_leaderboard()` and `settle_streak_freezes()`. `date_trunc('week', ...)` is ISO and always
+returns Monday with no setting to change it, so the SQL side needs its own helper: shift
+forward a day, truncate, shift back.
+
+To move the week again, change `WEEK_STARTS_ON` and `week_start()` together. Nothing else.
+
+Verified: JS and SQL produce the identical week start for all 14 days across a fortnight
+boundary, and `week_start()` returns a Sunday for all 731 days from 2025 to 2027. James's
+block, which began Tuesday 4 August, now runs week 1 through Saturday 8 August and rolls to
+week 2 on Sunday 9 August.
+
+One consequence worth knowing: the leaderboard reset this morning, because today is Sunday
+9 August. Everyone shows 0 for the new week. That is correct, not a regression.
+
+### The Ready card quote
+
+`quoteFor(typeId, seed)` was `(dayOfMonth + tabIndex) % 6`, which is fixed for a whole day.
+Four visits on a Tuesday gave the same line four times, which is how a motivational quote
+becomes wallpaper.
+
+It now takes a `rotation` counter, bumped once per plan visit via `nextQuoteRotation()` and
+persisted in `localStorage`. **Cycling, not random**: with six quotes per type, random repeats
+back to back about one time in six, and a back-to-back repeat is the exact thing being fixed.
+Cycling shows all six before any comes round again.
+
+Read in a `useState` lazy initialiser so it advances on mount rather than on every re-render,
+which would otherwise change the quote mid-session while logging sets. Wrapped in try/catch
+because `localStorage` throws in private browsing on iOS, which is a real configuration here.
+
+Verified: ten consecutive opens give zero back-to-back repeats and all six distinct quotes
+within the first six.
+
+Build clean, 20 routes. No `getDay() + 6`, `mondayOf` or `date_trunc('week'` left anywhere in
+app/ or lib/.
