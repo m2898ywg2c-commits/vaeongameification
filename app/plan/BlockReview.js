@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { blockProjection, readsAs, repsFrom, floorFromHistory } from "@/lib/progression";
+import { blockProjection, readsAs, repsFrom, floorFromHistory, adaptFrom } from "@/lib/progression";
 
 // THE END OF WEEK REVIEW.
 //
@@ -28,7 +28,7 @@ function firstName(screenName) {
   return cut.length > 1 ? cut : raw;
 }
 
-export default function BlockReview({ days, profile, maxes, lastSets, weekNo, blockWeeks, ladder, accent, onDismiss }) {
+export default function BlockReview({ days, profile, maxes, lastSets, weekBests, weekNo, blockWeeks, ladder, accent, onDismiss }) {
   const [open, setOpen] = useState(true);
   if (!open || !days || !days.length) return null;
 
@@ -51,7 +51,13 @@ export default function BlockReview({ days, profile, maxes, lastSets, weekNo, bl
       // Same floor the card uses, so the review cannot promise a week six number the plan
       // itself would refuse to prescribe.
       const floor = floorFromHistory(rowsForFloor, prescribedReps);
-      const proj = blockProjection(ex.name, profile, maxes, total, ladder, ex.intensity, prescribedReps, floor);
+      // And the same adaptation. The review is the screen that tells somebody where the block
+      // is going, so it has to be looking at the block the cards are actually prescribing. A
+      // review projecting the original, unadapted week six would contradict every card
+      // underneath it, which is worse than not showing a projection at all.
+      const adapt = adaptFrom(ex.name, profile, maxes, total, ex.intensity, prescribedReps,
+        weekBests ? weekBests[key] : null, weekNo, ladder);
+      const proj = blockProjection(ex.name, profile, maxes, total, ladder, ex.intensity, prescribedReps, floor, adapt.factor);
       if (!proj) return;
 
       // The week that has just finished, which is the one there is evidence for.

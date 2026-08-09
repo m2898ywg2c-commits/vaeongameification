@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TYPES, isFreestyle } from "@/lib/personality";
 import { buildWeek, primaryCategory, defaultSessionType } from "@/lib/training";
-import { currentWeek, weeksFor, BLOCK_WEEKS, estimateMax, testQuality } from "@/lib/progression";
+import { currentWeek, weeksFor, BLOCK_WEEKS, estimateMax, testQuality, weekOfBlock } from "@/lib/progression";
 import { isGymReady, buildGymWeek, blockWeeksFor, currentWeekIn } from "@/lib/gymready";
 import { quoteFor, sessionIntro, praiseFor, nextQuoteRotation } from "@/lib/voice";
 import { track, rememberIdentity, EVENTS } from "@/lib/events";
@@ -77,6 +77,9 @@ const [maxes, setMaxes] = useState({});
 const [freestyle, setFreestyle] = useState(false);
 const [doneKeys, setDoneKeys] = useState({});
 const [lastSets, setLastSets] = useState({});
+// Best effort demonstrated per lift per block week, which is what the weekly adaptation
+// reads. Built from the same recentLogs query as lastSets, so it costs nothing extra.
+const [weekBests, setWeekBests] = useState({});
 const [avoided, setAvoided] = useState({});
 // Raised when a testing week set lands outside the rep range the block can be built from.
 // Not a blocker: the set is logged either way and the number stands if they mean it. This
@@ -158,6 +161,38 @@ const out = [];
 Object.keys(bySet).forEach(function (i) { out[Number(i)] = bySet[i]; });
 lastByExercise[k].sets = out;
 });
+// WHAT EACH WEEK OF THE BLOCK ACTUALLY PRODUCED, PER LIFT.
+//
+// The prescription used to be decided once and never revisited. adaptFrom needs the other
+// half of the conversation: the best effort demonstrated in each completed week, so the
+// anchor can move towards what is really happening instead of towards what the test
+// predicted six weeks ago.
+//
+// Every set converts to an estimated max before it is compared, exactly as the floor does,
+// because 95kg x 8 and 90kg x 10 are the same session and only one of those is a bigger
+// number. Duplicate rows are harmless here: this takes a maximum, so a set counted twice
+// counts the same.
+//
+// Read off recentLogs, which is already fetched and already covers the block at this volume.
+const bests = {};
+(recentLogs || []).forEach(function (r) {
+const key = (r.exercise || "").toLowerCase();
+if (!key || !r.weight || !r.reps) return;
+const wk = weekOfBlock(p.block_start, r.logged_at, blockWeeksFor(p));
+if (!wk) return;
+const e = estimateMax(Number(r.weight), Number(r.reps));
+if (!e) return;
+if (!bests[key]) bests[key] = {};
+if (!bests[key][wk] || e > bests[key][wk]) bests[key][wk] = e;
+});
+const bestsByLift = {};
+Object.keys(bests).forEach(function (k) {
+bestsByLift[k] = Object.keys(bests[k]).map(function (wk) {
+return { week: Number(wk), est: bests[k][wk] };
+}).sort(function (a, b) { return a.week - b.week; });
+});
+setWeekBests(bestsByLift);
+
 // Gym ready users bring their own plan, so the week is empty slots rather than
 // prescribed sessions.
 const week = isGymReady(p.goals)
@@ -626,6 +661,7 @@ style={{ background: accent, color: "var(--brand-bg)" }}>Ready</button>
     than correction, because nothing in this app scolds. */}
 {showReview && !gym ? (
 <BlockReview days={days} profile={profile} maxes={maxes} lastSets={lastSets}
+weekBests={weekBests}
 weekNo={weekNo} blockWeeks={blockWeeks} ladder={weeksFor(cat)} accent={accent}
 onDismiss={function () {
 setShowReview(false);
@@ -721,6 +757,7 @@ finished={finished} onFinish={finish} />
 ) : (
 <DayView day={day} active={active} profile={profile} rule={rule} accent={accent} deep={deep}
 tid={tid} homeMode={homeMode} done={done} maxes={maxes} isTestWeek={isTestWeek} lastSets={lastSets}
+weekBests={weekBests} weekNo={weekNo} ladder={weeksFor(cat)}
 holdProgression={cat === "yoga"}
 onComplete={completeSet} onReopen={reopen} finished={finished} onFinish={finish} onStation={logStation}
 loggedThisWeek={day ? (weekLogs[day.key] || {}) : {}}

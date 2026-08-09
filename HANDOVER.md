@@ -1240,3 +1240,108 @@ within the first six.
 
 Build clean, 20 routes. No `getDay() + 6`, `mondayOf` or `date_trunc('week'` left anywhere in
 app/ or lib/.
+
+---
+
+## Added 2026-08-09, later: the block now answers back
+
+Requested as "the progressive overload needs to adjust each week if the weights go beyond or
+less than what you have predicted". Everything before this was decided once, on day one, from
+a single tested set. The floor could raise it. Nothing could lower it, and nothing at all
+responded to somebody outperforming their own test.
+
+`adaptFrom()` in `lib/progression.js` compares, for every finished week, the best effort
+demonstrated against **what that week's card actually asked for**, and moves the anchor half
+the distance. The factor multiplies `est` inside `workingWeight`, so the ramp, the six week
+projection and the floor comparison all move together rather than a fourth multiplier being
+bolted onto the end.
+
+Per-week history is built in `app/plan/page.js` from the `recentLogs` query that was already
+there, keyed by `weekOfBlock()`, and passed through `DayView` to `ExerciseCard` and to
+`BlockReview`. No new queries and no migration: the factor is re-derived on every load, so it
+cannot go stale and there is no second copy of the truth.
+
+### Four decisions, three of which were wrong first
+
+**It compares effort, not the number on the bar.** Both sides go through `estimateMax`, the
+same as `floorFromHistory`. 95kg x 8 and 90kg x 10 are the same session.
+
+**It compares against the prescription, not against the ladder.** The prescription includes the
+floor anchoring, which already sits several percent above the raw model. Judging against the
+model read a perfectly followed week as a five percent overshoot. Related and worse: `floorEst`
+starts seeded from `est_max` rather than from zero, because `est_max` came from a real logged
+set and so the floor was already in force on the very first card. Seeded at zero, week one
+re-prescribed at 102.5kg against the 107.5kg actually shown, and **every user would have
+drifted upwards for doing exactly as they were told.**
+
+**The deadbands are asymmetric, 3 percent up and 6 percent down.** The symmetric version had a
+systematic downward bias and it took a convergence test to see it. The ladder asks for about
+twelve percent more in week six than in week one, and that climb is an intention rather than a
+forecast. Almost nobody adds twelve percent to a lift in six weeks, so with one shared band
+every ordinary user missed the later weeks by four or five percent and was quietly backed off.
+Measured: a lifter whose test was exactly right, hitting their honest best every session, was
+adapted down to 0.946 by week six for the crime of not getting stronger on schedule.
+
+**`ADAPT_MIN` is 0.91 and it is arithmetic, not taste.** The ladder climbs 0.964 to 1.06, a
+ratio of 1.0996, so a factor falling faster than 1/1.0996 = 0.9094 outruns the block's own
+progression and the block finishes below where it started. At 0.85 it did exactly that: an
+optimistic test produced six weeks running 107.5 down to 100. **Same class of error as
+`LIGHT_DAY_LOAD` at 0.95 against a week six factor of 1.05.** Two defensible multipliers,
+multiplied, cancelling. Check a block by its start-to-finish gain, never week by week.
+
+The deload is not evidence, because plenty of people ignore it and lifting last week's weight
+on the one week designed to be easy would otherwise drive the largest increase in the block. A
+missed week is not a failed week either: no logged sets means no opinion.
+
+### Convergence, which is the test that matters
+
+A person with a fixed true capacity, lifting their honest best. Does the model find the truth
+and then stop moving?
+
+| Their real capacity vs the test | Factor by week 6 | Block gain wk1 to wk6 |
+|---|---|---|
+| Test was right, 120 | 1.00 | +9.3% |
+| Test 10% optimistic, 108 | 0.91 | 0.0% |
+| Test 17% optimistic, 100 | 0.91 | -4.7% |
+| Test pessimistic, truly 140 | 1.00 | +16.3% |
+
+The third row is negative and is meant to be. That block's week one was built on a test the
+person could never repeat, so walking down to reality is the correct outcome and prescribing
+107.5kg in week six to somebody whose honest best is 90kg would be worse. `testQuality()`
+exists to catch it at the point of testing, which is the cheaper place.
+
+Note the fourth row. Somebody stronger than their test is no longer capped by it.
+
+**Sweep: 129,654 prescriptions** across seven logged weights, seven logged rep counts, seven
+prescribed rep counts, three intensities, three set counts and seven behaviour profiles from
+20 percent under target to 25 percent over. Zero non-deload prescriptions strictly beaten by a
+logged effort, zero factors outside the caps, zero non-finite results, zero ramps that fall,
+and zero blocks finishing below where they started for anyone who met or beat the plan.
+
+The card explains itself: `adaptNote()` puts one muted line under the prescription saying which
+way it moved and why. A plan that silently rewrites itself is indistinguishable from a plan
+with a bug in it, and a downward adjustment especially must not arrive looking like a
+telling-off.
+
+Build clean, 22 routes. Not deployed.
+
+### CHARACTER-BRIEF.md rewritten around the robots
+
+The animals are formally cancelled. The brief now describes the eight robots that actually
+shipped and what is wrong with them: no alpha, identity carried by the background rather than
+by the character (the Hunter is an orange type with cyan eyes standing in an orange scene),
+eight different cameras and poses, and one flat raster with nothing in it that can move.
+
+The substance of the rewrite is a **layered delivery spec**, because the completion fanfare is
+already as good as a flat asset allows. Seven layers per character on an identical canvas,
+emissive drawn in flat white so the app tints it with the user's own accent, a `rig.json` of
+pivots as canvas fractions, and one shared neutral pose so eight characters can share one
+animation. Plus the three-beat fanfare it makes possible, and the `prefers-reduced-motion`
+collapse, specified but deliberately not built until assets exist.
+
+Honest note in there about Canva: it cannot produce true alpha or split a figure into
+registered layers, so it is the wrong tool for the character and the right one for the deck,
+the share card and the store artwork.
+
+**Do the Hunter only.** One character all the way through to a moving rig, then decide about
+the other seven once week six of the test says whether type predicts adherence at all.

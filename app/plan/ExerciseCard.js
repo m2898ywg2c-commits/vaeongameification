@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { workingSets, blockProjection, workingHold, increaseHint, repsFrom, floorFromHistory } from "@/lib/progression";
+import { workingSets, blockProjection, workingHold, increaseHint, repsFrom, floorFromHistory, adaptFrom, adaptNote } from "@/lib/progression";
 import { formTip, coachTip, homeAlternative, needsGym } from "@/lib/exercisedb";
 import { BRAND } from "@/lib/brand";
 import Icon from "../Icon";
@@ -162,7 +162,7 @@ function describeSet(row) {
   return bits.join(" ");
 }
 
-export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, holdProgression, onComplete, onReopen, onAvoid, logged }) {
+export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, history, weekNo, ladder, holdProgression, onComplete, onReopen, onAvoid, logged }) {
   const total = Number(ex.sets) || 1;
   const swap = homeMode && needsGym(ex.name);
   const alt = swap ? homeAlternative(ex.name) : "";
@@ -223,11 +223,29 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   // for a session this person has already beaten. Computed from `last`, which is the most
   // recent session for this lift and is already loaded.
   const historyFloor = !swap && last && last.sets ? floorFromHistory(last.sets, prescribedReps) : null;
-  const suggestedSets = kind === "weight" ? workingSets(ex.name, profile, weekPct, maxes, total, ex.intensity, prescribedReps, historyFloor) : null;
+  // THE BLOCK NOW ANSWERS BACK, WEEK BY WEEK.
+  //
+  // Everything else on this line was decided once, from one tested set, and could only ever
+  // be revised upwards by the floor. So a block built on an optimistic test stayed optimistic
+  // for six weeks, and somebody climbing faster than the ladder expected spent the back half
+  // beating a number that had stopped meaning anything.
+  //
+  // adaptFrom compares what was demonstrated in each finished week with what that week's card
+  // actually asked for, and moves the anchor half the distance, capped. A swapped exercise is
+  // excluded for the same reason its history is: it is a different movement wearing the same
+  // name, and its sets are not evidence about this one.
+  const adapt = !swap && kind === "weight"
+    ? adaptFrom(ex.name, profile, maxes, total, ex.intensity, prescribedReps, history, weekNo, ladder)
+    : null;
+  const adjust = adapt ? adapt.factor : 1;
+  const suggestedSets = kind === "weight" ? workingSets(ex.name, profile, weekPct, maxes, total, ex.intensity, prescribedReps, historyFloor, adjust) : null;
   const suggested = suggestedSets ? suggestedSets[suggestedSets.length - 1] : null;
+  // Why the number moved, in one sentence, on the card that moved it. A plan that quietly
+  // rewrites itself is indistinguishable from a plan with a bug in it.
+  const adaptLine = adapt && adapt.steps.length ? adaptNote(adapt.factor) : null;
   // Where this lift ends up if the block is followed. Shown so the ramp reads as a plan
   // rather than as the app being stingy in week one.
-  const projection = kind === "weight" ? blockProjection(ex.name, profile, maxes, total, null, ex.intensity, prescribedReps, historyFloor) : null;
+  const projection = kind === "weight" ? blockProjection(ex.name, profile, maxes, total, null, ex.intensity, prescribedReps, historyFloor, adjust) : null;
   const finalTop = projection ? projection[projection.length - 1].top : null;
   const hasRealMax = !!(maxes && maxes[(ex.name || "").toLowerCase()]);
 
@@ -452,6 +470,12 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
             <p className="text-[0.75rem] mt-1" style={{ color: accent }}>
               Week 6 of this block: {finalTop}kg
             </p>
+          ) : null}
+          {/* The plan has changed itself, so it says so. Muted rather than accented: this is
+              an explanation for a number somebody might question, not an announcement, and
+              a downward adjustment especially must not arrive looking like a telling-off. */}
+          {adaptLine ? (
+            <p className="text-[0.7rem] mt-1 text-brand-muted">{adaptLine}</p>
           ) : null}
         </div>
       ) : null}
