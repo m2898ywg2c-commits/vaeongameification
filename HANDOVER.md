@@ -1345,3 +1345,115 @@ the share card and the store artwork.
 
 **Do the Hunter only.** One character all the way through to a moving rig, then decide about
 the other seven once week six of the test says whether type predicts adherence at all.
+
+### Split into eight, because Canva caps a field at 4,000 characters
+
+`character-briefs/` now holds one standalone file per character plus `00-README.md` as the
+index. Each is 3,500 to 3,800 characters and carries its own prompt, palette, layer filenames
+and a full copy of the locked rules. The prompt block alone is 861 characters if a tighter
+field ever turns up, and it is the only part an image generator acts on: the tables are for
+whoever judges the result.
+
+Each brief also names what actually distinguishes that character once the background is gone,
+which the combined document never did. The Hunter has a visor slit rather than the full oval,
+the Monk a completely seamless shell, the Wanderer exposed joints and no plating. This mattered
+more than expected: several of the shipped renders are currently identifiable only by the
+colour of the scenery behind them.
+
+**The locked rules now exist in nine places**, this file's master copy and one per brief. That
+is the same trap as `lib/brand.js` against `app/globals.css` and it is called out in both
+documents. Change one, change all nine.
+
+---
+
+## Added 2026-08-09, later still: "1 of the last 8 weeks"
+
+Reported as "progress says you have hit 1 of your 8 last week, I am only doing 4 per week".
+Four separate problems behind one sentence, and the reported one was the least serious.
+
+**A session was a ROW, and it was counted that way in four places.** `get_leaderboard`,
+`weeks_kept` inside it, `settle_streak_freezes` and `computeStats` all did `count(*)` over
+`training_sessions`, and a row is written every time a plan day is completed. James's week
+beginning 2 August: **ten rows across five days**, of which `hyrox-push` appears on four
+consecutive days. That is one plan slot filled four times, not four sessions. The progress
+chart drew a bar of ten against a pledge line of four.
+
+Checked against the other testers before touching anything: Hampo8 logged five rows on five
+days and CatFisher one on one, so this was not a duplicate-write bug. The write guard added on
+4 August works. It is a definition problem, and the definition was in four copies.
+
+`public.session_key(day_key, id)` and `sessionKey()` in `lib/week.js` are now the single
+definition, mirrored the same way `week_start()` and `startOfWeek()` are. Plan days collapse by
+`day_key`; anything with a null `day_key` is a quick log, cannot be proved a repeat of
+anything, and stands alone. That errs towards crediting work rather than withholding it, which
+is the right direction in an app whose whole problem is people not coming back.
+
+James's week now reads 5 rather than 10, in SQL and in JS, verified against each other.
+`sessionsByWeek()` is the one function every adherence screen should go through.
+
+**The current week was scored as a miss.** The chart covered eight weeks and scored all eight,
+and the eighth is the week in progress. On a Sunday that week is a few hours old and cannot
+possibly have met a pledge, so everybody's number dropped every Sunday and climbed back through
+the week. Finished weeks only now, seven of them, and the current week's bar is drawn as a
+dashed outline rather than the same grey as a real miss.
+
+**The eight-week walk-back was DST-unsafe, in two files.** `thisWeek - i * 7 * 24 * 60 * 60 *
+1000` in the progress chart and `w -= weekMs` in `computeStats` both assume every week is
+exactly 604800000ms. The week containing the last Sunday in October is 25 hours. From November
+onwards every key before the change comes out an hour adrift of the keys sessions are filed
+under, the chart shows zeros for half the year and a long streak silently truncates at the
+clock change. Both now step the date and re-derive the boundary. Verified: eight consecutive
+buckets back from 15 November 2026 are all local-midnight Sundays.
+
+**And the copy.** "You hit your pledge in 1 of the last 8 weeks" has two numbers in it and
+names only one of them, which is why the man who set the pledge to four read the eight as a
+target. It now says "You pledged 4 sessions a week, and hit that in 1 of the last 7 full
+weeks."
+
+Migration `supabase/2026-08-09_session_key.sql`, **applied**. Build clean.
+
+### schema-live.sql regenerated, and it was not bookkeeping
+
+The previous capture was 30 July and had gone eleven days stale, which is about the fortnight
+its own header warned about. Missing entirely: `exercise_prefs`, `set_feedback`,
+`streak_freezes`, `challenges`, `push_subscriptions` and `body_metrics`; four columns on
+`exercise_logs`; three on `lift_maxes`; eight on `profiles`; both unique de-duplication
+indexes; the `profiles` trigger; and six functions.
+
+Regenerating from `pg_catalog` surfaced **three live defects nobody had reported**, all now
+fixed and applied.
+
+**`due_reminders()` was still on ISO Mondays.** The Sunday work earlier today verified "no
+`date_trunc('week'` left anywhere" by grepping the repo, and this call site lives only in the
+database. On a Sunday, `date_trunc('week')` returns the Monday six days ago, so
+`done_this_week` counted the week that had just ended: anybody who met their pledge last week
+was treated as already finished on the first day of the new one, and their Sunday nudge never
+fired. The day the reminder matters most was the one day it could not arrive.
+**Grep the database, not the checkout.** `week_start` is now verified to be the only function
+in `public` whose body contains `date_trunc('week')`, which is correct, since it is the
+definition.
+
+**`due_reminders()` and `current_challenge()` still counted rows**, so they were two more
+copies of the session-definition bug and were not in the morning's pass. Both now use
+`session_key()`.
+
+**`session_key` was executable by `anon`, and my own revoke had not worked.** This is a second
+trap on top of the one `rpc_permissions.sql` documents. Revoking from PUBLIC is not enough on
+Supabase: its `ALTER DEFAULT PRIVILEGES` grants EXECUTE on every new function in `public` to
+`anon`, `authenticated` and `service_role` **explicitly** at creation, so after revoking PUBLIC
+the ACL still read `anon=X/postgres`. Both revokes are needed. Caught only because the
+regeneration reads `has_function_privilege` for every function rather than trusting that the
+statement succeeded, which is exactly what that file tells you to do.
+
+Migration `supabase/2026-08-09_reminder_week_and_challenge_count.sql`, **applied**.
+
+All three SQL files parse under the real Postgres parser (`pglast`, libpg_query): 108, 7 and 2
+statements. The snapshot's gaps section is rewritten and ordered by what I would close first;
+the top two are unchanged from July and both are about durability rather than features, namely
+the client-side profile creation that orphans auth users, and **the free plan meaning no daily
+backups on a database that has already had a day of manual data surgery.**
+
+One deliberate non-change: `week_start` is still executable by `anon` and still carries the
+default PUBLIC grant. It is an immutable pure function over a date, so the exposure is nil, but
+it is the last inconsistency in the grant table. Left alone on purpose, because a snapshot
+regeneration is not where behaviour should change. It is listed in the gaps.

@@ -7,7 +7,7 @@ import { liftTrends, trendSummary } from "@/lib/progression";
 import { TYPES } from "@/lib/personality";
 import Home from "../Home";
 import { track, EVENTS } from "@/lib/events";
-import { startOfWeek } from "@/lib/week";
+import { startOfWeek, sessionsByWeek } from "@/lib/week";
 
 // Week key. The boundary itself lives in lib/week.js so every screen agrees on it.
 function weekStart(d) {
@@ -137,6 +137,12 @@ function BarChart({ bars, accent, pledge }) {
       {bars.map(function (b, i) {
         const hgt = Math.max(0, H - padB - y(b.v));
         const hit = pledge ? b.v >= pledge : b.v > 0;
+        // THE CURRENT WEEK IS NOT A FAILED WEEK, IT IS AN UNFINISHED ONE.
+        //
+        // The last bar is the week in progress. Painted in the same grey as a genuine miss it
+        // said "you have not hit your pledge", which on a Sunday morning is true of everybody
+        // and is not information. It is outlined instead: present, honest about the count so
+        // far, and visibly not yet judged.
         return (
           <g key={i}>
             <rect
@@ -145,7 +151,10 @@ function BarChart({ bars, accent, pledge }) {
               width={bw}
               height={hgt}
               rx="3"
-              fill={hit ? accent : "var(--brand-line)"}
+              fill={b.partial ? "none" : hit ? accent : "var(--brand-line)"}
+              stroke={b.partial ? accent : "none"}
+              strokeWidth={b.partial ? 1 : 0}
+              strokeDasharray={b.partial ? "3 3" : "0"}
             />
             <text
               x={i * (bw + gap) + gap / 2 + bw / 2}
@@ -218,20 +227,41 @@ export default function ProgressPage() {
     .filter(function (m) { return m.bodyweight !== null && m.bodyweight !== undefined; })
     .map(function (m) { return { y: Number(m.bodyweight), label: shortDate(new Date(m.logged_at).getTime()) }; });
 
-  // Sessions: last 8 weeks, Monday start, empty weeks included.
-  const counts = {};
-  sessions.forEach(function (s) {
-    const w = weekStart(s.logged_at);
-    counts[w] = (counts[w] || 0) + 1;
-  });
+  // Sessions: the last 8 weeks, on the shared week boundary, empty weeks included.
+  //
+  // Counted through sessionsByWeek so a repeat of the same plan day is one session, not two.
+  // This chart used to tally rows and drew a bar of ten against a pledge line of four for a
+  // week containing four plan days and a quick log. See lib/week.js.
+  const counts = sessionsByWeek(sessions);
   const thisWeek = weekStart(new Date());
   const bars = [];
   for (let i = 7; i >= 0; i--) {
-    const w = thisWeek - i * 7 * 24 * 60 * 60 * 1000;
-    bars.push({ v: counts[w] || 0, label: shortDate(w) });
+    // STEPPED IN DAYS, NOT IN MILLISECONDS.
+    //
+    // This was `thisWeek - i * 7 * 24 * 60 * 60 * 1000`, which assumes every week is exactly
+    // 604800000ms. In the UK the week containing the last Sunday in March is 23 hours long
+    // and the one in October is 25. From November onwards, looking back eight weeks crosses
+    // the October change, every bucket key before it comes out an hour adrift, none of them
+    // match the keys the sessions were filed under, and the chart quietly shows zeros for
+    // half the year. Stepping the date and re-deriving the boundary cannot drift.
+    const d = new Date(thisWeek);
+    d.setDate(d.getDate() - i * 7);
+    const w = weekStart(d);
+    bars.push({ v: counts[w] || 0, label: shortDate(w), partial: i === 0 });
   }
   const pledge = profile && profile.sessions_per_week ? profile.sessions_per_week : null;
-  const weeksHit = bars.filter(function (b) { return pledge ? b.v >= pledge : b.v > 0; }).length;
+  // FINISHED WEEKS ONLY.
+  //
+  // The score counted all eight bars, and the eighth is the week currently in progress. On a
+  // Sunday that week is a few hours old, cannot possibly have met a pledge, and was being
+  // counted as a miss. Everybody's number therefore fell by one every Sunday and climbed back
+  // during the week, which reads as the app losing track rather than as a calendar.
+  //
+  // Same principle as the deload being exempt from the progression floor: do not score a
+  // period against a target it was never given the chance to meet.
+  const finished = bars.slice(0, bars.length - 1);
+  const weeksHit = finished.filter(function (b) { return pledge ? b.v >= pledge : b.v > 0; }).length;
+  const weeksScored = finished.length;
 
   // Lifts.
   const trends = liftTrends(logs);
@@ -275,11 +305,19 @@ export default function ProgressPage() {
             <div className={card}>
               <p className="font-display text-base font-normal mb-1">Sessions per week</p>
               <p className="text-sm text-brand-muted mb-4">
+                {/* THE NUMBER THAT IS NOT THE PLEDGE HAS TO SAY WHAT IT IS.
+                    "You hit your pledge in 1 of the last 8 weeks" was read as the app
+                    expecting eight of something, by the person who set the pledge to four and
+                    knows perfectly well what it is. Two numbers in one sentence and only one
+                    of them named. The pledge is now stated outright, so the eight has nothing
+                    left to be confused with. */}
                 {sessions.length === 0
                   ? "Nothing logged yet."
                   : pledge
-                    ? "You hit your pledge in " + weeksHit + " of the last 8 weeks."
-                    : "Last 8 weeks."}
+                    ? "You pledged " + pledge + " sessions a week, and hit that in "
+                      + weeksHit + " of the last " + weeksScored
+                      + " full weeks. The dotted bar is this week, still going."
+                    : "Last 8 weeks. The dotted bar is this week, still going."}
               </p>
               {sessions.length === 0 ? (
                 <Empty text="Log a session and this fills in. Eight weeks of bars tells you more than any single week ever will." />

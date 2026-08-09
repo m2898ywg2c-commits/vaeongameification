@@ -142,6 +142,12 @@ picture of a running character can only ever run in that one direction at that o
 Unchanged from the previous brief where they were right, which is most of them. Lock these
 before generating number two.
 
+**These live in two places.** This table and a copy inside every one of the eight briefs in
+`character-briefs/`. Change one, change all nine, the same discipline as `lib/brand.js` and
+`app/globals.css`. The duplication is deliberate, because a brief that points elsewhere for its
+rules is a brief whose rules do not get read, but duplication only survives if everybody knows
+it is there.
+
 | Rule | Value |
 |---|---|
 | Subject | Chibi robot, as shipped: pearl helmet, dark visor, armour panels, V chevron |
@@ -157,50 +163,44 @@ before generating number two.
 
 ---
 
-## The eight
+## The eight, one file each
 
-| Type | Code | Main | Deep | Keeps |
-|---|---|---|---|---|
-| The Architect | Planned · Outcome · Solo | `#7C8CF8` | `#3D2E8C` | Antenna, panel lines |
-| The Captain | Planned · Outcome · Together | `#2DD4BF` | `#0F766E` | Shoulder pauldrons |
-| The Monk | Planned · Experience · Solo | `#4CC9F0` | `#155E75` | Smooth, unadorned shell |
-| The Anchor | Planned · Experience · Together | `#AE63F0` | `#5B2394` | Chest heart |
-| The Hunter | Freestyle · Outcome · Solo | `#FF8C42` | `#7A2E0E` | Visor slit, lean forward |
-| The Gladiator | Freestyle · Outcome · Together | `#E052A0` | `#6B1547` | Armoured forearms |
-| The Wanderer | Freestyle · Experience · Solo | `#3DDC97` | `#0E5C3F` | Light frame, no armour |
-| The Spark | Freestyle · Experience · Together | `#FF6B57` | `#8C2318` | Round, open, upright |
+**This document does not brief the characters.** Canva caps a field at 4,000 characters and
+this file is four times that. Eight characters in one document is also how a rule gets changed
+for one of them and quietly not for the other seven.
 
-**The Captain and the Monk are 20 degrees apart in hue**, measured on the rendered artwork
-rather than the hex codes, and they are the tightest pair in the set. Render those two first
-and put them side by side at 38px before committing to the other six.
+Each character has a standalone brief in `character-briefs/`, between 3,500 and 3,800
+characters, carrying its own prompt, palette, layer filenames and the locked rules repeated in
+full. Hand over one file, get back one character. `character-briefs/00-README.md` is the index.
 
----
+| Brief | Type | Code | Main | Deep | Distinguishing feature |
+|---|---|---|---|---|---|
+| `01-hunter.md` | The Hunter | Freestyle · Outcome · Solo | `#FF8C42` | `#7A2E0E` | Narrow visor slit, head forward |
+| `02-architect.md` | The Architect | Planned · Outcome · Solo | `#7C8CF8` | `#3D2E8C` | Antenna, fine panel seams |
+| `03-captain.md` | The Captain | Planned · Outcome · Together | `#2DD4BF` | `#0F766E` | Raised shoulder pauldrons |
+| `04-monk.md` | The Monk | Planned · Experience · Solo | `#4CC9F0` | `#155E75` | Smooth seamless shell |
+| `05-anchor.md` | The Anchor | Planned · Experience · Together | `#AE63F0` | `#5B2394` | Chest heart, planted stance |
+| `06-gladiator.md` | The Gladiator | Freestyle · Outcome · Together | `#E052A0` | `#6B1547` | Bracers and shin guards |
+| `07-wanderer.md` | The Wanderer | Freestyle · Experience · Solo | `#3DDC97` | `#0E5C3F` | No plating, exposed joints |
+| `08-spark.md` | The Spark | Freestyle · Experience · Together | `#FF6B57` | `#8C2318` | Oversized visor, roundest |
 
-## Step one: the pilot. One robot, not eight
+Everything the briefs share, they repeat rather than reference. That is deliberate: a brief
+that says "see the other document for the rules" is a brief whose rules do not get read.
 
-Generate the **Hunter** alone and take it all the way through to layered files and a working
-animation in the app before anybody generates a second character. It is the strongest colour
-in the set, it is the type James holds so he will spot a wrong note fastest, and it is the one
-currently getting its identity entirely from its background, so it is the hardest case.
+The numbering is the order to make them in. **The Hunter is first because it is the pilot**:
+strongest colour in the set, the type James holds so he will spot a wrong note fastest, and the
+one currently taking its whole identity from its background, which makes it the hardest case
+rather than the easiest. Take it all the way through to layered files and a working animation
+in the app before anybody generates a second character.
 
-> A stylised 3D chibi robot character, standing neutrally at rest, weight even on both feet,
-> arms relaxed at the sides with clear space between the arms and the torso. Three-quarter
-> view, eye level, head turned to camera, confident and capable rather than cute. Large
-> rounded pearl-white helmet with a smooth dark visor, matte charcoal armour panels on the
-> torso and limbs, chunky boots, a small V chevron on the chest. Warm orange #FF8C42 accent
-> panels and glowing eyes, deep burnt umber #7A2E0E in the recesses, no other hues. Soft key
-> light from the upper left, gentle rim light on the right edge. Clean vector-friendly forms,
-> smooth surfaces, minimal texture. Full body, centred, generous margin, flat even lighting on
-> the silhouette. Transparent background, no floor, no shadow, no scenery, no light effects.
+Two pairs to watch, both flagged again inside their own briefs:
 
-Judge it on four things, in this order:
-
-1. Squint. Does the **silhouette alone** still read as a Vaeon robot?
-2. Put it next to the shipped Hunter. Is it recognisably the same character?
-3. Delete the background. Is there still a character there, or was the character the scenery?
-4. Rotate the arm layer 30 degrees. Does it clip the torso?
-
-Only question four is new, and it is the one that will fail.
+- **The Captain and the Monk are 20 degrees apart in hue**, measured on the rendered artwork
+  rather than the hex codes, and they are the tightest pair in the set. That is why they are
+  consecutive. Make them back to back and put them side by side at 38px before committing to
+  anything after them.
+- **The Spark and the Hunter** are both warm, coral against orange. Round against trim, and the
+  largest visor in the set against the smallest, is all that separates them.
 
 ---
 
