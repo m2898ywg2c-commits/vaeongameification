@@ -57,6 +57,10 @@ const PATHS = {
   ruler: <path d="M3 9h18v6H3z M7 9v3 M11 9v4 M15 9v3 M19 9v4" />,
   // Home or fallback session.
   home: <path d="M3 11l9-8 9 8 M6 9v12h12V9" />,
+  // Nutrition and the weekly shop. A basket rather than a plate: the plate is the outcome,
+  // the basket is the thing you actually do on a Sunday. Drawn with straight sides so it keeps
+  // the mitres, and the two handles read at 18px where a fork and knife would not.
+  basket: <path d="M3 8h18l-2 12H5z M8 8l2-5 M16 8l-2-5 M10 12v4 M14 12v4" />,
   // Rest timer.
   clock: <path d="M12 3a9 9 0 100 18 9 9 0 000-18z M12 7v5l3 3" />,
   // Group challenge. Two figures reduced to shoulders, no faces.

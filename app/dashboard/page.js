@@ -351,6 +351,16 @@ style={{ borderColor: BRAND.line, background: BRAND.line }}>
 { href: "/settings", icon: "sliders", label: "Stats and settings" },
 { href: "/feedback", icon: "kudos", label: "Send feedback" },
 ]
+// THE NUTRITION TILE IS ABSENT RATHER THAN GREYED, WHICH IS THE OPPOSITE OF THE FALLBACK
+// TILE BELOW, AND THE DIFFERENCE IS DELIBERATE.
+//
+// "Train without a gym" is greyed for Gym ready users because it is a real feature that is
+// genuinely not for them, and saying so is useful. Nutrition is not off for a reason the
+// user would recognise, it is off because a test is running. A greyed tile would advertise
+// something nobody can have and generate a support question with no good answer.
+.concat(profile.nutrition_enabled
+  ? [{ href: "/nutrition", icon: "basket", label: "This week's food" }]
+  : [])
 // Was a permanent amber banner asking "can't get to the gym today?", which most days
 // is a question whose answer is obviously no. It is a destination, so it belongs with
 // the other destinations.
@@ -363,10 +373,21 @@ style={{ borderColor: BRAND.line, background: BRAND.line }}>
 // fault rather than a gap. Present but plainly inert says "not for you" and keeps the
 // block square.
 .concat([{ href: "/fallback", icon: "home", label: "Train without a gym", off: gym }])
-.map(function (t) {
+// KEEPING THE BLOCK SQUARE WHEN THE COUNT IS ODD.
+//
+// The greyed fallback tile above solved this once by never removing a cell. The nutrition
+// tile broke it again from the other direction, by adding one, and the fix cannot be the
+// same: there is no honest inert tile to pair it with, because the thing it would be
+// advertising is switched off for a reason the user has no way to act on.
+//
+// So the last tile spans both columns when the total is odd. That is general rather than a
+// patch for this one case, and the next tile anybody adds will not reopen the hole.
+.map(function (t, i, arr) {
+const wide = arr.length % 2 === 1 && i === arr.length - 1;
+const span = wide ? " col-span-2" : "";
 if (t.off) {
 return (
-<div key={t.href} aria-hidden="true" className="flex items-center gap-2.5 px-3 py-4"
+<div key={t.href} aria-hidden="true" className={"flex items-center gap-2.5 px-3 py-4" + span}
 style={{ background: BRAND.bg, opacity: 0.32 }}>
 <span style={{ color: BRAND.dim }}><Icon name={t.icon} size={18} /></span>
 <span className="text-sm" style={{ color: BRAND.dim }}>{t.label}</span>
@@ -374,7 +395,7 @@ style={{ background: BRAND.bg, opacity: 0.32 }}>
 );
 }
 return (
-<a key={t.href} href={t.href} className="flex items-center gap-2.5 px-3 py-4" style={{ background: BRAND.bg }}>
+<a key={t.href} href={t.href} className={"flex items-center gap-2.5 px-3 py-4" + span} style={{ background: BRAND.bg }}>
 <span style={{ color: accent }}><Icon name={t.icon} size={18} /></span>
 <span className="text-sm">{t.label}</span>
 </a>

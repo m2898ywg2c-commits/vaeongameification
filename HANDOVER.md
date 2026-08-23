@@ -1457,3 +1457,105 @@ One deliberate non-change: `week_start` is still executable by `anon` and still 
 default PUBLIC grant. It is an immutable pure function over a date, so the exposure is nil, but
 it is the last inconsistency in the grant table. Left alone on purpose, because a snapshot
 regeneration is not where behaviour should change. It is listed in the gaps.
+
+---
+
+## Added 2026-08-09: the nutrition tab
+
+`/nutrition`. A weekly meal plan that learns from like and not-for-me, with a shopping list
+scaled to the household. **Gated on `profiles.nutrition_enabled`, true for Hampo-1978 only.**
+
+The gate is not caution for its own sake. The six week test is running and exists to measure
+whether this app gets somebody to session three. A new tab appearing mid-block would make the
+31 August block end report unreadable as evidence, because nobody could say afterwards which
+change moved the number. Open it up after 10 September.
+
+**Files.** `supabase/2026-08-09_nutrition.sql` (applied), `lib/nutrition.js`,
+`app/nutrition/page.js`, a `basket` icon, and a gated tile on the dashboard.
+
+**Three tables.** `meals` is a shared read-only library, maintained by migration, with no
+insert policy at all: a user-editable recipe library is a moderation problem nobody here has
+time to run. `meal_prefs` is one verdict per person per meal, changed rather than appended,
+because "do you like this" has a current answer rather than a history. `meal_plans` stores the
+week that was actually issued.
+
+**Why the plan is stored rather than recomputed.** The picker is deterministic, so it could be
+pure. It reads preferences though, and preferences change the moment you press dislike, so a
+recomputing plan would rewrite Thursday's dinner because you disliked Monday's, after you had
+already bought Thursday's ingredients. The week is written once on first view and is then a
+fact. Verdicts land the following Sunday, which is also when you next shop.
+
+### The learner did nothing at all, and the tests are the only reason I know
+
+The first version passed every invariant: deterministic, no duplicates, dislikes never return,
+no deadlock on a small library, protein cap respected. All green, and completely useless.
+
+Measuring the actual effect rather than the correctness is what caught it. Liking every
+traybake in the library moved traybake frequency **from 1.78 dinners a week to 1.68**. Not just
+too small to notice, the wrong sign. Two independent causes, both invisible to a pass-or-fail
+test:
+
+**`scoreMeal` divided by every tag, not by the judged ones.** Meals carry three to five tags,
+so a strong opinion about "traybake" on a dish tagged `{chicken, korean, noodle, traybake,
+spicy}` was divided by five before it reached the picker. Every signal in the system was
+quartered. It now averages over tags that have an opinion and damps by the square root of
+coverage, so partial overlap still counts as the weaker evidence it is rather than as nothing.
+
+**The weighting was linear and far too flat.** `0.15 + (score + 1)` maps neutral to 1.15 and a
+strong like to 1.82, which through a `1/weight` exponent is very nearly no difference. Now
+`exp(2.5 * score)`: -1 maps to 0.08, 0 to 1, +1 to 12. Bounded both ends, never zero, so a
+merely unfavoured meal still surfaces occasionally rather than being buried for good.
+
+After both: liking one traybake lifts its tag-mates from 1.25 a week to 1.49, and a curry
+preference lifts curry from 1.45 to 1.71. Real, and visible within a month.
+
+**The remaining limit is the library, not the algorithm, and it is measurable.** Preference
+lift against library size, holding everything else constant:
+
+| Dinners in library | Lift from a like |
+|---|---|
+| 14 (today) | 26% |
+| 21 | 40% |
+| 28 | 48% |
+| 42 | 58% |
+
+At fourteen dinners the picker takes half the library every week, so there is barely any room
+for a preference to express itself. **Getting to about thirty dinners is worth more than any
+further work on the scoring.** That is the next job on this feature, and it is data entry
+rather than engineering.
+
+### Things it deliberately does not do
+
+**One dinner a week is always something never served before**, taken first so the protein cap
+and the repeat window cannot crowd it out. A learner that only serves your favourites narrows
+to five meals and then you stop opening the tab. Same failure as the Ready card quote that was
+fixed for a whole day: technically working, practically dead. Verified: twelve weeks under a
+strong salmon preference still touched all fourteen dinners.
+
+**No more than two dinners a week share a primary protein**, whatever the preferences say.
+
+**Pressing the verdict you already gave clears it.** "Not for me" on the exercise card has
+already shown what a one-way door does to somebody who mis-taps.
+
+**Nothing fails hard.** With a small library or after a run of dislikes, a strict picker returns
+four dinners and a broken screen. It relaxes the repeat window, then the protein cap, and only
+then allows a short week. A plan that quietly repeats last Tuesday is a far better failure than
+a plan with holes in it. Tested down to a seven dinner library with everything recently served.
+
+### Two smaller things
+
+The Elsewhere grid needed an even number of tiles, which is why the fallback tile is greyed
+rather than removed for Gym ready users. The nutrition tile broke that from the other side by
+adding one. The last tile now spans both columns when the count is odd, which is general rather
+than a patch and means the next tile added will not reopen the hole.
+
+Macros on meal cards are estimates and the schema says so with `macros_estimated`. Nobody has
+put these dishes through a lab. Intake is controlled by the weighed portion rule on the page,
+not by the number on the card, and the card should not be allowed to start pretending
+otherwise.
+
+Recipe links go to real published pages, checked against the live site rather than assembled
+from a pattern. The ingredient lists are ours, deliberately: they scale to the household and
+carry an aisle so the list sorts the way a supermarket is walked.
+
+Build clean, 23 routes. Not deployed.
