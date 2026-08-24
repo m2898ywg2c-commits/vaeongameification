@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TYPES } from "@/lib/personality";
 import { startOfWeek } from "@/lib/week";
-import { pickWeek, shoppingList, dayTotals, DAYS, isShoppingDay } from "@/lib/nutrition";
+import { pickWeek, shoppingList, dayTotals, DAYS, isShoppingDay, oldEnoughForNutrition, ALLERGEN_LABELS, NUTRITION_MIN_AGE } from "@/lib/nutrition";
 import { track, EVENTS } from "@/lib/events";
 import Icon from "../Icon";
 import Home from "../Home";
@@ -60,7 +60,15 @@ export default function NutritionPage() {
 
       const { data: p } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (!p) { router.push("/onboarding"); return; }
-      if (!p.nutrition_enabled) { setBlocked(true); setLoading(false); return; }
+      if (!p.nutrition_enabled) { setBlocked("off"); setLoading(false); return; }
+      // Age is checked here as well as on the setup screen rather than only there. A profile
+      // whose birth year is corrected downwards after setup would otherwise keep a calorie
+      // target it should no longer have, because the gate would only ever have run once.
+      if (!oldEnoughForNutrition(p.birth_year)) { setBlocked("age"); setLoading(false); return; }
+      // Unconfigured accounts go and configure. There is nothing sensible to show somebody
+      // whose maintenance calories are unknown, and a plan built on a default would be a
+      // confident wrong number, which is worse than a form.
+      if (!p.kcal_target || !p.nutrition_goal) { router.push("/nutrition/setup"); return; }
 
       const { data: a } = await supabase.from("assessment_results").select("type_id")
         .eq("user_id", user.id).order("completed_at", { ascending: false }).limit(1).maybeSingle();
@@ -82,7 +90,8 @@ export default function NutritionPage() {
       if (!thisWeek) {
         const picked = pickWeek(allMeals || [], myPrefs || [],
           (history || []).filter(function (h) { return h.week_start !== weekStart; }),
-          user.id, weekStart);
+          user.id, weekStart,
+          { allergens: p.allergens || [], budget: p.budget_pref });
         // Upsert rather than insert. Two tabs opened on a Sunday morning is a real thing and
         // the unique index would otherwise throw on the second one. Same lesson as the
         // duplicate exercise_logs: guard the write, do not hope.
@@ -146,10 +155,15 @@ export default function NutritionPage() {
       <main className="min-h-screen bg-brand-bg text-brand-text px-5 py-8">
         <div className="max-w-md mx-auto">
           <div className="mb-6"><Home /></div>
-          <h1 className="font-display text-2xl font-normal mb-2">Not switched on yet</h1>
+          <h1 className="font-display text-2xl font-normal mb-2">
+            {blocked === "age" ? "Not available on this account" : "Not switched on yet"}
+          </h1>
           <p className="text-sm text-brand-muted">
-            Meal planning is being tested before it goes out properly. It will open up once the
-            current six week block has finished.
+            {blocked === "age"
+              ? "Meal planning and calorie targets are for accounts aged " + NUTRITION_MIN_AGE
+                + " and over. Nothing else in Vaeon is affected."
+              : "Meal planning is being tested before it goes out properly. It will open up once "
+                + "the current six week block has finished."}
           </p>
         </div>
       </main>
@@ -248,6 +262,10 @@ export default function NutritionPage() {
             Plan figures are estimates. Your intake is controlled by the weighed portion, not by
             the number on the card: 200g raw protein, vegetables free, carbohydrate weighed.
           </p>
+          <p className="text-xs mt-2">
+            <a href="/nutrition/setup" className="underline decoration-1 underline-offset-2"
+               style={{ color: accent }}>Goal, weight, allergies and budget</a>
+          </p>
         </div>
 
         {/* The shopping list. Open by default on a Sunday and folded away the rest of the week,
@@ -291,6 +309,21 @@ export default function NutritionPage() {
           </div>
         ) : null}
 
+        {/* Said out loud rather than shown as a half-empty week. If somebody's allergies have
+            starved the library, that is our problem to fix and they should be told it is ours
+            rather than left wondering whether the app is broken. */}
+        {slots.short ? (
+          <div className="rounded-md border p-4 mb-5" style={{ borderColor: accent + "66" }}>
+            <p className="rule-label mb-2">A short week, and that is on us</p>
+            <p className="text-sm text-brand-muted">
+              Once your allergies are taken out there are not yet enough meals in the library to
+              fill a full week. You are getting {(slots.dinners || []).length} dinners rather
+              than seven. We would rather hand you a short list than serve the same thing four
+              nights running or, worse, something you cannot eat. More meals are being added.
+            </p>
+          </div>
+        ) : null}
+
         {/* Dinners. A named day each, because these are the ones that need shopping for and
             thawing. Breakfast and lunch are pools further down. */}
         <p className="rule-label mb-1">Dinners, all {profile.household_size} of you</p>
@@ -321,6 +354,27 @@ export default function NutritionPage() {
             they then misread as something worse.
           </p>
         </div>
+
+        {/* Stated on the plan itself, not just on the form that collected it. Somebody looking
+            at a week of food needs to know what the filter does and does not cover at the
+            moment they are deciding whether to trust it. */}
+        {profile.allergens && profile.allergens.length ? (
+          <div className="rounded-md border p-4 mb-5" style={{ borderColor: "var(--brand-line)" }}>
+            <p className="rule-label mb-2">Kept out of your plan</p>
+            <p className="text-sm mb-2">
+              {profile.allergens.map(function (k) { return ALLERGEN_LABELS[k] || k; }).join(", ")}
+            </p>
+            <p className="text-xs text-brand-muted">
+              Filtered on our own list of what is in each dish. The recipes are on other people's
+              sites and can change, and nothing here knows about cross-contamination or what a
+              shop has put in a jar. Check the recipe and the labels.
+            </p>
+            <p className="text-xs mt-2">
+              <a href="/nutrition/setup" className="underline decoration-1 underline-offset-2"
+                 style={{ color: accent }}>Change this</a>
+            </p>
+          </div>
+        ) : null}
 
         <div className="rounded-md border p-4" style={{ borderColor: "var(--brand-line)" }}>
           <p className="rule-label mb-2">How this learns</p>

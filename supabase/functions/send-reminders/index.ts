@@ -1,37 +1,33 @@
 // Reminder sender. Supabase Edge Function, Deno.
 //
-// NOT YET DEPLOYED. This file is ready to go and needs two things first, both of which
-// are James's to do because they involve secrets that must never be in this repository:
+// DEPLOYED 2026-08-09, version 1, verify_jwt on. Scheduled hourly by pg_cron as
+// 'vaeon-reminders'. See supabase/2026-08-09_push_schedule.sql for the job and for why the
+// service role key is read from Vault rather than pasted into the schedule.
 //
-//   1. Generate a VAPID key pair and set it as a secret:
-//        deno run --allow-net -r https://deno.land/x/webpush/gen.ts
-//      or, more simply, in any Node project:
-//        npx web-push generate-vapid-keys --json
-//      Then in the Supabase dashboard, Edge Functions -> Secrets:
-//        VAPID_PUBLIC_KEY   the public half
-//        VAPID_PRIVATE_KEY  the private half
-//        VAPID_SUBJECT      mailto:james@unifypartnership.com
-//      And in the Vercel project environment:
-//        NEXT_PUBLIC_VAPID_PUBLIC_KEY   the same public half
-//      The public half is meant to be public. The private half goes nowhere near the
-//      client bundle, this file, or git.
+// STILL MANUAL, AND IT HAS TO BE. Three secrets and one environment variable, none of which
+// can be set from a migration and none of which should ever pass through this repository:
 //
-//   2. Schedule it. Once deployed, in the SQL editor:
-//        select cron.schedule(
-//          'vaeon-reminders', '0 * * * *',
-//          $$ select net.http_post(
-//               url := 'https://wctsiafaiogyciqnmvad.supabase.co/functions/v1/send-reminders',
-//               headers := '{"Authorization": "Bearer <service role key>"}'::jsonb
-//             ) $$
-//        );
-//      Hourly, not by-the-minute. due_reminders() compares on the hour rather than the
-//      exact minute precisely so that an hourly schedule cannot miss anybody, and it
-//      deduplicates on last_reminded_at so running twice in an hour is harmless.
+//   Supabase dashboard, Edge Functions -> send-reminders -> Secrets:
+//     VAPID_PUBLIC_KEY   the public half
+//     VAPID_PRIVATE_KEY  the private half
+//     VAPID_SUBJECT      mailto:james@unifypartnership.com
+//   Vercel, Project Settings -> Environment Variables:
+//     NEXT_PUBLIC_VAPID_PUBLIC_KEY   the same public half, then REDEPLOY. It is baked into
+//     the bundle at build time, so setting it without a rebuild changes nothing.
+//   SQL editor, once:
+//     select vault.create_secret('<service role key>', 'service_role_key');
 //
-// Until both are done, reminders still work: the dashboard card in
-// app/dashboard/ReminderCard.js reads the same settings and the same copy, needs no
-// permission and no third party, and reaches every user rather than the minority who
-// accept a notification prompt. Push is the same message shouted through a smaller door.
+// The public half is meant to be public: it is the identifier the push service uses to verify
+// the sender and it is safe in the client bundle. The private half signs the requests.
+//
+// UNTIL THE VAPID SECRETS EXIST THIS SENDS NOTHING AND SAYS SO. It returns 500 with
+// "VAPID keys not configured" rather than half-working, which is the correct failure: loud,
+// in the logs, and impossible to mistake for "nobody was due".
+//
+// Push does not replace the in-app reminder and was never meant to. The dashboard card reads
+// the same settings and the same copy, needs no permission and no third party, and reaches
+// every user rather than the minority who accept a notification prompt. Push is the same
+// message shouted through a smaller door.
 //
 // KEEP IN SYNC. The REMINDERS and FRAMING_TAIL tables below are a copy of the ones in
 // lib/reminders.js. An edge function cannot import from the Next app, so this is

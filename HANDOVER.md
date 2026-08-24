@@ -1559,3 +1559,183 @@ from a pattern. The ingredient lists are ours, deliberately: they scale to the h
 carry an aisle so the list sorts the way a supermarket is walked.
 
 Build clean, 23 routes. Not deployed.
+
+---
+
+## Added 2026-08-09: web push, finished
+
+The item that had been sitting at number three on the outstanding list since 30 July, written
+but never deployed. It is deployed now.
+
+**Done, and verified:**
+
+- `send-reminders` edge function **deployed**, version 1, `verify_jwt` on, status ACTIVE. The
+  functions directory now holds two live functions rather than one of each.
+- `pg_cron` 1.6.4 and `pg_net` 0.20.4 enabled.
+- Job `vaeon-reminders` scheduled hourly, `0 * * * *`, active.
+- `due_reminders()` checked end to end against live data. One candidate right now, correctly
+  classified as `lapsed` at 999 days since log. She has no device registered, so the function
+  will skip her, which is the right behaviour rather than a bug.
+- Migration recorded in `supabase/2026-08-09_push_schedule.sql`.
+
+**The service role key is read from Vault, not pasted into the schedule.** The old instructions
+in the function header had it inline in the cron command. That would leave the one key that
+bypasses every RLS policy in the project sitting in `cron.job` in plain text, readable by
+anything that can read the database, and in a place nobody thinks to look when rotating. The
+command now looks it up in `vault.decrypted_secrets` when it fires.
+
+**The job was scheduled before the secret existed, deliberately.** The command is SQL text
+evaluated at execution time, so until the Vault secret is created the header resolves to
+`Bearer ` and the call 401s. It fails harmlessly every hour and starts working the moment the
+secret appears, with nothing further to do. That is a better failure than a schedule somebody
+has to remember to add later, which is precisely how this feature came to sit undeployed for
+ten days.
+
+**Four manual steps remain and all four have to be manual.** They are the halves of this system
+that must never pass through a repository, a tool call or a chat transcript:
+
+1. Supabase, Edge Functions -> send-reminders -> Secrets: `VAPID_PUBLIC_KEY`,
+   `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
+2. Vercel: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, **then redeploy**. It is baked in at build time, so
+   setting it without a rebuild changes nothing at all.
+3. SQL editor, once: `select vault.create_secret('<service role key>', 'service_role_key');`
+4. Settings -> reminders, turn them on. `reminder_enabled` is currently false on Hampo-1978,
+   so nothing will arrive until it is switched on and a device is registered.
+
+**The VAPID pair was generated into `vapid-keys.local.txt`, which is gitignored** and was
+written without the values ever being printed. Delete the file once both halves are pasted.
+Rotating means generating a new pair and re-pasting both; most browsers survive a key change
+but not all, so expect one or two people to have to re-enable.
+
+Until the VAPID secrets exist the function returns 500 with `VAPID keys not configured` and
+sends nothing. Loud, in the logs, and impossible to mistake for "nobody was due".
+
+### The rollout gate, and the near miss that prompted it
+
+`due_reminders()` scans every profile with `reminder_enabled` set, and **Netballsue already had
+it on**. She would have started receiving push notifications the moment the VAPID secrets
+landed, for a feature she had never been told existed. Caught before the secrets were set
+rather than after, which is the only reason this is a note rather than an apology.
+
+`profiles.push_enabled` is now an operator gate, default false, true for Hampo-1978 only, and
+`due_reminders()` filters on it.
+
+**It is deliberately a second flag rather than a reuse of `reminder_enabled`.** The shortcut
+was to switch her `reminder_enabled` to false and keep her out of the pilot that way. That
+silently overrides a preference she set herself and leaves her with no way to understand why
+her reminders stopped. `reminder_enabled` is what the user asked for; `push_enabled` is whether
+the account is in the pilot. Two meanings, two columns.
+
+The in-app reminder is untouched and still reaches everyone, because it is client side and
+never goes through `due_reminders()`. Only push is gated, which is the right split: push is the
+half that needs permission and arrives on a lock screen.
+
+Verified inside a rolled-back transaction: opening the gate for Netballsue makes her a
+candidate, closing it removes her. The gate is what excludes her rather than some incidental
+condition that might later stop holding.
+
+**Still not built:** the Sunday shopping list push from the nutrition tab. It is unblocked now
+rather than done. Worth getting one push type working end to end before adding a second.
+
+---
+
+## Added 2026-08-09: allergies, goals, registration, and Joe Wicks
+
+`/nutrition/setup`. Nutrition opened to **CEO-jamie and Hampo8** as well as Hampo-1978.
+
+### The age check, which was not asked for
+
+CEO-jamie's `birth_year` is 2007. He is nineteen, so this is fine, but he is nineteen by a
+year, and the open item about under-18s on the platform stopped being abstract at that point.
+
+Everything else in this app is exercise, which is safe for a fifteen year old. **This is the one
+feature that hands somebody a calorie figure**, and calorie targets aimed at adolescents are a
+recognised risk factor for disordered eating. So nutrition checks age directly, at
+`NUTRITION_MIN_AGE`, on both the setup screen and the plan screen, and **fails closed on an
+unknown birth year**. A missing date of birth is not evidence of being an adult.
+
+It is checked separately from `nutrition_enabled` on purpose. That flag is a rollout decision
+and somebody could open it to everybody one afternoon without stopping to think about who
+"everybody" includes.
+
+### Allergies
+
+Fourteen UK allergens on `profiles.allergens`, `meals.allergens`, collected on the setup screen.
+
+**Excluded at the pool, which is the whole safety argument.** All three fallback passes draw
+from one filtered list, so there is no code path that can relax an allergen the way it relaxes
+the repeat window and the protein cap. Tested against a library that is deliberately almost all
+fish with a fish allergy declared: twenty weeks, zero allergens served, including when the
+person had *liked* a meal containing one.
+
+**The library is over-tagged where uncertain, deliberately.** Meatballs carry gluten and eggs
+because breadcrumbs and egg are the usual binder even when a recipe does not mention them, soy
+sauce carries gluten because most of it is brewed with wheat, oats carry gluten because UK
+labelling treats them that way unless certified otherwise. Removing a meal somebody could have
+eaten is an annoyance. Serving one they cannot is not. The asymmetry decides the default.
+
+**And it is not sold as a guarantee.** The warning is on the setup form and again on the plan
+itself, in plain words rather than a footnote: this filters our own list, the recipes are on
+other people's sites and can change, and cross-contamination and "may contain" are not modelled
+at all. A filter somebody trusts more than it deserves is worse than no filter.
+
+**The empty list problem.** An empty `allergens` array cannot mean both "none" and "not asked",
+so the form requires either a tick or an explicit "I have no allergies". Silence is not a
+declaration.
+
+### A short week is now honest rather than hidden
+
+The comment in the picker claimed it would "quietly repeat last Tuesday" rather than return a
+short week. **It does not, and never did.** Testing a fish allergy against a mostly-fish library
+returned two dinners, not seven, because the picker dedupes within a week.
+
+Two dinners turned out to be the right answer and the comment was wrong. Serving the same meal
+four nights running to somebody whose allergies have starved the library is a bug wearing a
+plan's clothes, and it hides the real problem, which is that there is not enough food in the
+library that this person can eat. `pickWeek` now returns `short` and the screen says so, and
+says it is our fault rather than theirs.
+
+### Goals, and the multipliers came down
+
+`targetsFor()` does Mifflin-St Jeor, then an activity multiplier, then a goal offset.
+
+The cut is **banded on BMI**, 30 percent at 30 and over, 25 percent from 25, 20 percent below,
+and floored at BMR. A flat percentage is wrong in both directions: thirty percent is reasonable
+at a BMI of 33 and mostly costs you muscle at 23.
+
+The gain side is **capped hard and low**, fifteen percent to a maximum of 500. Past roughly 400
+over maintenance the extra is very largely fat, and bulking as commonly practised is a long way
+of arriving back where you started with further to go. The worked example for a 70kg nineteen
+year old comes out at 3,100 and 0.37kg a week.
+
+**The activity multipliers are below the textbook figures on purpose.** The standard
+1.2/1.375/1.55/1.725/1.9 are derived from self-reported activity and run high, and the error
+compounds because somebody training six times a week ticks the highest box they honestly can.
+Overestimating maintenance is the expensive direction: the deficit shrinks, nothing happens,
+and the person concludes the app does not work. They are now 1.2/1.35/1.45/1.55/1.7.
+
+The check that set them: James comes out at a maintenance of 2,897 here, against the 2,900
+arrived at by hand this morning before the function existed. The textbook 1.725 said 3,224.
+
+**His stored target moved from 2,000 to 2,050**, which is one rounding step and not worth having
+two answers to one question. His height, sex, activity and goal are now stored so the formula
+can be re-run rather than the number sitting there unexplained.
+
+### Joe Wicks, and the library is nearly big enough now
+
+Ten Body Coach recipes added alongside the fourteen from Jamie Oliver, links checked against
+the live site. `meals.source` records which. **Dinners are now 24, up from 14**, which against
+the scaling measured earlier takes the preference lift from about 26 percent to somewhere near
+45. The 30 I said was needed is close.
+
+`meals.cost` bands every dish low, mid or high, and `budget_pref = 'economical'` roughly doubles
+the odds on cheap meals and halves them on expensive ones. **A nudge, not a filter**, and that
+is the point: a hard cost filter hands a student ten identical mince dinners and gets ignored by
+the second week. Measured across 200 weeks, cheap dinners rise from 710 to 878 and expensive
+ones still appear 522 times.
+
+CEO-jamie is prefilled as gain and economical. He and Hampo8 have no targets until they fill the
+form in, and the plan screen sends them there rather than showing a plan built on a default.
+Guessing somebody's maintenance calories is not a thing this app is going to do.
+
+Build clean, 24 routes. Not deployed.

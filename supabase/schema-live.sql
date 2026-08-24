@@ -1,7 +1,10 @@
 -- ============================================================================
 -- Vaeon Fitness: live database snapshot.
 -- Project "Intent" (wctsiafaiogyciqnmvad), Postgres 17.6, eu-west-1.
--- Captured 2026-07-30. REGENERATED IN FULL 2026-08-09 from pg_catalog.
+-- Captured 2026-07-30. REGENERATED IN FULL 2026-08-09 from pg_catalog, then amended the same
+-- day for push_enabled and the three nutrition tables. Column lists verified against
+-- pg_catalog programmatically rather than by eye: profiles 40, meals 17, meal_prefs 7,
+-- meal_plans 6, all matching.
 -- ============================================================================
 --
 -- WHAT THIS IS
@@ -88,6 +91,32 @@ create table if not exists profiles (
   -- Streak insurance. Currency rather than a setting, which is why the trigger below refuses
   -- to let a client write it.
   freeze_credits int not null default 1,
+  -- Push rollout gate, operator controlled. NOT the same thing as reminder_enabled, which is
+  -- the user's own preference. Gating by flipping reminder_enabled would silently override a
+  -- choice somebody made themselves. Only push is gated; the in-app reminder reaches everyone.
+  push_enabled boolean not null default false,
+  -- Nutrition. nutrition_enabled is the pilot gate; the 18+ check is separate and lives in
+  -- lib/nutrition.js, because this flag is a rollout decision that could be opened to everybody
+  -- without anybody stopping to think about who "everybody" includes.
+  nutrition_enabled boolean not null default false,
+  nutrition_goal text,
+  -- How many the evening meal feeds. Breakfast and lunch are always for one.
+  household_size int not null default 1,
+  kcal_target int,
+  protein_target int,
+  height_cm int,
+  -- Only read by the Mifflin-St Jeor calculation, which differs by sex. Nothing else uses it.
+  sex text,
+  activity_level text,
+  -- Declared allergies. Hard exclusion in the picker, never relaxed by the fallback passes.
+  allergens text[] not null default '{}',
+  budget_pref text not null default 'any',
+  constraint profiles_household_size_check check (household_size between 1 and 12),
+  constraint profiles_nutrition_goal_check check (nutrition_goal is null or nutrition_goal in ('lose','maintain','gain')),
+  constraint profiles_sex_check check (sex is null or sex in ('male','female')),
+  constraint profiles_activity_check check (activity_level is null or activity_level in ('sedentary','light','moderate','very','extra')),
+  constraint profiles_budget_check check (budget_pref in ('any','economical')),
+  constraint profiles_height_check check (height_cm is null or height_cm between 100 and 250),
   constraint profiles_block_weeks_sane check (block_weeks is null or (block_weeks between 4 and 12)),
   constraint profiles_freeze_credits_check check (freeze_credits >= 0),
   constraint profiles_reminder_hour_check check (reminder_hour is null or (reminder_hour between 0 and 23)),
@@ -341,6 +370,76 @@ create table if not exists events (
   constraint events_local_hour_check check (local_hour is null or (local_hour between 0 and 23))
 );
 
+-- ---------------------------------------------------------------------------
+-- NUTRITION. Three tables, added 2026-08-09.
+-- ---------------------------------------------------------------------------
+
+-- The shared recipe library. Global rather than per user, and READ ONLY through the API:
+-- there is no insert, update or delete policy on it at all. A user-editable recipe library is
+-- a moderation problem nobody here has time to run. It is maintained by migration.
+--
+-- allergens is over-tagged where uncertain, on purpose. Removing a meal somebody could have
+-- eaten is an annoyance; serving one they cannot is not. That asymmetry decides every default.
+--
+-- kcal and protein_g are ESTIMATES and macros_estimated says so. Nobody has put these dishes
+-- through a lab. They are good enough to sort and display with an "approx", and they are not
+-- what controls intake: the weighed portion rule on the nutrition page does that.
+--
+-- ingredients are OURS rather than the linked recipe's, deliberately, so they scale to a
+-- household and carry an aisle. Treat the link as the authority on how to cook it and this list
+-- as the authority on what to buy.
+create table if not exists meals (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,
+  name text not null,
+  slot text not null,
+  url text,
+  source text,
+  serves int not null default 4,
+  kcal int,
+  protein_g int,
+  macros_estimated boolean not null default true,
+  tags text[] not null default '{}',
+  allergens text[] not null default '{}',
+  cost text not null default 'mid',
+  ingredients jsonb not null default '[]'::jsonb,
+  effort text not null default 'medium',
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  constraint meals_slot_check check (slot in ('breakfast', 'lunch', 'dinner')),
+  constraint meals_effort_check check (effort in ('quick', 'medium', 'slow')),
+  constraint meals_cost_check check (cost in ('low', 'mid', 'high')),
+  constraint meals_serves_check check (serves between 1 and 12)
+);
+
+-- One verdict per person per meal, changed rather than appended: "do you like this" has a
+-- current answer rather than a history. This is the entire learning signal.
+create table if not exists meal_prefs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  meal_id uuid not null references meals(id) on delete cascade,
+  verdict text not null,
+  week_start date,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, meal_id),
+  constraint meal_prefs_verdict_check check (verdict in ('like', 'dislike'))
+);
+
+-- The week that was actually issued. Stored rather than recomputed because the picker reads
+-- preferences, and preferences change the moment somebody presses dislike: a recomputing plan
+-- would rewrite Thursday's dinner because you disliked Monday's, after you had already bought
+-- Thursday's ingredients. Verdicts land the following Sunday, which is when you next shop.
+create table if not exists meal_plans (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  week_start date not null,
+  slots jsonb not null default '{}'::jsonb,
+  shopped_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (user_id, week_start)
+);
+
 -- ============================================================================
 -- INDEXES
 -- ============================================================================
@@ -374,6 +473,9 @@ create index if not exists streak_freezes_user_idx on streak_freezes (user_id, w
 create index if not exists events_user_created_idx on events (user_id, created_at desc);
 create index if not exists events_name_created_idx on events (name, created_at desc);
 create index if not exists events_type_name_idx on events (type_id, name) where type_id is not null;
+create index if not exists meals_slot_active_idx on meals (slot) where active;
+create index if not exists meal_prefs_user_idx on meal_prefs (user_id);
+create index if not exists meal_plans_user_week_idx on meal_plans (user_id, week_start desc);
 
 -- ============================================================================
 -- ROW LEVEL SECURITY
@@ -406,6 +508,9 @@ alter table streak_freezes      enable row level security;
 alter table challenges          enable row level security;
 alter table push_subscriptions  enable row level security;
 alter table events              enable row level security;
+alter table meals               enable row level security;
+alter table meal_prefs          enable row level security;
+alter table meal_plans          enable row level security;
 
 -- Note the `(select auth.uid())` wrapping throughout rather than a bare auth.uid(). It lets
 -- the planner evaluate the call once per query instead of once per row.
@@ -473,6 +578,19 @@ create policy "own feedback insert" on feedback for insert with check ((select a
 
 -- Public by nature and contains nothing personal.
 create policy "challenges readable" on challenges for select to authenticated using (true);
+
+-- Same argument as challenges. Note there is no insert, update or delete policy: the library
+-- is read only through the API and is maintained by migration.
+create policy "meals readable" on meals for select to authenticated using (true);
+
+create policy "own meal_prefs select" on meal_prefs for select using ((select auth.uid()) = user_id);
+create policy "own meal_prefs insert" on meal_prefs for insert with check ((select auth.uid()) = user_id);
+create policy "own meal_prefs update" on meal_prefs for update using ((select auth.uid()) = user_id);
+create policy "own meal_prefs delete" on meal_prefs for delete using ((select auth.uid()) = user_id);
+
+create policy "own meal_plans select" on meal_plans for select using ((select auth.uid()) = user_id);
+create policy "own meal_plans insert" on meal_plans for insert with check ((select auth.uid()) = user_id);
+create policy "own meal_plans update" on meal_plans for update using ((select auth.uid()) = user_id);
 
 -- ============================================================================
 -- FUNCTIONS
@@ -722,6 +840,11 @@ as $function$
       (now() at time zone coalesce(p.reminder_tz, 'Europe/London')) as local_now
     from profiles p
     where p.reminder_enabled
+      -- The rollout gate, added 2026-08-09. Netballsue already had reminder_enabled set and
+      -- would have started receiving push the moment the VAPID secrets landed, for a feature
+      -- she had never been told about. Two flags, two meanings: reminder_enabled is what she
+      -- asked for, push_enabled is whether the account is in the pilot.
+      and p.push_enabled
       and p.reminder_hour is not null
       and (p.last_reminded_at is null
         or (p.last_reminded_at at time zone coalesce(p.reminder_tz, 'Europe/London'))::date
