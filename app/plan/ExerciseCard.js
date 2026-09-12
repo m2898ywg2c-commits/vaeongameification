@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { workingSets, blockProjection, workingHold, increaseHint, repsFrom, floorFromHistory, adaptFrom, adaptNote } from "@/lib/progression";
+import { workingSets, workingReps, progressNote, blockProjection, workingHold, increaseHint, repsFrom, floorFromEst, bestInBlock, adaptFrom, adaptNote, bodyweightLadder, bodyweightTarget, bestBodyweightFrom } from "@/lib/progression";
 import { formTip, coachTip, homeAlternative, needsGym } from "@/lib/exercisedb";
 import { BRAND } from "@/lib/brand";
 import Icon from "../Icon";
@@ -162,7 +162,7 @@ function describeSet(row) {
   return bits.join(" ");
 }
 
-export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, history, weekNo, ladder, holdProgression, onComplete, onReopen, onAvoid, logged }) {
+export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, history, sessions, weekNo, ladder, holdProgression, onComplete, onReopen, onAvoid, logged }) {
   const total = Number(ex.sets) || 1;
   const swap = homeMode && needsGym(ex.name);
   const alt = swap ? homeAlternative(ex.name) : "";
@@ -222,7 +222,14 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   // allowed below it: fewer reps has to mean the same bar or heavier, or the plan is asking
   // for a session this person has already beaten. Computed from `last`, which is the most
   // recent session for this lift and is already loaded.
-  const historyFloor = !swap && last && last.sets ? floorFromHistory(last.sets, prescribedReps) : null;
+  // FROM THIS BLOCK'S BESTS, NOT FROM THE LAST SESSION WHENEVER IT WAS.
+  //
+  // This used to read `last`, the most recent session for the lift regardless of date, so the
+  // previous block's peak became the floor under the next block's week one and every block had
+  // to open at a personal best. `history` is weekBests for this lift, which the plan page
+  // already builds scoped to the current block via weekOfBlock, and which is empty on week one
+  // of a new block. See floorFromEst for the full argument.
+  const historyFloor = !swap ? floorFromEst(bestInBlock(history), prescribedReps) : null;
   // THE BLOCK NOW ANSWERS BACK, WEEK BY WEEK.
   //
   // Everything else on this line was decided once, from one tested set, and could only ever
@@ -235,17 +242,34 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   // excluded for the same reason its history is: it is a different movement wearing the same
   // name, and its sets are not evidence about this one.
   const adapt = !swap && kind === "weight"
-    ? adaptFrom(ex.name, profile, maxes, total, ex.intensity, prescribedReps, history, weekNo, ladder)
+    ? adaptFrom(ex.name, profile, maxes, total, ex.intensity, ex.reps, history, weekNo, ladder)
     : null;
   const adjust = adapt ? adapt.factor : 1;
-  const suggestedSets = kind === "weight" ? workingSets(ex.name, profile, weekPct, maxes, total, ex.intensity, prescribedReps, historyFloor, adjust) : null;
+  // ex.reps rather than the parsed number, so an authored range like "6-10" keeps its range
+  // instead of being flattened to a six and given a derived one.
+  const suggestedSets = kind === "weight" ? workingSets(ex.name, profile, weekPct, maxes, total, ex.intensity, ex.reps, historyFloor, adjust) : null;
   const suggested = suggestedSets ? suggestedSets[suggestedSets.length - 1] : null;
+  // THE REP COUNT IS NOW PART OF THE PRESCRIPTION AND CAN DIFFER FROM THE AUTHORED ONE.
+  //
+  // On a light lift the smallest plate is a bigger step than the week is worth, so the block
+  // holds the load and asks for a rep instead. The card has to show that, or the session says
+  // 12 while the plan means 13 and the log is wrong in a way nobody can see. See ladderFor.
+  const targetReps = kind === "weight"
+    ? workingReps(ex.name, profile, weekPct, maxes, total, ex.intensity, ex.reps, historyFloor, adjust, ladder)
+    : null;
+  const loadLadder = kind === "weight"
+    ? blockProjection(ex.name, profile, maxes, total, ladder, ex.intensity, ex.reps, historyFloor, adjust)
+    : null;
+  const thisWeekRow = loadLadder ? loadLadder.find(function (r) { return Number(r.pct) === Number(weekPct); }) : null;
+  // A week that holds the bar is a real prescription and has to read like one, otherwise it
+  // is indistinguishable from the app forgetting to add weight.
+  const progressLine = thisWeekRow ? progressNote(thisWeekRow) : null;
   // Why the number moved, in one sentence, on the card that moved it. A plan that quietly
   // rewrites itself is indistinguishable from a plan with a bug in it.
   const adaptLine = adapt && adapt.steps.length ? adaptNote(adapt.factor) : null;
   // Where this lift ends up if the block is followed. Shown so the ramp reads as a plan
   // rather than as the app being stingy in week one.
-  const projection = kind === "weight" ? blockProjection(ex.name, profile, maxes, total, null, ex.intensity, prescribedReps, historyFloor, adjust) : null;
+  const projection = kind === "weight" ? blockProjection(ex.name, profile, maxes, total, null, ex.intensity, ex.reps, historyFloor, adjust) : null;
   const finalTop = projection ? projection[projection.length - 1].top : null;
   const hasRealMax = !!(maxes && maxes[(ex.name || "").toLowerCase()]);
 
@@ -260,6 +284,29 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   // There is no one-rep max for a tree pose.
   const holdTarget = holdProgression && kind === "time" ? workingHold(ex.name, weekPct, maxes) : null;
   const hasHold = !!(holdProgression && maxes && maxes[(ex.name || "").toLowerCase()]);
+
+  // BODYWEIGHT AND HOLD WORK NOW PROGRESSES TOO, AND UNTIL NOW IT SIMPLY DID NOT.
+  //
+  // Measured over the only completed block in this app: Plank 45 seconds in week one and 45
+  // seconds in week six. Hanging Leg Raise 15 reps from week two to the end. Neither is a man
+  // who stopped improving, both are a card with no progression model behind it, because
+  // workingSets only fires on kind "weight" and workingHold is gated behind yoga.
+  //
+  // This is separate from holdProgression on purpose. That flag turns a yoga plan's poses
+  // into a percentage of your best pose, anchored in lift_maxes. This is the ordinary case:
+  // pull ups, dips, leg raises, planks and dead hangs in a strength or hybrid plan, anchored
+  // in what was actually logged for that movement in the last few sessions. A block that asks
+  // for more ab work has to be able to ask for more of it.
+  const bwKind = kind === "time" ? "time" : (kind === "reps" ? "reps" : null);
+  const bwBest = bwKind && !swap && !perSide ? bestBodyweightFrom(sessions, bwKind) : null;
+  const bwRows = bwKind && !holdProgression && !perSide
+    ? bodyweightLadder(bwKind, bwKind === "time" ? targetNumber(ex.reps) : prescribedReps, bwBest, profile, ladder)
+    : null;
+  const bwRow = bwRows ? bwRows.find(function (r) { return Number(r.pct) === Number(weekPct); }) : null;
+  // Only override the authored number once there is history to anchor on. Week one of a new
+  // movement is the test, exactly as it is for a barbell lift.
+  const bwTarget = bwBest && bwRow ? bwRow.target : null;
+  const bwFinal = bwBest && bwRows ? bwRows[bwRows.length - 1].target : null;
 
   // On the testing week you find your own number and log it. For lifts that means no
   // prescribed weight; for yoga it means no prescribed hold.
@@ -311,9 +358,14 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         weight: doneRow && doneRow.weight !== null && doneRow.weight !== undefined
           ? String(Number(doneRow.weight))
           : ((!calibrating && suggestedSets && suggestedSets[i]) ? String(suggestedSets[i]) : prevWeight),
+        // THE PRESCRIBED REP COUNT, NOT THE AUTHORED ONE. A week that progresses by holding
+        // the load and adding a rep has to prefill the rep it is asking for, or the box says
+        // twelve, the card says thirteen, and whichever one the user trusts the log is wrong.
         reps: doneRow && doneRow.reps !== null && doneRow.reps !== undefined
           ? String(doneRow.reps)
-          : (kind === "weight" || kind === "reps" ? (targetNumber(ex.reps) || prevReps) : ""),
+          : (kind === "weight" || kind === "reps"
+              ? String(bwTarget || targetReps || targetNumber(ex.reps) || prevReps || "")
+              : ""),
         // A prescribed hold beats the plan's printed target, because the prescription is
         // built from this person's own week one rather than from a sensible average.
         // distance_km and duration_min only exist on rows written after 4 August. Older
@@ -400,9 +452,25 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
 
   // "3 x 45 sec" reads as three sets of forty five somethings. For a hold, say
   // what it is: "Hold 45 sec, 3 times".
+  // WHAT THE BADGE SAYS HAS TO BE WHAT THE PLAN MEANS.
+  //
+  // The authored rep count is no longer always the prescribed one. A light lift progresses by
+  // holding the load and adding a rep, and a bodyweight movement progresses entirely in reps
+  // or seconds, so a badge hard-wired to ex.reps would read "3 x 12" on a week the plan is
+  // asking for thirteen. The log would then be right and the card wrong, which is the worst
+  // way round.
+  // THE SUFFIX SURVIVES. "12 per side" progressing to thirteen must read "13 per side", not
+  // "13": the number is the only part the ladder owns and dropping "per side" halves the
+  // prescription. Anything the authored text carried after the digits is kept, and a range
+  // like "6-10" is replaced wholesale by the single number being asked for this week.
+  const repSuffix = String(ex.reps || "").replace(/^\s*\d+(\s*-\s*\d+)?/, "");
+  const withSuffix = function (n) { return String(n) + repSuffix; };
+  const shownReps = bwTarget != null
+    ? (kind === "time" ? bwTarget + " sec" : withSuffix(bwTarget))
+    : (targetReps != null ? withSuffix(targetReps) : ex.reps);
   const badge = kind === "time"
-    ? (total > 1 ? "Hold " + ex.reps + " x " + total : "Hold " + ex.reps)
-    : total + " x " + ex.reps;
+    ? (total > 1 ? "Hold " + shownReps + " x " + total : "Hold " + shownReps)
+    : total + " x " + shownReps;
 
   const setLabel = kind === "time" ? "Hold" : "Set";
 
@@ -441,7 +509,13 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         ? <p className="text-xs mb-2" style={{ color: accent }}>Bodyweight, with the option of loading it. Put any added weight in the +kg box and leave it empty if you did these unloaded.</p>
         : (holdTarget
           ? <p className="text-xs mb-2" style={{ color: accent }}>Your target is {holdTarget} seconds, built from what you held in week one. It is a target, not an instruction: if the shape breaks first, come out and log what you got.</p>
-          : (HINTS[kind] ? <p className="text-xs mb-2" style={{ color: accent }}>{HINTS[kind]}</p> : null)))}
+          : (bwTarget
+            ? <p className="text-xs mb-2" style={{ color: accent }}>
+                Target {kind === "time" ? bwTarget + " seconds" : bwTarget + " reps"}, built from your best of {bwBest}{kind === "time" ? " seconds" : ""} in the last few sessions.
+                {bwFinal && bwFinal > bwTarget ? " Week six of this block asks for " + bwFinal + (kind === "time" ? " seconds." : ".") : ""}
+                {" "}Stop when the form goes, not when the number is reached, and log what you actually did.
+              </p>
+            : (HINTS[kind] ? <p className="text-xs mb-2" style={{ color: accent }}>{HINTS[kind]}</p> : null))))}
 
       {suggested && !calibrating ? (
         <div className="rounded-md px-3 py-2 mb-3" style={{ background: accent + "1A" }}>
@@ -452,8 +526,15 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
           </p>
           <p className="text-[0.75rem] text-brand-muted">
             {suggestedSets.length > 1 ? "Building to " + suggested + "kg on the last set. " : ""}
-            {hasRealMax ? "From your logged max. " : ""}{increaseHint(ex.name)}
+            {targetReps ? "For " + targetReps + " reps. " : ""}
+            {hasRealMax ? "From your recent sessions. " : ""}{increaseHint(ex.name)}
           </p>
+          {/* Why the number did what it did this week. A block that is capped to a realistic
+              gain spends several of its weeks holding the same load, and without a sentence
+              saying so that is indistinguishable from a bug. */}
+          {progressLine ? (
+            <p className="text-[0.75rem] mt-1" style={{ color: accent }}>{progressLine}</p>
+          ) : null}
           {/* You are doing this lift twice this week on purpose, and the two days are not the
               same session. Saying which is which stops the lighter one reading as a mistake. */}
           {ex.intensity ? (

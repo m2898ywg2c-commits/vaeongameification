@@ -1739,3 +1739,371 @@ form in, and the plan screen sends them there rather than showing a plan built o
 Guessing somebody's maintenance calories is not a thing this app is going to do.
 
 Build clean, 24 routes. Not deployed.
+
+---
+
+## Added 2026-09-12: the block was overloading itself, and six weeks of data to prove it
+
+The six week test finished. **James is the only person who completed a block**, so this is the
+first time the engine has been measurable against reality rather than against whether its
+numbers looked sensible. It did not survive the measurement.
+
+### What the data says
+
+Adherence: **13 sessions logged against 24 pledged.** He pledged four a week, hit four in
+exactly one week of six, did two in four of them, and week four was zero. The pledge was
+fiction and the leaderboard scored him against it every week.
+
+Progression, as estimated max, week one to week six:
+
+| lift | week 1 | week 6 | change |
+|---|---|---|---|
+| Back Squat | 120 | 168 | **+40%** |
+| Romanian Deadlift | 120 | 187 | **+56%** |
+| Hip Thrust | 140 | 207 | **+48%** |
+| Leg Press | 150 | 409 | **+173%** |
+| **Barbell Bench Press** | **114** | **130** | **+2.5% on the top set** |
+
+Bench is the tell. It is the only lift whose testing week was a genuine effort, which
+`testQuality()` flagged at the time as too heavy, and it went 100 to 102.5 to 105 to 107 and
+back to 100. **Every lift that "gained" forty percent and up is a lift whose week one was
+entered light**, and the engine booked the correction as progress. The block end report would
+have told him he got dramatically stronger, and it is not true. For an app whose entire pitch
+is that it tells you whether the training worked, that was the most serious thing in the
+block.
+
+### The cause, which is not the one he reported
+
+He reported it as the overload being too ambitious once the weights get heavy. The weekly
+steps say the opposite: squat +20% into week two, +8.3%, +3.8%, +3.7%. **The steps at the top
+of the block were the smallest in it.** The heavy weeks felt brutal because they carried six
+weeks of compounded inflation.
+
+The actual fault is a feedback loop with nothing damping it:
+
+```
+the prescription is a percentage of lift_maxes.est_max
+  -> the set gets hit
+  -> record_lift_max() does greatest(existing, new), so est_max rises
+  -> next week prescribes a percentage of the NEW est_max
+  -> round again, compounding, for six weeks
+```
+
+**est_max was at the same time an input to the prescription and an output of following it.**
+Every safeguard in `lib/progression.js` guards one week: `floorFromHistory` stops a week being
+easier than something already done, `adaptFrom` caps how far the anchor MULTIPLIER can drift.
+Neither can see the anchor itself moving underneath. There was a floor test and no ceiling
+test.
+
+### What changed
+
+**1. The anchor is recent form, not `greatest()`.** `anchorFrom()` takes the best effort across
+the last three SESSIONS, capped at `ANCHOR_RECENT_TOLERANCE` above the most recent one.
+`est_max` and `record_lift_max` are untouched and still hold the personal best; `app/plan/page.js`
+now overrides the prescription anchor from `exercise_logs`. Three sessions alone was not
+enough: Overhead Press has only ever been logged twice, 50kg x 6 in week one and 30kg x 6 in
+week six, so both were in the window and the bad one still won. The most recent session is the
+best estimate of today, so it sets a ceiling with ten percent of room for one rough morning.
+
+**2. `blockGainCap()` caps the total, and the cap shrinks as the bar gets heavier.** The ladder
+asked about ten percent of everybody at every load. Ten percent of a 60kg squat is six kilos;
+of a 140kg squat it is fourteen, which is most of a good year. Decays with the log of the
+load: 11% at 60kg, 8% at 100kg, 6% at 150kg, 3.8% at 200kg, times `DEFICIT_GAIN_SCALE` of 0.6
+when `nutrition_goal` is `lose`.
+
+**3. Progression uses whichever instrument is finer, and the obvious answer is backwards.**
+James asked for "more weight one week, more reps the other". The arithmetic decides it, and it
+goes the other way on his main lifts. One extra rep multiplies effort by `1 + 1/(30 + reps)`,
+about 2.5 percent nearly everywhere. One plate pair is `2.5/load`, which is 4.2 percent on a
+60kg bar and 1.7 percent on a 150kg one. **So on a heavy lift the plate is the fine adjustment
+and a rep is the blunt one, and on a light accessory it is the other way round.** Each climbing
+week picks from hold, add a plate, or add a rep, and takes whichever lands closest to the
+week's capped effort target. Heavy barbell work comes out as plates with hold weeks between.
+Cables and dumbbells come out as reps. Nobody chose: the loads chose.
+
+**4. Bodyweight and hold work progresses at all, which it previously did not.** His Plank read
+45 seconds in week one and 45 seconds in week six. His Hanging Leg Raise was 15 reps from week
+two to the end. Not a man who stopped improving: `workingSets` only fires on kind `weight`,
+`workingHold` is gated behind yoga, and `splittable()` was quietly doing double duty as the
+reason nothing else moved. `bodyweightLadder()` anchors on logged reps or seconds with its own
+log-decaying cap, and **no deficit penalty, deliberately** — losing weight makes pull ups
+easier, and scaling them down as he cuts would have the model predict the opposite.
+
+**5. `bonus_day` on `profiles`.** `sessions_per_week` was deciding both how many days the week
+contains and the denominator adherence is scored against. `bonus_day` adds a day to the plan
+without touching the pledge, so "three mornings, maybe four" scores as "3 of 3 +1" using the
+`extra` column `get_leaderboard` already returns. **There is no Settings toggle for it yet.**
+
+### The bug that explains the missing conditioning, and it was never findable
+
+Six weeks of a HYROX plan produced **twelve strength sessions and five conditioning entries**:
+SkiErg once, Row three times, sled once, slam balls once, against an event that is eight
+kilometres of running and eight stations.
+
+`buildWeek` does `primary.days.slice(0, n)`, and hyrox's two conditioning days sat at
+**positions five and six**. At three or four sessions a week they were **unreachable**. Nobody
+could have found them. What conditioning did exist was an optional ten minute finisher, and
+the optional thing is what gets dropped after an hour in the gym. Engine Day is now third in
+the list, and `week.mjs` asserts that a hybrid goal at three or more sessions always contains
+conditioning work.
+
+### The new goal: `hyroxlean`
+
+`GOALS.hyroxlean` in `lib/training.js`. Three mornings, each roughly half strength and half
+engine, with the conditioning as **prescribed exercises rather than a finisher**. Squat, bench
+and a conventional Deadlift kept as the main lifts; SkiErg, Row, Sled Push, Sled Pull, Farmers
+Carry, Dead Hang, Burpee Broad Jumps, Wall Balls, Pull Ups, curls and an ab movement a day
+added. Fourth day is a fixed HYROX simulation, last in the list so only `bonus_day` reaches it.
+
+Nothing repeats across consecutive days, so the variance pass has nothing to substitute and
+the week that renders is the week that was authored. That is deliberate: last block's numbers
+are only interpretable because the sessions stayed the same week to week.
+
+**`fixed: true` is new on the day shape.** A race simulation must not be substituted or
+intensity-tagged. Run through the normal passes it came out mangled: its Row clashed with
+Thursday's Row so the table swapped it for Bike Intervals, and its Wall Balls were tagged the
+"volume day" of a pair with Tuesday, complete with a note telling him to leave the heavy work
+for the other session. `varyExercises` and `assignIntensity` both skip fixed days and leave
+them out of the week count.
+
+### Tests, finally committed
+
+`test/`, plain Node, no runner, no `node_modules`. `node test/invariants.mjs` sweeps 58,368
+combinations against seven invariants; `test/bodyweight.mjs` 360 anchors against four;
+`test/week.mjs` 18,000 weeks against eight. All pass. Read `test/README.md` first: it lists the
+four total-gain bugs this engine has shipped, each of which looked fine week by week, and three
+of which were found by these sweeps during this session rather than by review.
+
+`lib/progression.js` now imports `./week.js` with the extension so Node can load it directly.
+Webpack and Turbopack resolve both. **Do not take it off again.**
+
+### Applied to the live database
+
+`supabase/2026-09-12_block_two_anchor_and_bonus_day.sql`, on `wctsiafaiogyciqnmvad`.
+
+- `profiles.bonus_day`, plus column comments on it and on `lift_maxes.est_max` recording that
+  est_max is no longer the prescription anchor.
+- **Two poisoned maxes corrected by hand.** Overhead Press 60 to 36; Incline Dumbbell Press 114
+  to 78.9, off a week one "90kg x 8" that is either the pair or a slip against 44 to 64 in
+  every session since. **Leg Press deliberately left at 408.8** despite growing 173 percent:
+  272.5kg x 15 on a plate-loaded press is plausible for a man squatting 140 and he logged it
+  nine days ago. Week one at 100kg was the under-entry, not week six.
+- `baseline_squat` and `baseline_bench` moved from the 100/100 typed in at onboarding to his
+  measured 167.8/133, because they are the ratio-table fallback and block two introduces a
+  Deadlift he has never logged.
+- James's profile set to block two: `hyroxlean`, three sessions, `bonus_day`, train days
+  Tue/Wed/Thu plus Sat, `block_start` 2026-09-13.
+
+`block_start` had to be written through the `vaeon.system_write` escape hatch.
+`protect_profile_system_columns` clamps a future `block_start` to today, and today is a
+Saturday whose week began on 6 September and is already over, so he would have opened the app
+on Tuesday already in week two.
+
+Four duplicate `body_metrics` rows removed. **`body_metrics` never got the delete-then-insert
+guard** that `completeSet`, `logStation` and `finish` got on 4 and 5 August, so the duplicate
+write bug is still live there. The 11 September pair disagrees, 95.5kg against 99.5kg, and was
+left for him to resolve.
+
+### Outstanding, in the order I would do it
+
+1. **Not deployed.** Nothing in this session has been through `next build`, because
+   `registry.npmjs.org` returns 403 under this environment's egress policy so `npm install`
+   cannot run. Every import was walked against the filesystem and both lib modules execute
+   under Node via the test suites, but **the JSX in `page.js`, `ExerciseCard.js` and
+   `DayView.js` has been bracket-checked and not parsed.** Build before deploying and read the
+   build log rather than trusting this paragraph.
+2. **A Settings toggle for `bonus_day`.** It is set directly in his row and nothing in the UI
+   can change it.
+3. **The delete-then-insert guard on `body_metrics`**, and a unique index behind it. This is
+   the third table to need it.
+4. **`exercise_logs` has no unit on the cardio fields.** His Row entries read "20", "5:36" and
+   "5.39" in `time_text`, three formats in one column, so six weeks of conditioning data is
+   unusable. `duration_min` and `distance_km` exist for this and the card is not always
+   filling them. Fix before the conditioning half of this block generates a block's worth of
+   the same mess.
+5. **`readsAs()` still compares loads only**, so a rep week or a hold week reads as flat. It
+   needs the rep count, the way `adaptFrom` now takes it.
+6. **The block end report has still never been seen by anyone.** His block completed on
+   12 September. That screen is the first time the app has to prove its own argument, and it is
+   now being fed numbers that are honest rather than inflated, which makes it a much harder
+   test than it would have been last week.
+7. `FEATURES.md` has not been updated for any of this.
+
+### Where I would push back on him
+
+Last block he asked for polish while retention was flat, and the note from 4 August said to
+watch the block end report rather than the next feature. That still stands, with one
+correction: **he was right to push on the numbers.** Three of the four corrections on this
+engine in August came from him checking a prescription against what he had actually lifted,
+and the compounding loop was found the same way this time. His instinct that something was
+wrong with the overload was correct even though his diagnosis of where was not.
+
+The thing to watch now is not the engine. It is that **the app has just stopped promising him
+forty percent and started promising him three**, and three percent is the honest number. If a
+truthful block is less motivating than an inflated one, that is worth knowing at week six of
+block two, and it is a far more important finding than anything in this file.
+
+---
+
+## Added 2026-09-12, later: he read the block and the block was wrong twice more
+
+Two rounds of feedback on the block built earlier today, both correct, and between them they
+undid most of the first pass. Worth reading in order, because each one exposed a fault the
+previous fix had created.
+
+### Round one: "the starting weights are too heavy"
+
+They were, and not for the reason the earlier section would suggest. **The floor was setting
+the start.** `floorFromHistory` refuses to prescribe anything easier than the best effort
+logged, and the plan page fed it `last`, the most recent session for the lift regardless of
+when it happened. So the previous block's peak sat under the next block's week one and **every
+block had to open at a personal best.** His squat opened at 150kg x 5 against a best five of
+140, because 132.5kg x 8 converts to 150kg x 5 at full Epley equivalence and rep-specific
+strength is the hole in that conversion.
+
+He also sent a corrected table with week one lowered and weeks two to six left where they
+were, which put **+13 percent between weeks one and two** and then two flat weeks. That is the
+same shape as the fault the whole day was spent removing, compressed into one step, so the
+numbers were not taken as given.
+
+Three changes:
+
+- **`floorFromEst` and `bestInBlock`.** The floor is now built from THIS BLOCK's logged bests,
+  which the plan page already has as `weekBests`, and is empty on week one of a new block. The
+  original argument for the floor is untouched and still right, it just does not reach across
+  a block boundary: Wednesday 90kg x 10 against Friday 87.5kg x 8 is two sessions in one week,
+  and nothing in that argument says a new block cannot open below the old peak.
+- **`OPENING_FACTOR`**, week one as a fraction of demonstrated capacity, so the opener is a
+  decision rather than a side effect of the floor.
+- **`capacityAt` and `anchorEstFor`.** A clean reference for "100 percent of what you can do at
+  this rep count", split out so `weekFactor`'s absolute values stop being load-setting. They
+  had been re-argued three times precisely because one function was doing both jobs.
+
+### Round two: "what about adding more reps at a weight before increasing weights, we seem to be only doing 5 and 8 reps"
+
+Also right, and this one deleted a large piece of the first pass.
+
+The first pass chose, week by week, whichever of a plate or a rep landed closest to a capped
+effort target, on the argument that at heavy loads a plate is the finer instrument. That
+argument is correct and the conclusion was still wrong. It produced heavy lifts reading 150,
+150, 152.5, 152.5, 155 with **nothing to chase in three of the six weeks**, and "hold the same
+weight and make it cleaner" is a coaching instruction, not a prescription. Optimal tracking of
+a curve is not a programme anybody wants to follow.
+
+**Replaced with true double progression.** Each lift carries a rep RANGE. Reps climb by one
+every climbing week; when the top of the range is reached the bar goes up one step and the reps
+drop back to the bottom. Better for three reasons that have nothing to do with precision: there
+is something to chase every week, accumulating reps at a load is real volume progression rather
+than a proxy for load, and you earn the load increase by first demonstrating the reps.
+
+**The cap now governs LOAD ONLY, and that is a correction.** `blockGainCap` limits one-rep-max
+equivalent gain. Reps at a submaximal load are mostly work capacity, which comes far faster.
+Epley scores 130kg x 6 to 130kg x 10 as eleven percent, which breaches a 3.3 percent cap, and
+treating those as one currency is what made the first pass refuse to move the reps at all.
+
+**The range is sized to the block.** Five climbing weeks with week one at the bottom needs four
+increments, so a range four wide fills one cycle exactly: 6, 7, 8, deload, 9, 10. Derived from
+the ladder, not hardcoded, and an authored range narrower than that is widened. Capped at four
+because a set of six and a set of twelve train different things.
+
+### Four faults the sweeps found during those two rounds
+
+Each of these was live for at least one commit and each was found by a test rather than by
+reading the code.
+
+1. **An opener of 0.90 made the block loop.** A range four wide is worth 11.1 percent of
+   effort, so opening at 0.90 landed the final week at 1.000 of capacity, dead level. The next
+   block then re-derives the same anchor, opens at the same fraction and prescribes the same
+   weight forever. **A block that only reaches capacity is a block that loops.** 0.93 lands it
+   3.3 percent past, which is what the cap allows a heavy lift on a cut, so the two halves of
+   the design agree without being made to.
+2. **`capacityAt` inherited `workingWeight`'s 2.5kg rounding**, which put a 42kg Tricep
+   Pushdown's capacity at 43.6 and a 408.8 Leg Press's at 410.3. Small, and it fed the opener
+   and the break-even guard where a kilo decides whether a block finishes above capacity.
+   `anchorEstFor` now serves both, unrounded.
+3. **The opener rounded UP past its own ceiling.** Rounding to nearest put a Tricep Pushdown at
+   30kg against an intended 28.9, which is capacity exactly rather than 93 percent of it. It
+   floors to the step now: at light loads 2.5kg is most of the gap between submaximal and
+   maximal.
+4. **`splittable` rejected rep ranges**, so on a two-goal week the heavy day of a shared lift
+   went untagged while the other goal's bare rep count still got tagged light. 768 combinations
+   came out with a volume day and no heavy day to be the volume of, which is the one invariant
+   that mechanism exists to keep. `lighterReps` now shifts a range as a range: 6-10 heavy
+   becomes 9-13 light.
+
+### And two in the ratio table, which is scanned first-match-wins
+
+`test/ratios.mjs` is new and exists because of these. The table is scanned top to bottom and
+the first substring match wins, so **a qualifier sitting above a movement silently captures
+it**:
+
+- **"Incline DB Curl" matched `incline` at 0.8 of the bench max** and prescribed a 72.5kg
+  dumbbell curl to a man who curls 30. Renamed to Seated DB Curl as well, since the name was
+  ambiguous to a reader too.
+- **"Romanian Deadlift" matched the plain `deadlift` row** at 1.2 of the squat max rather than
+  its own at 1.0. A twenty percent over-estimate on one of the four main lifts in his block,
+  sitting there unnoticed through the whole of the earlier work.
+
+**The rule, now written into the table itself: the specific variant and the movement go ABOVE
+the generic movement and the qualifier.** Fourteen further ratios were added for movements that
+the substitution table can produce and that had no row at all, so a substituted exercise no
+longer arrives with no week-one suggestion.
+
+### His block two, final
+
+Three mornings plus the Saturday simulation. Squat, deadlift and bench on 6-10; Romanian
+deadlift and incline press on 8-12; curls and the ab work on 10-15.
+
+| lift | wk1 | wk2 | wk3 | wk4 | wk5 | wk6 |
+|---|---|---|---|---|---|---|
+| Back Squat | 130x6 | 130x7 | 130x8 | 120x6 | 130x9 | 130x10 |
+| Bench Press | 102.5x6 | 102.5x7 | 102.5x8 | 95x6 | 102.5x9 | 102.5x10 |
+| Romanian Deadlift | 135x8 | 135x9 | 135x10 | 125x8 | 135x11 | 135x12 |
+| Incline DB Press | 50x8 | 50x9 | 50x10 | 45x8 | 50x11 | 50x12 |
+| Cable Crunch | 25x12 | 25x13 | 25x14 | 22.5x12 | 25x15 | 27.5x16 |
+| Plank | 60s | 65s | 75s | 55s | 80s | 85s |
+
+Week one lands within 3.6 percent of every number he asked for, expressed as sixes and eights
+rather than fives, and every lift finishes above demonstrated capacity. **Ab Wheel is out and
+Cable Crunch is in**: he has no wheel, and the replacement is loaded on purpose so it
+progresses on the same ladder as everything else rather than depending on a bodyweight anchor.
+
+**Incline Dumbbell Press `est_max` is pinned to 69, not derived.** The card says "log the weight
+of ONE dumbbell" and his logged sets read 60, 64 and 44, which as single dumbbells would be
+elite for a 100kg bencher. He asked for 50kg, and 69 is the anchor that produces it. One of the
+instruction and the entries is wrong and **only he can say which** — ask before touching it.
+
+**Deadlift is new to him and has no row in `lift_maxes`**, so week one is correctly a test and
+the 155kg in the table above is only the ratio-table suggestion behind it.
+
+### Tests
+
+`test/`, still plain Node with no dependencies. Now four suites, all passing:
+
+```
+node test/invariants.mjs   # 87,552 ladder combinations + 1,536 floor, 9 invariants
+node test/week.mjs         # 18,000 weeks, 8 invariants
+node test/bodyweight.mjs   # 360 anchors, 4 invariants
+node test/ratios.mjs       # every ratio-table row resolves to the right movement
+```
+
+`invariants.mjs` was rewritten for double progression, and **the change worth understanding is
+that effort is no longer monotonic and must not be asserted as such.** Resetting the reps when
+the bar goes up makes that week genuinely easier than the last, and every lifter recognises it.
+What holds instead: the bar never falls, reps stay inside the range, reps never fall at a given
+load, every climbing week moves one axis or the other, the block finishes above capacity, and
+load gain stays inside the cap.
+
+### Still outstanding
+
+1. **Still not deployed and still not built.** `registry.npmjs.org` returns 403 under this
+   environment's egress policy, so `npm install` and therefore `next build` cannot run. Imports
+   are walked against the filesystem, the lib modules execute under the four test suites, and
+   the JSX is bracket-checked only. **Build locally and read the build log.**
+2. Settings toggle for `bonus_day`.
+3. The delete-then-insert guard on `body_metrics`, plus a unique index.
+4. `exercise_logs` cardio units: "20", "5:36" and "5.39" all in `time_text`.
+5. `FEATURES.md` and `GUIDE.md` say nothing about rep ranges, and `GUIDE.md` is what a user
+   reads to understand the plan. The rep range IS the user-visible change here.
+6. `increaseHint()` still returns "+2.5kg when all sets move well", which is now wrong advice:
+   the answer under double progression is "add a rep until you reach the top of the range".

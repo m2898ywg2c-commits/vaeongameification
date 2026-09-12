@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { blockProjection, readsAs, repsFrom, floorFromHistory, adaptFrom } from "@/lib/progression";
+import { blockProjection, readsAs, repsFrom, floorFromEst, bestInBlock, adaptFrom } from "@/lib/progression";
 
 // THE END OF WEEK REVIEW.
 //
@@ -47,17 +47,18 @@ export default function BlockReview({ days, profile, maxes, lastSets, weekBests,
       seen[key] = true;
       const total = Number(ex.sets) || 1;
       const prescribedReps = repsFrom(ex.reps);
-      const rowsForFloor = lastSets && lastSets[key] ? lastSets[key].sets || [] : [];
       // Same floor the card uses, so the review cannot promise a week six number the plan
-      // itself would refuse to prescribe.
-      const floor = floorFromHistory(rowsForFloor, prescribedReps);
+      // itself would refuse to prescribe. Scoped to this block, like the card's: reading the
+      // last session whenever it happened put the previous block's peak under this block's
+      // week one and made every block open at a personal best.
+      const floor = floorFromEst(bestInBlock(weekBests ? weekBests[key] : null), prescribedReps);
       // And the same adaptation. The review is the screen that tells somebody where the block
       // is going, so it has to be looking at the block the cards are actually prescribing. A
       // review projecting the original, unadapted week six would contradict every card
       // underneath it, which is worse than not showing a projection at all.
-      const adapt = adaptFrom(ex.name, profile, maxes, total, ex.intensity, prescribedReps,
+      const adapt = adaptFrom(ex.name, profile, maxes, total, ex.intensity, ex.reps,
         weekBests ? weekBests[key] : null, weekNo, ladder);
-      const proj = blockProjection(ex.name, profile, maxes, total, ladder, ex.intensity, prescribedReps, floor, adapt.factor);
+      const proj = blockProjection(ex.name, profile, maxes, total, ladder, ex.intensity, ex.reps, floor, adapt.factor);
       if (!proj) return;
 
       // The week that has just finished, which is the one there is evidence for.
@@ -70,12 +71,28 @@ export default function BlockReview({ days, profile, maxes, lastSets, weekBests,
         if (w > loggedTop) loggedTop = w;
       });
 
+      // COMPARED AS EFFORT, NOT AS THE NUMBER ON THE BAR.
+      //
+      // readsAs used to take two loads, which under double progression reads every rep week as
+      // dead flat: the bar is the same by design and the rep is the progress. The logged reps
+      // for the top set go in with it so a week where he added the rep reads as on track.
+      let loggedReps = 0;
+      rows.forEach(function (r) {
+        if (Number(r && r.weight) === loggedTop) {
+          const rp = Number(r && r.reps);
+          if (rp > loggedReps) loggedReps = rp;
+        }
+      });
       lifts.push({
         name: ex.name,
         finalTop: proj[proj.length - 1].top,
+        finalReps: proj[proj.length - 1].reps,
         prescribedTop: prescribed ? prescribed.top : null,
+        prescribedReps: prescribed ? prescribed.reps : null,
         loggedTop: loggedTop || null,
-        verdict: readsAs(prescribed ? prescribed.top : null, loggedTop),
+        loggedReps: loggedReps || null,
+        verdict: readsAs(prescribed ? prescribed.top : null, loggedTop,
+          prescribed ? prescribed.reps : null, loggedReps),
       });
     });
   });

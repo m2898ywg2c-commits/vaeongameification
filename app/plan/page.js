@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TYPES, isFreestyle } from "@/lib/personality";
 import { buildWeek, primaryCategory, defaultSessionType } from "@/lib/training";
-import { currentWeek, weeksFor, BLOCK_WEEKS, estimateMax, testQuality, weekOfBlock } from "@/lib/progression";
+import { currentWeek, weeksFor, BLOCK_WEEKS, estimateMax, testQuality, weekOfBlock, anchorFrom, ANCHOR_SESSIONS } from "@/lib/progression";
 import { isGymReady, buildGymWeek, blockWeeksFor, currentWeekIn } from "@/lib/gymready";
 import { quoteFor, sessionIntro, praiseFor, nextQuoteRotation } from "@/lib/voice";
 import { track, rememberIdentity, EVENTS } from "@/lib/events";
@@ -80,6 +80,10 @@ const [lastSets, setLastSets] = useState({});
 // Best effort demonstrated per lift per block week, which is what the weekly adaptation
 // reads. Built from the same recentLogs query as lastSets, so it costs nothing extra.
 const [weekBests, setWeekBests] = useState({});
+// The last few sessions per movement, newest first. Feeds the load anchor above and the
+// bodyweight and hold ladders on the cards, which until now had no anchor and therefore no
+// progression at all: his plank read 45 seconds in week one and 45 seconds in week six.
+const [liftSessions, setLiftSessions] = useState({});
 const [avoided, setAvoided] = useState({});
 // Raised when a testing week set lands outside the rep range the block can be built from.
 // Not a blocker: the set is logged either way and the number stands if they mean it. This
@@ -161,6 +165,52 @@ const out = [];
 Object.keys(bySet).forEach(function (i) { out[Number(i)] = bySet[i]; });
 lastByExercise[k].sets = out;
 });
+// THE PRESCRIPTION ANCHOR, WHICH IS NO LONGER est_max.
+//
+// est_max is maintained by record_lift_max() with greatest(existing, new), so it only ever
+// climbs. That was fine while it was only a personal best, and it is a disaster as the input
+// to a prescription, because the prescription is what produced the set that raised it. Six
+// weeks of the only completed block in this app's history: squat estimated max 120 to 168,
+// RDL 120 to 187, leg press 150 to 409. The block was overloading itself and no safeguard in
+// progression.js could see it, because every one of them guards a single week and this is a
+// fault in the total.
+//
+// So the anchor is now the best effort across the last few SESSIONS, capped just above the
+// most recent one. See anchorFrom in lib/progression.js for the full argument. est_max is
+// still read first, so a lift with no logged sessions at all (a brand new movement, or the
+// yoga holds, which live in the same table in seconds) behaves exactly as before.
+//
+// GROUPED TO ANCHOR_SESSIONS DAYS, NOT ONE. lastByExercise above is deliberately a single
+// session, because "last time" means last time. The anchor wants a short run of them so one
+// rough morning does not rescale a block, which is a different question and needs its own
+// grouping rather than a widened version of that one.
+const recentByExercise = {};
+(recentLogs || []).forEach(function (r) {
+const key = (r.exercise || "").toLowerCase();
+// NOT filtered on weight here, unlike the week bests below, and that matters. The bodyweight
+// and hold ladders anchor on reps and on time_text, and those rows have no weight at all.
+// Filtering them out was why the first version of this left planks and pull ups exactly as
+// unprogressed as they were before. anchorFrom ignores weightless rows on its own.
+if (!key) return;
+const day = String(r.logged_at).slice(0, 10);
+if (!recentByExercise[key]) recentByExercise[key] = [];
+const list = recentByExercise[key];
+let session = list.find(function (s) { return s.day === day; });
+if (!session) {
+// Rows arrive newest first, so pushing keeps the sessions in newest-first order, which is
+// the order anchorFrom expects when it takes the first one as "most recent".
+if (list.length >= ANCHOR_SESSIONS) return;
+session = { day: day, sets: [] };
+list.push(session);
+}
+session.sets.push(r);
+});
+Object.keys(recentByExercise).forEach(function (k) {
+const a = anchorFrom(recentByExercise[k]);
+if (a) map[k] = a;
+});
+setLiftSessions(recentByExercise);
+
 // WHAT EACH WEEK OF THE BLOCK ACTUALLY PRODUCED, PER LIFT.
 //
 // The prescription used to be decided once and never revisited. adaptFrom needs the other
@@ -197,7 +247,20 @@ setWeekBests(bestsByLift);
 // prescribed sessions.
 const week = isGymReady(p.goals)
 ? buildGymWeek(p.sessions_per_week || 3, p.train_days, p.fixed_days)
-: buildWeek(p.goals, p.sessions_per_week || 3, p.train_days, p.fixed_days,
+// THE BONUS DAY, AND WHY IT IS NOT JUST sessions_per_week + 1.
+//
+// sessions_per_week was doing two jobs that have now come apart: it decides how many days the
+// week contains AND it is the denominator the leaderboard, the streak and weeks_kept score
+// adherence against. James pledged four last block and trained twice in four of the six
+// weeks, so the pledge was fiction and he was marked down against it every week. He has asked
+// for three mornings with an optional fourth, and pushing sessions_per_week to four to make
+// the fourth day appear would recreate exactly the problem he is trying to leave behind.
+//
+// So bonus_day adds a day to the PLAN without touching the PLEDGE. The machinery for this
+// already exists: get_leaderboard caps done at the pledge and returns the overshoot
+// separately as extra, so a fourth session logged reads "3 of 3 +1" rather than "3 of 4".
+// Credit for turning up, no penalty for not.
+: buildWeek(p.goals, (p.sessions_per_week || 3) + (p.bonus_day ? 1 : 0), p.train_days, p.fixed_days,
 currentWeekIn(p.block_start, blockWeeksFor(p)));
 // Freestyle types land on a choice, not on a weekday.
 //
@@ -661,7 +724,7 @@ style={{ background: accent, color: "var(--brand-bg)" }}>Ready</button>
     than correction, because nothing in this app scolds. */}
 {showReview && !gym ? (
 <BlockReview days={days} profile={profile} maxes={maxes} lastSets={lastSets}
-weekBests={weekBests}
+weekBests={weekBests} liftSessions={liftSessions}
 weekNo={weekNo} blockWeeks={blockWeeks} ladder={weeksFor(cat)} accent={accent}
 onDismiss={function () {
 setShowReview(false);
@@ -757,7 +820,7 @@ finished={finished} onFinish={finish} />
 ) : (
 <DayView day={day} active={active} profile={profile} rule={rule} accent={accent} deep={deep}
 tid={tid} homeMode={homeMode} done={done} maxes={maxes} isTestWeek={isTestWeek} lastSets={lastSets}
-weekBests={weekBests} weekNo={weekNo} ladder={weeksFor(cat)}
+weekBests={weekBests} liftSessions={liftSessions} weekNo={weekNo} ladder={weeksFor(cat)}
 holdProgression={cat === "yoga"}
 onComplete={completeSet} onReopen={reopen} finished={finished} onFinish={finish} onStation={logStation}
 loggedThisWeek={day ? (weekLogs[day.key] || {}) : {}}
