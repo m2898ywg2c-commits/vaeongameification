@@ -334,6 +334,22 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   //
   // Last time is SHOWN in every case, even when it is not used to prefill, because the
   // number to beat is the point.
+  // PER-SET STATE, WHICH IS READ FROM THE DATABASE RATHER THAN KEPT LOCALLY.
+  //
+  // `logged` is this week's rows for this exercise on this day, slotted by set_index, so
+  // logged[i] is truthy exactly when set i has been written. Deriving "done" from it rather
+  // than from a local tick means a reload, a tab switch or a second phone all agree, which
+  // is the failure mode the per-exercise version already had to be fixed for once.
+  function loggedRow(i) { return logged && logged.length ? logged[i] : null; }
+  function setLogged(i) { return !!loggedRow(i); }
+
+  var liveSet = -1;
+  for (var li = 0; li < total; li++) { if (!setLogged(li)) { liveSet = li; break; } }
+
+  // The keypad is opt-in now. Anyone on a testing week needs it immediately, because there
+  // is no prescription to tap.
+  const [editing, setEditing] = useState(false);
+
   const [fields, setFields] = useState(function () {
     const seed = {};
     for (let i = 0; i < total; i++) {
@@ -411,6 +427,62 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
     });
   }
 
+  // WHAT A ROW SAYS. One number and its reps, never a string of five to parse.
+  function setHeadline(i) {
+    if (bwTarget != null) return kind === "time" ? bwTarget + " sec" : bwTarget + " reps";
+    if (kind === "weight" && suggestedSets && suggestedSets[i]) {
+      return suggestedSets[i] + "kg \u00d7 " + (targetReps || prescribedReps || "");
+    }
+    if (kind === "time") return String(ex.reps);
+    if (kind === "distance" || kind === "cardio") return String(ex.reps);
+    // Bodyweight with no history to build from, and the testing week for a weighted lift.
+    return calibrating && kind === "weight" ? "Find your own" : String(shownRepsPlain());
+  }
+  function shownRepsPlain() {
+    return (targetReps || prescribedReps || ex.reps) + (repSuffix || "");
+  }
+  function setSubtitle(i) {
+    if (kind !== "weight") return setLabel + " " + (i + 1) + " of " + total;
+    if (calibrating) return "Testing week \u00b7 find a working set";
+    return i === total - 1 ? "Top set" : "Ramp";
+  }
+
+  // TAPPING A ROW LOGS IT AS PRESCRIBED. Tapping a logged row takes it back.
+  //
+  // The field for that set is filled from the prescription first, because the whole point is
+  // that the common case needs nothing typed. Then completeSet runs with the full field
+  // state, which it deletes and re-inserts, so the set just tapped and every set already
+  // logged end up correct in one write.
+  function toggleSet(i) {
+    const next = Object.assign({}, fields);
+    next[i] = Object.assign({}, next[i] || {});
+    if (setLogged(i)) {
+      // Undo. Clearing the measurements is what removes the row, because writeSets skips a
+      // set with nothing in it.
+      ["weight", "reps", "secs", "secsL", "secsR", "text", "km", "mins"].forEach(function (k) { next[i][k] = ""; });
+    } else {
+      if (kind === "weight") {
+        if (!next[i].weight && suggestedSets && suggestedSets[i]) next[i].weight = String(suggestedSets[i]);
+        if (!next[i].reps) next[i].reps = String(targetReps || prescribedReps || "");
+      } else if (kind === "reps") {
+        if (!next[i].reps) next[i].reps = String(bwTarget || prescribedReps || "");
+        if (loadable && !next[i].weight) next[i].weight = "";
+      } else if (kind === "time" && !perSide) {
+        if (!next[i].secs) next[i].secs = String(bwTarget || targetNumber(ex.reps) || "");
+      } else if (kind === "distance") {
+        if (!next[i].text) next[i].text = String(ex.reps);
+      } else if (kind === "cardio") {
+        if (!next[i].km) next[i].km = String(targetKm(ex.reps) || "");
+      }
+      // A per-side hold and a testing week both need real numbers, so there is nothing
+      // sensible to prefill and the keypad is the honest answer.
+      const filled = !!(next[i].weight || next[i].reps || next[i].secs || next[i].text || next[i].km);
+      if (!filled) { setEditing(true); return; }
+    }
+    setFields(next);
+    onComplete(ex, exIdx, next, total, kind, perSide);
+  }
+
   if (done) {
     // Was a single <button> wrapping the whole row. It cannot stay one, because the
     // feedback controls are buttons too and a button inside a button is invalid markup
@@ -426,16 +498,16 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
           onClick={function () { onReopen(exIdx); }}
           className="w-full flex items-center gap-3 text-left"
         >
-          <span style={{ color: "#3DDC97" }}><Icon name="check" size={16} /></span>
-          <span className="flex-1 font-display text-sm" style={{ color: "#3DDC97" }}>{title}</span>
-          <span className="text-xs text-brand-muted">Tap to reopen</span>
+          <span style={{ color: "#3DDC97" }}><Icon name="check" size={22} /></span>
+          <span className="flex-1 font-display text-xl" style={{ color: "#3DDC97", letterSpacing: "-0.02em" }}>{title}</span>
+          <span className="text-base text-brand-muted">Reopen</span>
         </button>
 
         {/* Asked here rather than at the end of the session, because by the time somebody
             has finished six exercises they cannot tell you which one was too heavy. */}
         <div className="flex items-center justify-between gap-2 mt-3 pt-3"
           style={{ borderTop: "1px solid rgba(61,220,151,0.2)" }}>
-          <span className="text-[0.6875rem] uppercase tracking-wide text-brand-muted">How did that feel?</span>
+          <span className="text-base text-brand-muted">How did that feel?</span>
           <SetFeedback dayKey={dayKey} exercise={ex.name} />
         </div>
       </div>
@@ -447,8 +519,6 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   // the same width and the row does not twitch as it is typed into.
   const field = "w-full px-3 py-4 rounded-md text-xl text-center text-brand-text placeholder-brand-dim font-display";
   const fieldStyle = { background: "var(--brand-surface)", border: "1px solid " + BRAND.lineStrong };
-  const tipBtn = "flex-1 py-2 rounded-sm text-[0.75rem] uppercase border";
-  const tipBtnStyle = { borderColor: BRAND.line, color: BRAND.muted, letterSpacing: "0.16em" };
 
   // "3 x 45 sec" reads as three sets of forty five somethings. For a hold, say
   // what it is: "Hold 45 sec, 3 times".
@@ -480,120 +550,148 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         {/* The exercise name is the one bold thing on this card. It used to compete with a
             filled badge, three bold buttons and a bold set count, which meant nothing was
             actually emphasised. */}
-        <p className="font-display text-base font-normal leading-tight flex-1">{title}</p>
-        <span className="text-[0.6875rem] px-2 py-1 rounded-sm border flex-shrink-0"
-          style={{ borderColor: accent + "55", color: accent, letterSpacing: "0.08em" }}>
+        <p className="font-display text-2xl font-normal leading-tight flex-1" style={{ letterSpacing: "-0.02em" }}>{title}</p>
+        <span className="px-2 py-1 rounded-sm border flex-shrink-0 font-display text-base"
+          style={{ borderColor: accent + "55", color: accent, letterSpacing: "0.06em" }}>
           {badge}
         </span>
       </div>
 
       {swap ? (
-        <p className="text-[0.75rem] text-brand-dim mb-1">Standing in for {ex.name}</p>
+        <p className="text-base text-brand-muted mb-1">Standing in for {ex.name}</p>
       ) : null}
 
-      {ex.note ? <p className="text-xs text-brand-muted mb-1">{ex.note}</p> : null}
+      {/* 16px, not 12px. This is the coaching cue for the movement you are about to do. */}
+      {ex.note ? <p className="text-base text-brand-muted mb-2">{ex.note}</p> : null}
 
       {swap ? (
         <div className="rounded-md px-3 py-3 mb-3 border" style={{ borderColor: accent + "55", background: accent + "14" }}>
-          <p className="text-xs text-brand-text">{alt}</p>
+          <p className="text-base text-brand-text">{alt}</p>
         </div>
       ) : null}
 
       {calibrating ? (
-        <p className="text-xs mb-2" style={{ color: accent }}>
+        <p className="text-base mb-3" style={{ color: accent }}>
           {kind === "time"
             ? "Baseline week. No target today. Hold the pose as long as you can keep the shape and the breath, then log the seconds. Every later week is a proportion of this number."
             : "Testing week. No target today. Work up to a set of 8 to 10 you could stop 2 reps short of, then log it. Every week after this is a percentage of this number, so do not max out."}
         </p>
       ) : (loadable
-        ? <p className="text-xs mb-2" style={{ color: accent }}>Bodyweight, with the option of loading it. Put any added weight in the +kg box and leave it empty if you did these unloaded.</p>
+        ? <p className="text-base mb-3" style={{ color: accent }}>Bodyweight, with the option of loading it. Put any added weight in the +kg box and leave it empty if you did these unloaded.</p>
         : (holdTarget
-          ? <p className="text-xs mb-2" style={{ color: accent }}>Your target is {holdTarget} seconds, built from what you held in week one. It is a target, not an instruction: if the shape breaks first, come out and log what you got.</p>
+          ? <p className="text-base mb-3" style={{ color: accent }}>Your target is {holdTarget} seconds, built from what you held in week one. It is a target, not an instruction: if the shape breaks first, come out and log what you got.</p>
           : (bwTarget
-            ? <p className="text-xs mb-2" style={{ color: accent }}>
+            ? <p className="text-base mb-3" style={{ color: accent }}>
                 Target {kind === "time" ? bwTarget + " seconds" : bwTarget + " reps"}, built from your best of {bwBest}{kind === "time" ? " seconds" : ""} in the last few sessions.
                 {bwFinal && bwFinal > bwTarget ? " Week six of this block asks for " + bwFinal + (kind === "time" ? " seconds." : ".") : ""}
                 {" "}Stop when the form goes, not when the number is reached, and log what you actually did.
               </p>
-            : (HINTS[kind] ? <p className="text-xs mb-2" style={{ color: accent }}>{HINTS[kind]}</p> : null))))}
+            : (HINTS[kind] ? <p className="text-base mb-3" style={{ color: accent }}>{HINTS[kind]}</p> : null))))}
 
+      {/* THE FIVE-NUMBER LINE IS GONE, AND THAT IS THE POINT.
+          "Today: 90 · 100 · 110 · 120 · 130kg" was 14px and asked you to find the one
+          number you needed out of five. Each set row now carries its own, at 28px. What is
+          left here is the sentence explaining what the week is asking for, at 16px. */}
       {suggested && !calibrating ? (
-        <div className="rounded-md px-3 py-2 mb-3" style={{ background: accent + "1A" }}>
-          <p className="font-display text-sm" style={{ color: accent }}>
-            Today: {suggestedSets.length > 1
-              ? suggestedSets.join(" · ") + "kg"
-              : suggested + "kg"}
+        <div className="rounded-md px-3 py-3 mb-3" style={{ background: accent + "1A" }}>
+          <p className="font-display text-base" style={{ color: accent }}>
+            Top set {suggested}kg &times; {targetReps || prescribedReps}
           </p>
-          <p className="text-[0.75rem] text-brand-muted">
-            {suggestedSets.length > 1 ? "Building to " + suggested + "kg on the last set. " : ""}
-            {targetReps ? "For " + targetReps + " reps. " : ""}
-            {hasRealMax ? "From your recent sessions. " : ""}{increaseHint(ex.name)}
-          </p>
-          {/* Why the number did what it did this week. A block that is capped to a realistic
-              gain spends several of its weeks holding the same load, and without a sentence
-              saying so that is indistinguishable from a bug. */}
           {progressLine ? (
-            <p className="text-[0.75rem] mt-1" style={{ color: accent }}>{progressLine}</p>
+            <p className="text-base mt-1" style={{ color: "var(--brand-text)" }}>{progressLine}</p>
           ) : null}
-          {/* You are doing this lift twice this week on purpose, and the two days are not the
-              same session. Saying which is which stops the lighter one reading as a mistake. */}
+        </div>
+      ) : null}
+
+      {/* ================================================================================
+          REFERENCE GOES BEHIND ONE TOGGLE. Added 2026-09-12.
+
+          Everything in here used to sit open above the set rows: the intensity note, the
+          week six projection, the adaptation note, last time, and three tip buttons. Four
+          of those are 11 to 12px and none of them is something you read between sets. That
+          is roughly 200px of card, above the thing you came to press, for information you
+          want once at the start.
+
+          It is not deleted, because every line of it is there for a reason argued elsewhere
+          in this file. It is one tap away instead of always in the way.
+          ================================================================================ */}
+      <button onClick={function () { setTip(tip ? null : "all"); }}
+        className="w-full flex items-center justify-between rounded-md px-3 mb-3 border border-brand-line text-left"
+        style={{ minHeight: 56 }}>
+        <span className="font-display text-base text-brand-text">Details</span>
+        <span className="text-base text-brand-muted">{tip ? "Hide" : "Show"}</span>
+      </button>
+
+      {tip ? (
+        <div className="rounded-md border border-brand-line bg-brand-surface p-3 mb-3">
           {ex.intensity ? (
-            <p className="text-[0.75rem] mt-1 text-brand-muted">
+            <p className="text-base mb-2 text-brand-muted">
               {ex.intensity === "heavy"
                 ? "Heavy day. The lighter, higher rep session is later this week."
                 : "Volume day. Your heavy session for this lift is the other one this week."}
             </p>
           ) : null}
-          {/* The whole point of a block is that week one is supposed to feel light. Saying
-              where it ends turns a modest first week from the app being cautious into the
-              first rung of something. The deload week is not hidden either. */}
           {finalTop && finalTop > suggested ? (
-            <p className="text-[0.75rem] mt-1" style={{ color: accent }}>
-              Week 6 of this block: {finalTop}kg
+            <p className="text-base mb-2" style={{ color: accent }}>Week 6 of this block: {finalTop}kg</p>
+          ) : null}
+          {adaptLine ? <p className="text-base mb-2 text-brand-muted">{adaptLine}</p> : null}
+          {lastSets ? (
+            <p className="text-base mb-2 text-brand-muted">
+              Last time, {lastAgo}:{" "}
+              <span className="font-display" style={{ color: "var(--brand-text)" }}>
+                {lastSets.map(function (r) { return describeSet(r); }).filter(Boolean).join("   ")}
+              </span>
             </p>
           ) : null}
-          {/* The plan has changed itself, so it says so. Muted rather than accented: this is
-              an explanation for a number somebody might question, not an announcement, and
-              a downward adjustment especially must not arrive looking like a telling-off. */}
-          {adaptLine ? (
-            <p className="text-[0.7rem] mt-1 text-brand-muted">{adaptLine}</p>
-          ) : null}
+          <p className="text-base mb-2 text-brand-muted">{formTip(ex.name)}</p>
+          <p className="text-base mb-3 text-brand-muted">{coachTip(ex.name)}</p>
+          <a href={videoLink(title)} target="_blank" rel="noopener noreferrer"
+            className="w-full flex items-center justify-center rounded-md border border-brand-line-strong font-display text-base text-brand-text"
+            style={{ minHeight: 56 }}>
+            Watch the movement
+          </a>
         </div>
       ) : null}
 
-      {/* The number to beat. Deliberately plain and not in the accent colour: this is a
-          fact about the past, not the coach talking, and it should not compete with the
-          prescription directly above it. */}
-      {lastSets ? (
-        <div className="rounded-md px-3 py-2 mb-3 border border-brand-line bg-brand-surface">
-          <p className="text-[0.75rem] uppercase tracking-wide text-brand-dim mb-0.5">Last time &middot; {lastAgo}</p>
-          <p className="font-display text-sm text-brand-text">
-            {lastSets.map(function (r) { return describeSet(r); }).filter(Boolean).join("   ")}
+      {/* ================================================================================
+          TAP TO LOG, ONE SET AT A TIME. Added 2026-09-12.
+
+          This was ten input boxes and one "Completed as planned" at the bottom, which is
+          what made everything on the card small: five set rows plus their labels plus the
+          prescription plus the notes plus three tip buttons all had to share a phone
+          screen, so every one of them got 11 to 14px and the log button ended up about
+          900px below the top of the card.
+
+          A set is now a 76px row you tap when you have done it. The numbers are 28px, the
+          subtitle 15px, the tick 56px on its own, and nothing on the card is under 16px.
+          The keypad only appears if you actually need it, behind "Change the numbers".
+
+          WHY THIS IS SAFE AGAINST THE DUPLICATE-WRITE HISTORY. completeSet was already a
+          delete-then-insert of every row for this exercise on this day, so it is
+          idempotent: calling it after each set replaces the exercise's rows with the
+          current field state rather than appending. Two things had to change in page.js to
+          make that true per set rather than per exercise, and both are commented there:
+          concurrent writes queue instead of being dropped, and sets with nothing in them
+          are no longer written as rows of nulls.
+          ================================================================================ */}
+
+      {editing ? (
+        <div className="mb-3">
+          <p className="text-base text-brand-muted mb-2">
+            Type what you actually did. Blank rows are not logged.
           </p>
-        </div>
-      ) : null}
-
-      <div className="flex gap-2 mb-3">
-        <button onClick={function () { setTip(tip === "form" ? null : "form"); }} className={tipBtn} style={tipBtnStyle}>Form</button>
-        <button onClick={function () { setTip(tip === "coach" ? null : "coach"); }} className={tipBtn} style={tipBtnStyle}>Coach</button>
-        <a href={videoLink(title)} target="_blank" rel="noopener noreferrer" className={tipBtn + " text-center block"} style={tipBtnStyle}>Video</a>
-      </div>
-
-      {tip === "form" ? <p className="text-xs text-brand-muted mb-3 rounded-md bg-brand-surface p-3">{formTip(ex.name)}</p> : null}
-      {tip === "coach" ? <p className="text-xs text-brand-muted mb-3 rounded-md bg-brand-surface p-3">{coachTip(ex.name)}</p> : null}
-
       {Array.from({ length: total }).map(function (_, i) {
         const v = fields[i] || {};
         return (
           <div key={i} className="mb-3">
-            <p className="text-[0.75rem] uppercase tracking-wide text-brand-dim mb-1">
+            <p className="text-base text-brand-muted mb-1">
               {setLabel} {i + 1}
               {kind === "time" ? <span className="normal-case"> &middot; in {UNIT_WORD[unit]}</span> : null}
               {/* Set-level history, so you are comparing like with like. A fifth set that
                   did not exist last time correctly shows nothing rather than repeating
                   the fourth. */}
               {lastSets && lastSets[i] && describeSet(lastSets[i])
-                ? <span className="normal-case text-brand-dim"> &middot; last {describeSet(lastSets[i])}</span>
+                ? <span className="text-brand-muted"> &middot; last {describeSet(lastSets[i])}</span>
                 : null}
             </p>
             <div className="flex gap-2">
@@ -637,14 +735,67 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
           </div>
         );
       })}
+          <button
+            onClick={function () { setEditing(false); onComplete(ex, exIdx, fields, total, kind, perSide); }}
+            className="w-full rounded-md font-display text-lg"
+            style={{ minHeight: 72, background: accent, color: "var(--brand-bg)" }}
+          >
+            Save these numbers
+          </button>
+          <button onClick={function () { setEditing(false); }}
+            className="w-full mt-2 rounded-md font-display text-base border border-brand-line-strong text-brand-text"
+            style={{ minHeight: 56 }}>
+            Back to tapping
+          </button>
+        </div>
+      ) : (
+        <div className="mb-3">
+          {Array.from({ length: total }).map(function (_, i) {
+            const isLogged = setLogged(i);
+            const isLive = i === liveSet;
+            const sub = isLogged
+              ? describeSet(loggedRow(i)) || "Logged"
+              : (lastSets && lastSets[i] && describeSet(lastSets[i])
+                  ? setSubtitle(i) + " \u00b7 last " + describeSet(lastSets[i])
+                  : setSubtitle(i));
+            return (
+              <button key={i} onClick={function () { toggleSet(i); }}
+                aria-pressed={isLogged}
+                aria-label={(isLogged ? "Logged: " : "Log ") + setLabel + " " + (i + 1) + ", " + setHeadline(i)}
+                className="w-full flex items-center gap-3 mb-2 p-3 rounded-md text-left"
+                style={{
+                  minHeight: 76,
+                  background: isLive && !isLogged ? accent + "12" : "var(--brand-surface)",
+                  border: "1px solid " + (isLive && !isLogged ? accent + "88" : "var(--brand-line)"),
+                  opacity: isLogged ? 0.62 : 1,
+                }}>
+                <span className="font-display text-sm text-brand-dim" style={{ width: 14, flex: "0 0 14px" }}>{i + 1}</span>
+                <span className="flex-1 min-w-0">
+                  <span className="block font-display text-2xl leading-tight">{setHeadline(i)}</span>
+                  <span className="block text-base text-brand-muted mt-0.5">{sub}</span>
+                </span>
+                <span className="grid place-items-center rounded-md"
+                  style={{
+                    width: 56, height: 56, flex: "0 0 56px",
+                    background: isLogged ? accent : "transparent",
+                    border: "1px solid " + (isLogged ? accent : "var(--brand-line-strong)"),
+                  }}>
+                  <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"
+                    style={{ fill: "none", stroke: isLogged ? "var(--brand-bg)" : "var(--brand-dim)", strokeWidth: 1.5, strokeLinejoin: "miter" }}>
+                    <polyline points="4 12.5 9.5 18 20 6" />
+                  </svg>
+                </span>
+              </button>
+            );
+          })}
 
-      <button
-        onClick={function () { onComplete(ex, exIdx, fields, total, kind, perSide); }}
-        className="w-full py-4 rounded-md font-display text-base"
-        style={{ background: accent, color: "var(--brand-bg)" }}
-      >
-        {calibrating ? "Log it" : "Completed as planned"}
-      </button>
+          <button onClick={function () { setEditing(true); }}
+            className="w-full rounded-md font-display text-base border border-brand-line-strong text-brand-text"
+            style={{ minHeight: 56 }}>
+            {calibrating ? "Enter what you lifted" : "Change the numbers"}
+          </button>
+        </div>
+      )}
 
       {/* Under the log button, not beside it. Somebody who can do the exercise should never
           have to read past this to finish their set. */}

@@ -2107,3 +2107,135 @@ load gain stays inside the cap.
    reads to understand the plan. The rep range IS the user-visible change here.
 6. `increaseHint()` still returns "+2.5kg when all sets move well", which is now wrong advice:
    the answer under double progression is "add a rep until you reach the top of the range".
+
+---
+
+## Added 2026-09-13: the session screens, rebuilt around swiping
+
+He said the set and rep screens were too small to read and press. Measuring the card rather
+than taking that at face value moved the diagnosis: **the inputs and the log button were
+already fine.** The inputs were 20px in a 56px box and the button 16px in a 56px box.
+Everything he had to READ was 11 to 14px, and the worst line on the screen was the set label,
+which was small AND uppercase AND letter-spaced AND in `--brand-dim`, the lowest-contrast
+colour in the app. Four separate legibility costs on one line.
+
+And it had a structural cause. One "Completed as planned" per exercise meant ten input boxes
+shared a five-set card, so nothing else got room, and on Back Squat the button sat about 900px
+below where you started reading.
+
+### What changed, in the order it matters
+
+**1. A set is logged when you do it, not at the end of the exercise.** This is the change that
+makes the rest possible. `ExerciseCard` now renders a 76px row per set showing the prescribed
+load and reps at 28px with a 56px tick; tapping it logs that set as prescribed with nothing
+typed. The keypad still exists behind "Change the numbers" and is unchanged, because a number
+a long way off plan still needs typing.
+
+**2. One exercise per screen, swiped.** `DayView`'s vertical list of every card is now a
+horizontal scroll-snap pager. It is the same list with different CSS on the container, so the
+keying, the props and the state are untouched.
+
+**3. Nothing you read mid-session is under 16px any more**, in either file, and nothing small
+is also dim. `grep text-xs app/plan/ExerciseCard.js app/plan/DayView.js` returns nothing.
+
+**4. Reference is behind one "Details" toggle**: the intensity note, the week-six projection,
+the adaptation note, last time, and the form and coach tips. About 200px of card that you read
+once at the start and never between sets.
+
+**5. The five-number prescription line is gone.** "Today: 90 · 100 · 110 · 120 · 130kg" at 14px
+asked you to find one number out of five. Each row carries its own.
+
+### The three things in the write path that had to change first
+
+These are the risky part, and all three are commented at length where they live.
+
+- **`queueWrite` in page.js.** The duplicate-write guard was `if (writing.current[key]) return;`,
+  which is correct for a double tap on one button and wrong the moment two different sets share
+  a lock key: tapping set 1 then set 2 a second later silently dropped the second while the
+  tick still lit up. Writes now queue behind each other rather than being discarded. Serialised,
+  so the delete-then-insert pairs still cannot interleave. `logStation` and `finish` keep the
+  old drop-the-second-tap behaviour, which is right for them.
+- **`writeSets` skips a set with nothing in it.** It built a row per prescribed set regardless,
+  so a part-filled card wrote rows of nulls. Harmless when the only way to log was one button
+  at the end; not harmless when every write carries the sets that have not happened yet.
+- **`doneFor` counts rows against the prescription** instead of returning true on any row. The
+  first tap on Back Squat would otherwise have collapsed the card and hidden the other four
+  sets, and DayView's auto-finish would have logged the session after one set of each.
+  Consequence worth knowing: **skip a set and the session no longer auto-finishes.** The
+  Finish session button further down DayView is still there for the days you cut short.
+
+**Why per-set logging is safe against this project's duplicate-write history:** `completeSet`
+was already a delete-then-insert of every row for the exercise on that day, so it is
+idempotent. Calling it after each set replaces the exercise's rows with the current field
+state rather than appending. Nothing new writes to the database.
+
+### The pager, and the one thing that will bite whoever touches it next
+
+Native CSS scroll-snap, no library. Three lines do the real work:
+
+- **`overscrollBehaviorX: "contain"`** stops a swipe past the last panel chaining up to the
+  browser and firing its back gesture. Without it you lose the session mid-workout.
+- **`scrollSnapStop: "always"`** makes one flick move one exercise rather than skimming three.
+- **The panels are INSET, not full bleed.** Nothing in CSS outranks a system gesture, so the
+  edge-swipe-back on iOS and Android cannot be overridden, only avoided. A swipe that starts on
+  a panel is unambiguously ours and the screen edge stays the phone's. The sliver of the next
+  panel this produces is also the only thing telling anyone it swipes at all.
+
+**`flex: "0 0 100%"` on a panel is deliberate and is not a bug.** flex-basis resolves against
+the track's CONTENT box, which the 22px padding has already inset, so 100 percent IS the inset
+panel. Writing `calc(100% - 44px)` subtracts the inset twice and leaves the panel at about 72
+percent of the screen. I did that twice in one day, once in the prototype and once here.
+
+**Use `scrollIntoView`, never a computed `scrollLeft`.** With `scroll-snap-type: mandatory` the
+browser re-snaps to the nearest snap point after any layout change and quietly corrects a
+hand-computed position to the neighbouring panel. `block: "nearest"` matters too, or logging a
+set scrolls the whole page vertically.
+
+A swipe is invisible, unreliable with wet hands and unavailable to a keyboard, so the gesture
+is the fast path and the 56px arrows and dots are the contract. The session list under the
+pager answers "how much is left", which is the one thing a pager takes away that a scrolling
+list gave for free, and doubles as the jump menu.
+
+`.pager` in `app/globals.css` hides the track's scrollbar. It is in the stylesheet rather than
+inline because a scrollbar is a pseudo-element and an inline style cannot reach one.
+
+### How this was verified, since `next build` still cannot run
+
+`registry.npmjs.org` returns 403 under this environment's egress policy, so there is still no
+real build. But `tsc` is available and **parses JSX**, and `react` and `react-dom` are
+installed globally, which together get much closer than the bracket-counting the last two
+sessions relied on:
+
+- All four files in `app/plan/` **parse** via
+  `tsc --noEmit --allowJs --jsx preserve --noResolve`. This caught a genuine bug: two `style`
+  attributes on one element in DayView, which is a JSX syntax error that no amount of reading
+  had spotted.
+- `ExerciseCard` and `DayView` were **compiled and server-rendered** against stubs for the JSX
+  imports and the real `lib/progression.js`, then asserted: the week 2 squat ramp comes out
+  `90/100/110/120/130 x 7`, week 4 deloads to `120 x 6`, two logged sets render two ticks, the
+  plank climbs off its logged best to 65 seconds, the five-number line is gone, nothing renders
+  under 16px, and the pager emits seven inset panels with snap, containment, dots and a
+  correctly disabled Previous. Every exercise kind renders without throwing: weighted,
+  bodyweight reps, timed hold, per side, distance and cardio.
+- The four Node suites in `test/` still pass unchanged.
+
+**What is still NOT verified: how it looks.** The SSR output uses Tailwind classes that do not
+resolve without the build, so a screenshot of it would be misleading. The visual reference is
+the prototype in `_scratch/vaeon-set-logging.html`, which uses the same sizes and spacing and
+can be opened in any browser. **Build it and look at it on a phone before trusting the
+layout.**
+
+### Outstanding
+
+1. **Not deployed and not built.** As above.
+2. `RestTimer` does not start when a set is logged. It should: that is the natural moment, and
+   it is most of the value of logging per set rather than per exercise.
+3. The **rest of the app has not had this pass.** Gym ready (`GymDayView`) still has the old
+   dense layout, and the reporting screens were never looked at.
+4. Settings toggle for `bonus_day`.
+5. The delete-then-insert guard on `body_metrics`, plus a unique index.
+6. `exercise_logs` cardio units: "20", "5:36" and "5.39" all in `time_text`.
+7. `increaseHint()` still says "+2.5kg when all sets move well", which is wrong advice under
+   double progression. It is no longer rendered on the card, so it is now dead copy in a live
+   function rather than a visible lie, but it should be rewritten or removed.
+8. `FEATURES.md` and `GUIDE.md` describe neither the rep ranges nor any of this.

@@ -322,3 +322,17 @@ main.min-h-screen {
 @media (prefers-reduced-motion: reduce) {
   .vf-ray, .vf-ring, .vf-spark, .vf-bloom { animation: none; opacity: 0; }
 }
+
+/* THE SESSION PAGER's scrollbar.
+   DayView styles the track inline, because everything in this app that touches colour does,
+   but a scrollbar is a pseudo-element and an inline style cannot reach one. Hidden rather
+   than styled: the dots and arrows under the track are the position indicator, and a second
+   one that you cannot tap is just noise. Firefox takes scrollbar-width, WebKit needs its own
+   pseudo-element, and both are needed to cover a phone and a desktop browser. */
+.pager {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.pager::-webkit-scrollbar {
+  display: none;
+}

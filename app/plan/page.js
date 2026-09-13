@@ -27,12 +27,27 @@ const TAB_KEY = "vaeon-plan-tab";
 // Matched on the exercise name rather than the index, because a swapped exercise logs
 // under its original name on purpose (see the note in ExerciseCard) and an index would
 // drift the moment the plan changed.
+// DONE MEANS EVERY PRESCRIBED SET, NOT "SOME ROWS EXIST". Changed 2026-09-12.
+//
+// This returned true as soon as the exercise had any logged row, which was right while the
+// only way to log was one button covering the whole exercise. With a set logged as it
+// happens, the first tap on Back Squat would have collapsed the card and hidden the other
+// four sets, and DayView's auto-finish would have logged the session after one set of each.
+//
+// Counting rows against the prescription fixes both. The consequence worth knowing: skip a
+// set and the session will not auto-finish, which is honest rather than annoying, and the
+// Finish session button further down DayView is still there for the days you cut short.
 function doneFor(day, weekLogs) {
   if (!day || !day.exercises || !weekLogs) return {};
   const forDay = weekLogs[day.key] || {};
   const out = {};
   day.exercises.forEach(function (ex, i) {
-    if (forDay[(ex.name || "").toLowerCase()]) out[i] = true;
+    const rows = forDay[(ex.name || "").toLowerCase()];
+    if (!rows) return;
+    const need = Math.max(1, Number(ex.sets) || 1);
+    let have = 0;
+    for (let k = 0; k < need; k++) if (rows[k]) have++;
+    if (have >= need) out[i] = true;
   });
   return out;
 }
@@ -108,6 +123,26 @@ const [weekLogs, setWeekLogs] = useState({});
 // A ref rather than state on purpose: state updates are batched and asynchronous, which
 // is precisely the window this is trying to close.
 const writing = useRef({});
+
+// CONCURRENT WRITES ARE CHAINED, NOT DROPPED. Added 2026-09-12 with per-set logging.
+//
+// The guard below used to be `if (writing.current[key]) return;`, which is correct for a
+// double tap on ONE button: the second tap is the same intent and discarding it is right.
+//
+// Per-set logging breaks that assumption. Tapping set 1 then set 2 a second later is two
+// different intents on the same lock key, and silently dropping the second means the set
+// the user just logged never reaches the database while the tick still lights up. That is
+// worse than the duplicate rows the lock was built to stop.
+//
+// So the lock now holds a promise and new work queues behind it. Serialised, so the
+// delete-then-insert pairs can never interleave, and nothing is thrown away.
+function queueWrite(key, fn) {
+  const prev = writing.current[key] || Promise.resolve();
+  const next = prev.then(fn, fn).catch(function () {});
+  writing.current[key] = next;
+  next.finally(function () { if (writing.current[key] === next) delete writing.current[key]; });
+  return next;
+}
 
 useEffect(function () {
 async function load() {
@@ -404,16 +439,32 @@ const rule = weeksFor(cat)[weekNo - 1] || weeksFor(cat)[0];
 const homeMode = profile && profile.equipment && profile.equipment !== "gym";
 const noBaselines = profile && !gym && !profile.baseline_bench && !profile.baseline_squat;
 
-async function completeSet(ex, exIdx, fields, total, kind, perSide) {
+function completeSet(ex, exIdx, fields, total, kind, perSide) {
 const lockKey = (day ? day.key : "") + "|" + (ex && ex.name ? ex.name : "");
-if (writing.current[lockKey]) return;
-writing.current[lockKey] = true;
+return queueWrite(lockKey, function () {
+return writeSets(ex, exIdx, fields, total, kind, perSide);
+});
+}
+
+async function writeSets(ex, exIdx, fields, total, kind, perSide) {
 try {
 const { data: { user } } = await supabase.auth.getUser();
 if (user && day) {
 const rows = [];
 for (let i = 0; i < total; i++) {
 const v = fields[i] || {};
+// A SET WITH NOTHING IN IT IS NOT A SET.
+//
+// This built a row per prescribed set regardless, so a card completed with three of five
+// boxes filled wrote two rows of nulls. Harmless while the only way to log was one button
+// at the end; not harmless now that a set is logged the moment it is done, because every
+// write would carry the sets that have not happened yet as empty rows and the history
+// would fill up with them.
+//
+// Empty means every measurement is empty. The per-side branch below already worked this
+// way, which is where the rule comes from.
+const hasAny = !!(v.weight || v.reps || v.secs || v.secsL || v.secsR || v.text || v.km || v.mins);
+if (!hasAny) continue;
 // A per-side hold writes two rows for one set, tagged left and right. Warrior II at
 // 3 x 30 sec per side is six holds, and logging three of them was throwing away the
 // comparison that matters most in yoga.
@@ -585,7 +636,7 @@ next[exIdx] = true;
 return next;
 });
 } finally {
-writing.current[lockKey] = false;
+// The lock is released by queueWrite now.
 }
 }
 
