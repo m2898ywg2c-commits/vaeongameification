@@ -7,7 +7,16 @@ import Icon from "./Icon";
 export default function ShareButton({ accent }) {
   const [copied, setCopied] = useState(false);
   const colour = accent || "#22D3EE";
-  const url = "https://vaeon-fitness.vercel.app";
+  // The canonical public address, read from NEXT_PUBLIC_SITE_URL in Vercel's project
+  // settings, falling back to the origin the visitor is actually on.
+  //
+  // The hardcoded vercel.app URL this replaces was correct at the time. That is exactly
+  // why it was worth removing: a share URL is the one string in the app that nothing
+  // ever exercises, so the day the canonical address changes it goes stale silently and
+  // keeps sending people to the old host. The origin fallback means it cannot.
+  const url =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "");
 
   const share = async function () {
     if (typeof navigator !== "undefined" && navigator.share) {

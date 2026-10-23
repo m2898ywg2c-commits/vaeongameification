@@ -34,10 +34,41 @@ const body = Inter({
   display: "swap",
 });
 
+// ABSOLUTE URLS FOR LINK PREVIEWS.
+//
+// metadataBase is what turns the relative paths below into the absolute URLs that
+// WhatsApp, Slack, iMessage and LinkedIn require before they will render a preview card.
+// Without it those services receive "/icon-512.png", cannot resolve it, and show nothing.
+//
+// NEXT_PUBLIC_SITE_URL must include the protocol. new URL() throws at build time on a
+// bare hostname, which would fail the deploy rather than degrade quietly, and that is the
+// preferable failure: a wrong canonical domain is invisible until somebody shares a link.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vaeon-fitness.vercel.app";
+
 export const metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Vaeon Fitness",
   description: "Your bespoke personal trainer and accountability partner",
   manifest: "/manifest.webmanifest",
+  // The preview card itself. The image is the app icon rather than a purpose-made asset:
+  // it is square where most platforms want 1200x630, so it renders as a small thumbnail
+  // rather than a banner. Enough to stop shared links looking broken. A proper 1200x630
+  // image is a separate job and wants the wordmark on it, not just the mark.
+  openGraph: {
+    title: "Vaeon Fitness",
+    description: "Your bespoke personal trainer and accountability partner",
+    url: "/",
+    siteName: "Vaeon",
+    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "Vaeon" }],
+    locale: "en_GB",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Vaeon Fitness",
+    description: "Your bespoke personal trainer and accountability partner",
+    images: ["/icon-512.png"],
+  },
   // iOS ignores the manifest almost entirely and reads these instead.
   appleWebApp: {
     capable: true,
