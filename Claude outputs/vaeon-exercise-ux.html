@@ -1,0 +1,609 @@
+<title>Engine Room &amp; Set Logging</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&family=Inter:wght@400;500;600&display=swap">
+<style>
+  /* Layout: a review sheet. Problem stated, evidence, then phone frames side by side,
+     "today" against "proposed". Committed to dark because every screen shown is a screen
+     of a dark app, and a light chrome around dark mockups would misrepresent them.
+     Tokens mirror app/globals.css in the Vaeon repo so these read as real screens. */
+  :root {
+    color-scheme: dark;
+    --bg: #09090b;
+    --surface: #0f0f12;
+    --raised: #16161a;
+    --line: rgba(255,255,255,0.10);
+    --line-strong: rgba(255,255,255,0.20);
+    --fg: #fafafa;
+    --muted: #a1a1aa;
+    --dim: #71717a;
+    --accent: #22d3ee;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --good: #4ade80;
+    --font-display: "Space Grotesk", "Segoe UI", sans-serif;
+    --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+    --track: 0.28em;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .wrap {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 0;
+  }
+
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 400; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.9rem, 5vw, 2.9rem); line-height: 1.08; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.3rem, 3vw, 1.75rem); line-height: 1.15; letter-spacing: -0.015em; }
+  h3 { font-size: 1.05rem; }
+  p { margin: 0; }
+
+  .label {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-family: var(--font-display); font-size: 0.6875rem; font-weight: 400;
+    letter-spacing: var(--track); text-transform: uppercase; color: var(--dim);
+  }
+  .label::after { content: ""; flex: 1; height: 1px; background: var(--line-strong); }
+
+  header.top { border-bottom: 1px solid var(--line); }
+  header.top .wrap { padding-block: clamp(2.5rem, 7vw, 4.5rem); display: grid; gap: 1.5rem; }
+  .lede { font-size: clamp(1rem, 2vw, 1.15rem); color: var(--muted); max-width: 62ch; }
+
+  .flag {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    border: 1px solid rgba(251,191,36,0.4); background: rgba(251,191,36,0.08);
+    color: var(--warn); border-radius: 4px; padding: 0.55rem 0.9rem;
+    font-size: 0.82rem; width: fit-content;
+  }
+
+  section { border-bottom: 1px solid var(--line); }
+  section > .wrap { padding-block: clamp(2.5rem, 6vw, 4rem); display: grid; gap: 1.5rem; }
+
+  .prose { max-width: 68ch; display: grid; gap: 0.9rem; color: var(--muted); }
+  .prose strong { color: var(--fg); font-weight: 600; }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.86em;
+    background: var(--raised); border: 1px solid var(--line); border-radius: 3px;
+    padding: 0.1em 0.38em; color: var(--accent);
+  }
+  pre {
+    margin: 0; overflow-x: auto; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 4px; padding: 1rem;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.8rem;
+    line-height: 1.65; color: var(--muted); min-width: 0;
+  }
+  pre b { color: var(--bad); font-weight: 400; }
+  pre i { color: var(--good); font-style: normal; }
+
+  /* Evidence table */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 0.62rem 0.9rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font-family: var(--font-display); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); font-weight: 400; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.bad { color: var(--bad); }
+
+  /* Phone frames */
+  .frames { display: grid; gap: 1.75rem; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); align-items: start; }
+  .frame { display: grid; gap: 0.75rem; min-width: 0; }
+  .frame > .cap { display: grid; gap: 0.2rem; }
+  .cap .tag { font-family: var(--font-display); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; }
+  .cap .tag.now { color: var(--bad); }
+  .cap .tag.new { color: var(--good); }
+  .cap .note { font-size: 0.82rem; color: var(--dim); }
+
+  .phone {
+    background: var(--bg); border: 1px solid var(--line-strong); border-radius: 22px;
+    padding: 0.85rem; max-width: 100%;
+  }
+  .screen { background: #000; border-radius: 14px; padding: 0.9rem; display: grid; gap: 0.7rem; }
+
+  /* App UI primitives, mirroring the real app */
+  .exname { font-family: var(--font-display); font-size: 0.98rem; line-height: 1.2; }
+  .exmeta { font-size: 0.74rem; color: var(--dim); }
+  .card { border: 1px solid var(--line); border-radius: 4px; padding: 0.8rem; display: grid; gap: 0.6rem; }
+
+  .setrow {
+    display: flex; align-items: center; gap: 0.7rem;
+    border: 1px solid var(--line); border-radius: 4px; padding: 0.7rem 0.8rem;
+    background: var(--surface);
+  }
+  .setrow .idx { font-family: var(--font-display); font-size: 0.7rem; color: var(--dim); width: 2.6rem; letter-spacing: 0.1em; }
+  .setrow .val { font-family: var(--font-display); font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+  .setrow .val.empty { color: var(--bad); }
+  .setrow .unit { font-size: 0.72rem; color: var(--dim); }
+  .setrow .tick {
+    margin-left: auto; width: 34px; height: 34px; border-radius: 4px;
+    border: 1px solid var(--line-strong); display: grid; place-items: center;
+    font-size: 0.95rem; color: var(--dim);
+  }
+  .setrow.done { border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.07); }
+  .setrow.done .tick { border-color: rgba(74,222,128,0.5); color: var(--good); }
+  .setrow.live { border-color: var(--accent); background: rgba(34,211,238,0.07); }
+
+  .field { display: grid; gap: 0.25rem; }
+  .field label { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); font-family: var(--font-display); }
+  .field .box {
+    border: 1px solid var(--line-strong); border-radius: 4px; padding: 0.6rem 0.65rem;
+    font-family: var(--font-display); font-size: 1.15rem; font-variant-numeric: tabular-nums;
+  }
+  .field .box.focus { border-color: var(--accent); }
+  .field .box.ph { color: var(--dim); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+
+  .btn {
+    border-radius: 4px; padding: 0.7rem; text-align: center;
+    font-family: var(--font-display); font-size: 0.85rem;
+  }
+  .btn.solid { background: var(--accent); color: #000; }
+  .btn.ghost { border: 1px solid var(--line-strong); color: var(--fg); }
+
+  .banner {
+    border-radius: 4px; padding: 0.6rem 0.7rem; font-size: 0.76rem; line-height: 1.45;
+    border: 1px solid rgba(34,211,238,0.35); background: rgba(34,211,238,0.08); color: var(--accent);
+  }
+  .banner.warn { border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.08); color: var(--warn); }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.66rem;
+    letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--font-display);
+    border: 1px solid var(--line-strong); border-radius: 3px; padding: 0.2rem 0.45rem; color: var(--dim);
+  }
+  .pill.accent { border-color: rgba(34,211,238,0.5); color: var(--accent); }
+
+  /* AMRAP / EMOM specific */
+  .clock {
+    font-family: var(--font-display); font-size: 2.6rem; line-height: 1;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+  }
+  .clock .sub { font-size: 0.7rem; letter-spacing: var(--track); color: var(--dim); display: block; margin-top: 0.35rem; }
+  .movelist { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .movelist .m { background: #000; padding: 0.6rem 0.7rem; display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
+  .movelist .m .q { font-family: var(--font-display); color: var(--accent); min-width: 3.4rem; font-variant-numeric: tabular-nums; }
+  .movelist .m.cur { background: rgba(34,211,238,0.09); }
+  .rounds { display: flex; align-items: center; gap: 0.5rem; }
+  .rounds .n { font-family: var(--font-display); font-size: 2.1rem; font-variant-numeric: tabular-nums; }
+  .stepper { margin-left: auto; display: flex; gap: 0.4rem; }
+  .stepper div { width: 38px; height: 38px; border: 1px solid var(--line-strong); border-radius: 4px; display: grid; place-items: center; font-size: 1.1rem; }
+  .stepper div.plus { border-color: var(--accent); color: var(--accent); }
+
+  /* Annotations */
+  .anno { display: grid; gap: 0.55rem; }
+  .anno li { list-style: none; display: flex; gap: 0.6rem; font-size: 0.86rem; color: var(--muted); }
+  .anno li::before { content: attr(data-n); font-family: var(--font-display); color: var(--accent); flex-shrink: 0; font-size: 0.78rem; padding-top: 0.15rem; }
+  ul { margin: 0; padding: 0; }
+
+  .sessions { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .sess { border: 1px solid var(--line); border-radius: 4px; padding: 1rem; display: grid; gap: 0.7rem; min-width: 0; }
+  .sess .name { font-family: var(--font-display); font-size: 1rem; }
+  .sess .meta { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); font-family: var(--font-display); }
+  .sess ol { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; font-size: 0.85rem; color: var(--muted); }
+  .sess .why { font-size: 0.8rem; color: var(--dim); border-top: 1px solid var(--line); padding-top: 0.6rem; }
+
+  .decide { display: grid; gap: 0.8rem; }
+  .decide .d { border: 1px solid var(--line); border-left: 2px solid var(--accent); border-radius: 4px; padding: 0.85rem 1rem; display: grid; gap: 0.25rem; }
+  .decide .d .q { font-family: var(--font-display); font-size: 0.95rem; }
+  .decide .d .o { font-size: 0.85rem; color: var(--muted); }
+
+  footer { }
+  footer .wrap { padding-block: 2.5rem; color: var(--dim); font-size: 0.82rem; }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <p class="label">Vaeon &middot; design review</p>
+    <h1>The set you tapped, and the session you can&rsquo;t log</h1>
+    <p class="lede">
+      Three things in one sheet: a bug that has been throwing away your weights since September,
+      a rework of the exercise card, and a new session type for the AMRAP and EMOM work your gym
+      actually programmes.
+    </p>
+    <p class="flag">Nothing here is built. This is for you to mark up before I write any of it.</p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="label">1 &middot; The bug</p>
+    <h2>A tap counts as a logged set even when there is no weight in it</h2>
+
+    <div class="prose">
+      <p>
+        When you tap a set row, the card fills in what it can and then checks whether the set is
+        &ldquo;filled&rdquo; before writing it. That check passes if <strong>any</strong> field has
+        a value. A rep count alone satisfies it.
+      </p>
+      <p>
+        So on a testing week, where there is deliberately no prescribed load, the rep count gets
+        prefilled, the check passes, the row is written with a null weight, and the set is marked
+        done. Four sets later the exercise closes. The keypad that would have let you type the
+        weight never opens, because the code only opens it when <em>nothing at all</em> could be
+        prefilled.
+      </p>
+      <pre>app/plan/ExerciseCard.js
+
+<b>const filled = !!(next[i].weight || next[i].reps || next[i].secs
+                  || next[i].text || next[i].km);</b>
+if (!filled) { setEditing(true); return; }
+
+<i>// should be: the measurement that DEFINES this kind must be present
+const filled = kind === "weight" ? !!next[i].weight
+             : kind === "reps"   ? !!next[i].reps
+             : ...</i></pre>
+      <p>
+        There is a second, quieter one directly above it. The initial prefill honours
+        <code>calibrating</code> and refuses to suggest a weight on a testing week. The tap handler
+        does not, so a tap can write an app-derived number as though you had tested it. That is the
+        feedback loop the September migration existed to kill.
+      </p>
+      <p>And a third: the comment says the keypad should be open on a testing week, and the code says <code>useState(false)</code>.</p>
+    </div>
+
+    <p class="label">Your logs</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Exercise</th><th>Set</th><th>Weight</th><th>Reps</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>16 Sep</td><td>Hammer Curl</td><td>2</td><td class="bad">null</td><td>10</td></tr>
+          <tr><td>16 Sep</td><td>Hammer Curl</td><td>3</td><td class="bad">null</td><td>10</td></tr>
+          <tr><td>15 Sep</td><td>Barbell Curl</td><td>2</td><td class="bad">null</td><td>10</td></tr>
+          <tr><td>15 Sep</td><td>Barbell Curl</td><td>3</td><td class="bad">null</td><td>10</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose" style="max-width:68ch"><span>Those are loaded lifts with a rep count and no load. On 15 September, 13 of your 26 logged rows had no weight against them.</span></p>
+
+    <div class="frames">
+      <div class="frame">
+        <div class="cap">
+          <span class="tag now">Today</span>
+          <span class="note">Testing week, Barbell Curl. Tap and it is done.</span>
+        </div>
+        <div class="phone"><div class="screen">
+          <div>
+            <p class="exname">Barbell Curl</p>
+            <p class="exmeta">3 sets &middot; 10&ndash;15 reps</p>
+          </div>
+          <div class="banner warn">Testing week. No target today. Work up to a set you could stop 2 reps short of.</div>
+          <div class="setrow done"><span class="idx">Set 1</span><span class="val empty">&mdash;</span><span class="unit">kg</span><span class="val">10</span><span class="unit">reps</span><span class="tick">&#10003;</span></div>
+          <div class="setrow done"><span class="idx">Set 2</span><span class="val empty">&mdash;</span><span class="unit">kg</span><span class="val">10</span><span class="unit">reps</span><span class="tick">&#10003;</span></div>
+          <div class="setrow done"><span class="idx">Set 3</span><span class="val empty">&mdash;</span><span class="unit">kg</span><span class="val">10</span><span class="unit">reps</span><span class="tick">&#10003;</span></div>
+          <div class="btn ghost">Details</div>
+        </div></div>
+      </div>
+
+      <div class="frame">
+        <div class="cap">
+          <span class="tag new">Proposed</span>
+          <span class="note">No prescription means the keypad is the screen, not a toggle.</span>
+        </div>
+        <div class="phone"><div class="screen">
+          <div>
+            <p class="exname">Barbell Curl</p>
+            <p class="exmeta">Set 1 of 3 &middot; find your working set</p>
+          </div>
+          <div class="banner">Testing week. Every week after this is a percentage of this number, so do not max out.</div>
+          <div class="card">
+            <div class="grid2">
+              <div class="field"><label>Weight</label><div class="box focus ph">kg</div></div>
+              <div class="field"><label>Reps</label><div class="box">10</div></div>
+            </div>
+            <div class="btn solid">Log set 1</div>
+          </div>
+          <div class="setrow"><span class="idx">Set 2</span><span class="exmeta" style="margin-left:auto">waiting</span></div>
+          <div class="setrow"><span class="idx">Set 3</span><span class="exmeta" style="margin-left:auto">waiting</span></div>
+        </div></div>
+      </div>
+    </div>
+
+    <ul class="anno">
+      <li data-n="01">The weight field is the only empty one, and it is focused. There is nothing to tap past.</li>
+      <li data-n="02">No tick on a weight-kind set until a weight exists. The tick is for sets that are complete.</li>
+      <li data-n="03">Remaining sets are listed but inert, so you can see the shape of the exercise without being able to tick your way through it.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="label">2 &middot; The exercise card</p>
+    <h2>One set at a time, with last week in reach</h2>
+
+    <div class="prose">
+      <p>
+        The current card shows every set at once as equal rows. That is a table, and a table is what
+        you want afterwards, not during. Mid-session you are doing exactly one set, and the question
+        is always the same: what am I lifting, and what did I do last time.
+      </p>
+      <p>
+        The change is to promote the live set and demote the rest. Same data, same writes, same
+        per-set logging. The table is still there once the exercise is finished.
+      </p>
+    </div>
+
+    <div class="frames">
+      <div class="frame">
+        <div class="cap">
+          <span class="tag now">Today</span>
+          <span class="note">Four equal rows. The number you need is 28px and shared with three others.</span>
+        </div>
+        <div class="phone"><div class="screen">
+          <div>
+            <p class="exname">Back Squat</p>
+            <p class="exmeta">4 sets &middot; 6&ndash;10 reps &middot; 72% of 168kg</p>
+          </div>
+          <div class="setrow done"><span class="idx">Set 1</span><span class="val">120</span><span class="unit">kg</span><span class="val">8</span><span class="unit">reps</span><span class="tick">&#10003;</span></div>
+          <div class="setrow done"><span class="idx">Set 2</span><span class="val">120</span><span class="unit">kg</span><span class="val">8</span><span class="unit">reps</span><span class="tick">&#10003;</span></div>
+          <div class="setrow"><span class="idx">Set 3</span><span class="val">120</span><span class="unit">kg</span><span class="val">8</span><span class="unit">reps</span><span class="tick">&#9711;</span></div>
+          <div class="setrow"><span class="idx">Set 4</span><span class="val">120</span><span class="unit">kg</span><span class="val">8</span><span class="unit">reps</span><span class="tick">&#9711;</span></div>
+          <div class="btn ghost">Details</div>
+        </div></div>
+      </div>
+
+      <div class="frame">
+        <div class="cap">
+          <span class="tag new">Proposed</span>
+          <span class="note">The live set owns the screen. Done sets collapse to one line.</span>
+        </div>
+        <div class="phone"><div class="screen">
+          <div style="display:flex;align-items:baseline;gap:0.5rem">
+            <p class="exname">Back Squat</p>
+            <span class="pill accent" style="margin-left:auto">Set 3 of 4</span>
+          </div>
+          <p class="exmeta">Set 1 &middot; 120&times;8 &nbsp;&middot;&nbsp; Set 2 &middot; 120&times;8</p>
+
+          <div class="card" style="border-color:rgba(34,211,238,0.4);background:rgba(34,211,238,0.05)">
+            <div style="display:flex;align-items:flex-end;gap:0.6rem">
+              <div><span class="clock" style="font-size:3rem">120</span></div>
+              <div style="padding-bottom:0.5rem"><span class="unit" style="font-size:0.9rem">kg</span></div>
+              <div style="margin-left:auto;text-align:right">
+                <span class="clock" style="font-size:3rem">8</span>
+                <span class="unit" style="font-size:0.9rem">reps</span>
+              </div>
+            </div>
+            <div class="grid3">
+              <div class="btn ghost" style="padding:0.5rem">&minus;2.5</div>
+              <div class="btn ghost" style="padding:0.5rem">Edit</div>
+              <div class="btn ghost" style="padding:0.5rem">+2.5</div>
+            </div>
+            <div class="btn solid">Log set 3</div>
+          </div>
+
+          <div class="banner">Last week, same set: 117.5&times;8. Up 2.5kg.</div>
+          <div class="setrow"><span class="idx">Set 4</span><span class="exmeta" style="margin-left:auto">120 &times; 8 to come</span></div>
+        </div></div>
+      </div>
+    </div>
+
+    <ul class="anno">
+      <li data-n="01">The prescribed number is the biggest thing on screen, because in bad light at arm&rsquo;s length that is the whole job.</li>
+      <li data-n="02">Plus and minus by the bar&rsquo;s own increment. Most corrections are one plate, and that should not need a keypad.</li>
+      <li data-n="03">Last week&rsquo;s matching set, stated as a difference. The number to beat is the point, and right now you have to remember it.</li>
+      <li data-n="04">Finished sets collapse to a single line of text. Still visible, no longer competing.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="label">3 &middot; The Engine Room</p>
+    <h2>Your gym programmes time, not sets</h2>
+
+    <div class="prose">
+      <p>
+        Every board you sent is an AMRAP, an EMOM or a circuit. None of them is sets by reps by
+        weight, which is the only shape the app can currently hold. An AMRAP has a cap and a score.
+        An EMOM has an interval and a station. Forcing either into the exercise card is what makes
+        conditioning feel bolted on.
+      </p>
+      <p>
+        <strong>The Engine Room is a second session type</strong>, with its own card. It sits
+        alongside the strength days rather than inside them, and it scores rounds and reps instead
+        of load.
+      </p>
+    </div>
+
+    <div class="frames">
+      <div class="frame">
+        <div class="cap">
+          <span class="tag new">New &middot; AMRAP</span>
+          <span class="note">One clock, the station you are on, one button.</span>
+        </div>
+        <div class="phone"><div class="screen">
+          <div style="display:flex;align-items:baseline;gap:0.5rem">
+            <p class="exname">Engine Room</p>
+            <span class="pill accent" style="margin-left:auto">AMRAP 20</span>
+          </div>
+          <div style="text-align:center;padding:0.5rem 0">
+            <span class="clock">12:04</span>
+            <span class="sub">remaining</span>
+          </div>
+          <div class="movelist">
+            <div class="m"><span class="q">200m</span> Run</div>
+            <div class="m cur"><span class="q">20</span> Wall Balls</div>
+            <div class="m"><span class="q">15/12</span> Cal Ski</div>
+            <div class="m"><span class="q">25m</span> Sled Push</div>
+            <div class="m"><span class="q">15</span> Down Ups</div>
+          </div>
+          <div class="card">
+            <div class="rounds">
+              <div><span class="n">3</span> <span class="unit">rounds</span></div>
+              <div class="stepper"><div>&minus;</div><div class="plus">+</div></div>
+            </div>
+          </div>
+          <div class="btn solid">Finish &amp; score</div>
+        </div></div>
+      </div>
+
+      <div class="frame">
+        <div class="cap">
+          <span class="tag new">New &middot; EMOM</span>
+          <span class="note">The interval is the unit. Station advances itself.</span>
+        </div>
+        <div class="phone"><div class="screen">
+          <div style="display:flex;align-items:baseline;gap:0.5rem">
+            <p class="exname">Engine Room</p>
+            <span class="pill accent" style="margin-left:auto">EMOM 42</span>
+          </div>
+          <div style="text-align:center;padding:0.5rem 0">
+            <span class="clock" style="color:var(--accent)">0:38</span>
+            <span class="sub">minute 14 of 42 &middot; work</span>
+          </div>
+          <div class="card" style="border-color:rgba(34,211,238,0.4)">
+            <p class="exmeta">Now</p>
+            <p class="exname" style="font-size:1.3rem">16/12 Cal Ski</p>
+          </div>
+          <div class="movelist">
+            <div class="m"><span class="q">Next</span> 12 Burpee Box Jump</div>
+            <div class="m"><span class="q">Then</span> 15/12 Cal Ass Bike</div>
+          </div>
+          <div class="grid2">
+            <div class="btn ghost">Pause</div>
+            <div class="btn ghost">Skip</div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="frame">
+        <div class="cap">
+          <span class="tag new">New &middot; after</span>
+          <span class="note">What a conditioning session leaves behind.</span>
+        </div>
+        <div class="phone"><div class="screen">
+          <div>
+            <p class="exname">Engine Room</p>
+            <p class="exmeta">AMRAP 20 &middot; today</p>
+          </div>
+          <div class="card">
+            <p class="exmeta">Score</p>
+            <div style="display:flex;align-items:baseline;gap:0.4rem">
+              <span class="clock">3</span><span class="unit">rounds</span>
+              <span class="clock" style="margin-left:0.6rem">+ 2</span><span class="unit">stations</span>
+            </div>
+          </div>
+          <div class="banner">Last time you did this: 2 rounds + 4. You went one full round further.</div>
+          <div class="card">
+            <p class="exmeta">How did that feel?</p>
+            <div class="grid3">
+              <div class="btn ghost" style="padding:0.5rem">Easy</div>
+              <div class="btn ghost" style="padding:0.5rem;border-color:var(--accent);color:var(--accent)">Right</div>
+              <div class="btn ghost" style="padding:0.5rem">Brutal</div>
+            </div>
+          </div>
+          <div class="btn solid">Done</div>
+        </div></div>
+      </div>
+    </div>
+
+    <ul class="anno">
+      <li data-n="01">Rounds and stations, not weight. That is the only honest score for an AMRAP, and it compares cleanly to the same session six weeks later.</li>
+      <li data-n="02">The clock is the screen. Everything else is subordinate to it, which is the opposite of the strength card.</li>
+      <li data-n="03">The effort question is the progression input. Three AMRAPs at &ldquo;Easy&rdquo; is what tells the engine to lengthen the cap or add a station.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="label">4 &middot; Three new sessions</p>
+    <h2>Built from your gym&rsquo;s own grammar</h2>
+
+    <div class="prose">
+      <p>
+        Your boards have a house style: an erg, a loaded carry or push, a wall ball or burpee, and a
+        run. Thirteen to twenty minutes. These three keep that shape and point it at HYROX, so they
+        sit next to Revolution&rsquo;s sessions rather than competing with them.
+      </p>
+    </div>
+
+    <div class="sessions">
+      <div class="sess">
+        <p class="meta">AMRAP 18 &middot; engine</p>
+        <p class="name">Four Stations</p>
+        <ol>
+          <li>500m Row</li>
+          <li>15 Wall Balls</li>
+          <li>25m Sled Push</li>
+          <li>10 Burpee Broad Jumps</li>
+        </ol>
+        <p class="why">The closest thing to race order. Row then wall balls is the back-to-back that catches people out on the day.</p>
+      </div>
+
+      <div class="sess">
+        <p class="meta">AMRAP 16 &middot; strength under fatigue</p>
+        <p class="name">Compromised</p>
+        <ol>
+          <li>400m Ski</li>
+          <li>12 Dumbbell Thrusters</li>
+          <li>20m Farmers Carry, heavy</li>
+          <li>15 Box Step Overs</li>
+        </ol>
+        <p class="why">Loaded movements placed after the erg on purpose. Grip is the limiter, which is the point: it is also the limiter in the race.</p>
+      </div>
+
+      <div class="sess">
+        <p class="meta">AMRAP 20 &middot; push and pull</p>
+        <p class="name">Both Directions</p>
+        <ol>
+          <li>800m C2 Bike</li>
+          <li>25m Sled Pull</li>
+          <li>12 Dual DB Front Rack Reverse Lunge</li>
+          <li>20 Cal Ski</li>
+        </ol>
+        <p class="why">Sled pull is the station most people neglect because most gyms cannot set one up. Yours can.</p>
+      </div>
+    </div>
+
+    <div class="prose" style="margin-top:0.5rem">
+      <p>
+        Your gym&rsquo;s four boards go in as fixed sessions alongside these, unmodified, the same way
+        the HYROX simulation day already works: authored, not generated, and excluded from
+        substitution.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="label">5 &middot; Before I build</p>
+    <h2>Four things only you can answer</h2>
+
+    <div class="decide">
+      <div class="d">
+        <p class="q">Does the Engine Room replace a strength day or sit on top?</p>
+        <p class="o">You asked for more HYROX work in each day <em>and</em> a new section. Both is four hard days a week plus whatever you do at Revolution. I would make the Engine Room the bonus day and add one conditioning finisher to each strength day, not two full sessions.</p>
+      </div>
+      <div class="d">
+        <p class="q">Should I fix the logging bug now, separately?</p>
+        <p class="o">It is three small changes and it is losing data every session you train. I would ship that on its own, today, rather than hold it behind this review.</p>
+      </div>
+      <div class="d">
+        <p class="q">Carlito across the whole app, or landing page only?</p>
+        <p class="o">It currently stops at the landing page. Carrying it through means every screen in the app changes face, and the app was deliberately set in Inter for tabular figures at arm&rsquo;s length. I would keep numbers in Inter and move only prose.</p>
+      </div>
+      <div class="d">
+        <p class="q">Meal planning for everyone: the flag, or the age gate too?</p>
+        <p class="o">I will open the rollout flag. I am not touching the age check, which exists because calorie targets aimed at teenagers are a recognised risk factor. That stays whatever else changes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Mark it up and tell me what is wrong. Nothing in this sheet exists in the repo yet.
+  </div>
+</footer>
