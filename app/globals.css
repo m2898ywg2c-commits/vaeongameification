@@ -170,8 +170,17 @@ html[data-text="larger"] {
 body {
   background: var(--brand-bg);
   color: var(--brand-text);
-  /* Was Arial, with a --font-geist-sans reference that pointed at nothing. */
-  font-family: var(--font-body), "Segoe UI", Roboto, sans-serif;
+  /* CARLITO, APP-WIDE, ON REQUEST.
+     Metric-compatible with Calibri and derived from Lato: humanist and softer than Inter,
+     which this was until 2026-10-24. Inter stays in the stack as the first fallback, so a
+     failed font load lands on the face the app was designed in rather than on Arial.
+
+     THE TRADE, WRITTEN DOWN. Inter was chosen for its tabular figures, because this app is
+     mostly numbers on a phone at arm's length and proportional digits make a counting rest
+     timer visibly shuffle its own width. The tabular-nums declaration below is kept and
+     Carlito does carry tnum, but if a timer or a stat tile is ever seen jittering as it
+     counts, this line is the first place to look. */
+  font-family: var(--font-soft), var(--font-body), "Segoe UI", Roboto, sans-serif;
   /* The app is almost entirely numbers. Proportional figures make a counting timer and a
      changing stat tile visibly shuffle their own digits, which reads as jank even when
      nothing is wrong. Tabular by default is the correct setting for this product, and the
@@ -380,6 +389,9 @@ main.min-h-screen {
    body so every app screen keeps Inter. The wordmark opts back out: see
    .site-wordmark below. */
 .site-soft {
+  /* Carlito is the app-wide face now, so this no longer changes the typeface. It stays
+     because it still switches tabular figures off: lining digits are right for a rest
+     timer and wrong inside a sentence, where they leave visible gaps around every number. */
   font-family: var(--font-soft), Calibri, Candara, Segoe UI, sans-serif;
   /* The app sets tabular figures globally because it is mostly numbers at arm's
      length in bad gym lighting. Prose is not, and tabular digits in a sentence
