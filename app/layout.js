@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { Space_Grotesk, Inter } from "next/font/google";
+import { Space_Grotesk, Inter, Carlito } from "next/font/google";
 import { THEME_COOKIE, SCHEME_COOKIE, TEXT_COOKIE, resolveScheme, resolveTextSize } from "@/lib/theme";
 import "./globals.css";
 import BrandBar from "./Brand";
@@ -25,6 +25,24 @@ const display = Space_Grotesk({
   subsets: ["latin"],
   weight: ["300", "400", "500"],
   variable: "--font-display",
+  display: "swap",
+});
+
+// A THIRD FACE, FOR THE PUBLIC PAGE ONLY.
+//
+// Carlito is metric-compatible with Calibri and derived from Lato: humanist, rounded
+// terminals, far softer than Space Grotesk's engineered grotesque. The landing page is
+// the one screen talking to somebody who has never heard of Vaeon, and the engineered
+// face that makes the app feel precise makes the pitch feel cold.
+//
+// IT SHIPS 400 AND 700 AND NOTHING ELSE. Asking next/font for 300, 500 or 600 fails the
+// build, so the page is designed in two weights on purpose rather than by accident.
+//
+// Scoped to .site-soft in globals.css, not to body, so the app itself is untouched.
+const soft = Carlito({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-soft",
   display: "swap",
 });
 
@@ -115,7 +133,7 @@ export default async function RootLayout({ children }) {
   const textSize = resolveTextSize(jar.get(TEXT_COOKIE)?.value);
 
   return (
-    <html lang="en" data-theme={scheme} data-text={textSize} className={"h-full antialiased " + display.variable + " " + body.variable}>
+    <html lang="en" data-theme={scheme} data-text={textSize} className={"h-full antialiased " + display.variable + " " + body.variable + " " + soft.variable}>
       <head>
         {/* CATCH beforeinstallprompt BEFORE REACT EXISTS.
             Chrome fires this event early in page load, frequently before the bundle has

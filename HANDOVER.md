@@ -2401,3 +2401,80 @@ types appear with their orbs and taglines and that every nav anchor has a matchi
 assertions on the robots and sitemap output, and 8 source checks that specifically fail if
 either Tailwind v3-ism reappears. **The thing none of that covers is what it looks like.**
 Open it and judge the design with your eyes before telling anyone about it.
+
+---
+
+## Added 2026-10-24, later: the landing page gets a voice of its own
+
+Second pass on the front door, at James's direction: an opening animation, a photograph,
+softer type, softer buttons, the character renders instead of the orbs, and the Unify credit
+removed.
+
+**The page no longer looks like the app, on purpose.** The app is Space Grotesk on near-black
+at 4px radius because it is a tool used at arm's length in bad gym lighting and it should feel
+machined. This is the one screen talking to somebody who has never heard of Vaeon, and that
+same engineered face makes the pitch feel cold. So the page runs **Carlito** (metric-compatible
+with Calibri, derived from Lato), 12px buttons and 14px panels.
+
+**All of it is scoped.** `.site-soft` and the `.site-*` / `.btn-*` / `.panel-*` classes in
+globals.css. Nothing touches the app. If that divergence is wrong and the whole product should
+soften, the change is in those classes rather than scattered through the page.
+
+**Carlito ships 400 and 700 and nothing else.** Asking next/font for 300, 500 or 600 fails the
+build, so the page is designed in two weights deliberately. Do not reach for `font-medium` or
+`font-semibold` here.
+
+### A latent bug this surfaced
+
+`BrandLockup` sets **no font-family at all**, so it inherits whatever it lands in. app/layout.js
+says "Space Grotesk for display and the wordmark", but since body is Inter, the wordmark has in
+fact been rendering in Inter everywhere in the app. On this page it would have inherited
+Carlito, i.e. the logo quietly changing typeface on its own front page.
+
+Patched here with `.site-wordmark`, which pins the display face back on. **The app-wide version
+of this bug is still live.** The real fix is a font-family inside BrandLockup, which would
+correct every screen at once; it was left alone because it changes the look of the whole app
+and that is a decision rather than a tidy-up.
+
+### The opening, and why it is pure CSS
+
+The mark lands, then Vaeon rises a letter at a time, then the card lifts off the hero. The
+stagger is an `animation-delay` per letter and the lift is one keyframe. No client component,
+no timer to drift, no hydration mismatch. `visibility` is animated to hidden at the end so the
+card cannot sit invisible over the hero swallowing the first tap.
+
+**app/Splash.js is suppressed on "/"** via a new `HIDE_ON` list. Otherwise a first-time visitor
+got the app's "Welcome to Vaeon" card and then this one: two intros on one page load.
+
+Scroll reveals use `animation-timeline: view()` behind an `@supports` query rather than an
+IntersectionObserver. No JavaScript, nothing to leak, and a browser without support simply shows
+the content, which is the right fallback for a page whose job is to be readable.
+
+Every animation has a `prefers-reduced-motion` path, and the reduced-motion case removes the
+opening card outright rather than racing it.
+
+### THE HERO PHOTOGRAPH IS NOT THERE YET
+
+`app/Welcome.js` points `--hero-image` at **`/hero.webp`, which does not exist**. It is a
+`background-image` and not an `<img>` precisely so that the missing file degrades to an empty
+surface panel instead of a broken-image icon. Drop a file at `public/hero.webp` and it appears,
+drains from colour to greyscale after the wordmark finishes, and needs no code change.
+
+It could not be fetched from here: the egress policy returns 403 on CONNECT for image hosts,
+from both the container and the laptop shell, so no stock library is reachable. The Canva
+connector is installed but reads `needs_reconnect`.
+
+Aspect is 4:5 and the focal point sits at `center 30%`, so a figure's head is in frame. A real
+photograph of James or his actual gym would be worth more than stock here: the whole argument of
+this page is that it tells you the truth, and a stock athlete on a rower is the single most
+generic image in the category.
+
+### Verification
+
+Still no local build. 37 render assertions, 43 source checks, and a `tsc` parse of every changed
+file. The source checks specifically fail if a Tailwind v3 spelling returns, if any animation
+loses its reduced-motion path, or if a class is used in JS without being defined in CSS.
+
+**Unverified: that Carlito 400/700 resolves on Google Fonts.** It is a four-style family and
+those are the two upright weights, but the check could not be completed from here. A wrong
+weight fails `next build` loudly rather than shipping broken, so the deploy log is the test.

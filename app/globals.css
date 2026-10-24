@@ -367,3 +367,192 @@ main.min-h-screen {
 .site-nav-link:hover {
   color: var(--brand-text);
 }
+
+/* ==========================================================================
+   THE PUBLIC LANDING PAGE
+   Everything below is scoped to the marketing page and must not leak into the
+   app. The app's own voice is Space Grotesk on near-black at 4px radius; this
+   page is deliberately softer, because it is the one screen talking to somebody
+   who has never heard of Vaeon.
+   ========================================================================== */
+
+/* Carlito, metric-compatible with Calibri. Scoped to a class rather than set on
+   body so every app screen keeps Inter. The wordmark opts back out: see
+   .site-wordmark below. */
+.site-soft {
+  font-family: var(--font-soft), Calibri, Candara, Segoe UI, sans-serif;
+  /* The app sets tabular figures globally because it is mostly numbers at arm's
+     length in bad gym lighting. Prose is not, and tabular digits in a sentence
+     leave visible gaps around every number. */
+  font-variant-numeric: normal;
+  font-feature-settings: normal;
+}
+
+/* THE WORDMARK KEEPS ITS OWN FACE.
+   BrandLockup sets no font-family, so it inherits whatever it lands in. In the
+   app that means Inter, which is already not what app/layout.js claims the
+   wordmark uses. On this page it would mean Carlito, i.e. the logo quietly
+   changing typeface. Pinning it here makes the lockup correct on the one page
+   that shows it largest. */
+.site-wordmark {
+  font-family: var(--font-display), Segoe UI, sans-serif;
+  letter-spacing: var(--track-tight);
+}
+
+/* Softer than the app's machined 4px, on request. Buttons and the large panels
+   only: the hairline grids stay sharp or the whole page turns to jelly. */
+.btn-soft {
+  border-radius: 12px;
+}
+
+.panel-soft {
+  border-radius: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   THE OPENING
+   The wordmark builds itself: the mark lands, then Vaeon rises in a letter at a
+   time, then the card lifts and the page is underneath.
+
+   Pure CSS with animation-delay rather than JavaScript timing. No client
+   component, no hydration mismatch, nothing to drift, and the reduced-motion
+   opt-out is a media query instead of a branch.
+   -------------------------------------------------------------------------- */
+@keyframes site-open-mark {
+  from { opacity: 0; transform: translateY(14px) scale(0.86); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes site-open-letter {
+  from { opacity: 0; transform: translateY(0.5em); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* visibility is animated so the card stops intercepting taps the moment it is
+   gone, rather than sitting invisible over the hero swallowing the first click. */
+@keyframes site-open-lift {
+  0%, 62%   { opacity: 1; visibility: visible; }
+  100%      { opacity: 0; visibility: hidden; }
+}
+
+.site-opening {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: var(--brand-bg);
+  animation: site-open-lift 2150ms cubic-bezier(.65, 0, .35, 1) both;
+  pointer-events: none;
+}
+
+.site-opening-mark {
+  animation: site-open-mark 620ms cubic-bezier(.16, .9, .3, 1) both;
+}
+
+.site-opening-letter {
+  display: inline-block;
+  animation: site-open-letter 520ms cubic-bezier(.16, .9, .3, 1) both;
+}
+
+/* --------------------------------------------------------------------------
+   THE HERO IMAGE
+   Arrives in colour while the card is still up, then drains to greyscale once
+   the wordmark has finished building. A background-image rather than an <img>
+   on purpose: if the file is missing there is no broken-image icon, just the
+   panel underneath, so the page degrades to something that still looks made.
+   -------------------------------------------------------------------------- */
+@keyframes site-hero-drain {
+  from { filter: grayscale(0) contrast(1.04); transform: scale(1.06); }
+  to   { filter: grayscale(1) contrast(1.08); transform: scale(1); }
+}
+
+.site-hero-media {
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center 30%;
+  animation: site-hero-drain 1400ms 1500ms cubic-bezier(.5, 0, .2, 1) both;
+}
+
+/* --------------------------------------------------------------------------
+   SCROLL REVEALS
+   Scroll-driven animations rather than an IntersectionObserver: no JavaScript,
+   no observer to leak, and a browser without support simply shows the content,
+   which is the correct fallback for a page whose job is to be readable.
+   -------------------------------------------------------------------------- */
+@keyframes site-reveal {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .site-reveal {
+      animation: site-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 26%;
+    }
+  }
+}
+
+/* A card lifting slightly under the cursor. Kept to transform and border so it
+   costs a compositor layer and nothing else. */
+.site-lift {
+  transition: transform 220ms ease, border-color 220ms ease;
+}
+
+@media (hover: hover) {
+  .site-lift:hover {
+    transform: translateY(-3px);
+    border-color: var(--brand-line-strong);
+  }
+}
+
+/* Somebody who has asked the system to stop moving things at them has not made
+   an exception for a marketing page. Everything resolves to its end state at
+   once: no card, no build, no drain, greyscale from the first frame. */
+@media (prefers-reduced-motion: reduce) {
+  .site-opening {
+    display: none;
+  }
+
+  .site-opening-mark,
+  .site-opening-letter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .site-hero-media {
+    animation: none;
+    filter: grayscale(1) contrast(1.08);
+    transform: none;
+  }
+
+  .site-lift {
+    transition: none;
+  }
+}
+
+/* Ghost button hover. A class for the same reason .site-nav-link is one: an
+   arbitrary-value utility that silently fails to generate leaves a control that
+   looks dead under the cursor, and that is not a failure you notice in review. */
+.btn-ghost {
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+@media (hover: hover) {
+  .btn-ghost:hover {
+    border-color: var(--brand-line-strong);
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-ghost {
+    transition: none;
+  }
+  .btn-ghost:hover {
+    transform: none;
+  }
+}

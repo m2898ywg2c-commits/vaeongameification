@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { BrandLockup } from "./Brand";
 import { BRAND } from "@/lib/brand";
 
@@ -21,6 +22,11 @@ import { BRAND } from "@/lib/brand";
 // load. Anything held in React state would be lost each time. It has to be
 // storage.
 
+// The public landing page runs its own opening, where the wordmark builds itself out of
+// the mark. Two intros on one page load is one intro too many, and the landing page's is
+// the one that belongs to the audience it is talking to.
+const HIDE_ON = ["/"];
+
 const SEEN_KEY = "vaeon.splash.lastShown";
 
 // How long the app must have been away before the card earns another showing.
@@ -34,12 +40,18 @@ const HOLD_MS = 1600;
 const FADE_MS = 420;
 
 export default function Splash() {
+  const pathname = usePathname();
   // null means "not yet decided". Rendering nothing on the first pass keeps the
   // server and client markup identical; localStorage does not exist during SSR,
   // so reading it inline would hydrate-mismatch on every load.
   const [phase, setPhase] = useState(null);
 
   useEffect(function () {
+    if (HIDE_ON.indexOf(pathname) !== -1) {
+      setPhase("done");
+      return;
+    }
+
     let last = 0;
     try {
       last = parseInt(window.localStorage.getItem(SEEN_KEY), 10) || 0;
@@ -75,7 +87,7 @@ export default function Splash() {
       clearTimeout(toFade);
       clearTimeout(toDone);
     };
-  }, []);
+  }, [pathname]);
 
   if (phase === null || phase === "done") return null;
 
