@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { workingSets, workingReps, progressNote, blockProjection, workingHold, increaseHint, repsFrom, floorFromEst, bestInBlock, adaptFrom, adaptNote, bodyweightLadder, bodyweightTarget, bestBodyweightFrom } from "@/lib/progression";
 import { formTip, coachTip, homeAlternative, needsGym } from "@/lib/exercisedb";
+import { setIsComplete } from "@/lib/setlog";
 import { BRAND } from "@/lib/brand";
 import Icon from "../Icon";
 import NotForMe from "./NotForMe";
@@ -346,9 +347,11 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
   var liveSet = -1;
   for (var li = 0; li < total; li++) { if (!setLogged(li)) { liveSet = li; break; } }
 
-  // The keypad is opt-in now. Anyone on a testing week needs it immediately, because there
-  // is no prescription to tap.
-  const [editing, setEditing] = useState(false);
+  // The keypad is opt-in, EXCEPT where there is no prescription to tap, which is exactly
+  // what `calibrating` means. This said useState(false) while the comment above it claimed
+  // the opposite, so on a testing week the one screen that needed the inputs open was the
+  // one that hid them behind a toggle.
+  const [editing, setEditing] = useState(calibrating);
 
   const [fields, setFields] = useState(function () {
     const seed = {};
@@ -462,7 +465,11 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       ["weight", "reps", "secs", "secsL", "secsR", "text", "km", "mins"].forEach(function (k) { next[i][k] = ""; });
     } else {
       if (kind === "weight") {
-        if (!next[i].weight && suggestedSets && suggestedSets[i]) next[i].weight = String(suggestedSets[i]);
+        // !calibrating, matching the seed in useState below, which already had this guard.
+        // Without it a tap on a testing week writes an app-derived weight as though it were
+        // a number you had tested, which is the anchor feedback loop the 2026-09-12
+        // migration existed to break, reopened through a different door.
+        if (!calibrating && !next[i].weight && suggestedSets && suggestedSets[i]) next[i].weight = String(suggestedSets[i]);
         if (!next[i].reps) next[i].reps = String(targetReps || prescribedReps || "");
       } else if (kind === "reps") {
         if (!next[i].reps) next[i].reps = String(bwTarget || prescribedReps || "");
@@ -476,7 +483,18 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
       }
       // A per-side hold and a testing week both need real numbers, so there is nothing
       // sensible to prefill and the keypad is the honest answer.
-      const filled = !!(next[i].weight || next[i].reps || next[i].secs || next[i].text || next[i].km);
+      //
+      // THE MEASUREMENT THAT DEFINES THE KIND, NOT ANY MEASUREMENT.
+      //
+      // This was an OR across every field. A weighted lift on a testing week prefills its
+      // rep count from the range and has no weight to prefill, so the OR passed on the reps
+      // alone, the row was written with a null weight, and the set was ticked. Four taps
+      // later the exercise closed with no load recorded anywhere. James's Barbell Curl and
+      // Hammer Curl rows on 15 and 16 September 2026 are this bug, in his own history.
+      //
+      // Loadable bodyweight work is deliberately satisfied by reps: the added weight is
+      // optional there, and somebody doing them unloaded leaves the box empty on purpose.
+      const filled = setIsComplete(kind, perSide, next[i]);
       if (!filled) { setEditing(true); return; }
     }
     setFields(next);
