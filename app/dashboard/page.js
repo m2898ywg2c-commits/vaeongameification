@@ -358,8 +358,12 @@ style={{ borderColor: BRAND.line, background: BRAND.line }}>
 // genuinely not for them, and saying so is useful. Nutrition is not off for a reason the
 // user would recognise, it is off because a test is running. A greyed tile would advertise
 // something nobody can have and generate a support question with no good answer.
-.concat(profile.nutrition_enabled
-  ? [{ href: "/nutrition", icon: "basket", label: "This week's food" }]
+// Shown unless they have actually said no. Never asked (null) still shows it, because
+// the tile is how the question gets asked: tapping it goes to the setup screen, which
+// opens with "do you want meal plans?" and takes no for an answer.
+.concat(profile.nutrition_opt_in !== false
+  ? [{ href: "/nutrition", icon: "basket",
+       label: profile.nutrition_opt_in ? "This week's food" : "Plan your food" }]
   : [])
 // Was a permanent amber banner asking "can't get to the gym today?", which most days
 // is a question whose answer is obviously no. It is a destination, so it belongs with

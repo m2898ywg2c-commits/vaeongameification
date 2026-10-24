@@ -12,10 +12,19 @@ import Home from "../Home";
 
 // THE NUTRITION TAB.
 //
-// Gated on profiles.nutrition_enabled, which is false for everybody except James. The six week
-// test is measuring whether this app gets people to session three, and a new tab appearing
-// mid-block would make the 31 August block end report unreadable as evidence. Turn it on for
-// everyone after the test, not during it.
+// Open to every account since 2026-10-24. It was gated on profiles.nutrition_enabled while
+// the six week test ran, because a new tab appearing mid-block would have made the block end
+// report unreadable as evidence. That test is long finished and the flag is retired.
+//
+// What gates it now is the person's own answer, in profiles.nutrition_opt_in. Anything other
+// than true sends them to /nutrition/setup, which asks "do you want meal plans?" before it
+// asks anything else. Declining is a stored false rather than a null, so the dashboard can
+// tell "said no" apart from "never asked".
+//
+// SEPARATELY, AND NOT NEGOTIABLE: oldEnoughForNutrition() still gates the whole feature at
+// NUTRITION_MIN_AGE and fails closed on a missing date of birth. Calorie targets aimed at
+// adolescents are a recognised risk factor for disordered eating, so that check answers to
+// nobody's rollout plan and nobody's opt-in.
 //
 // THE WEEK IS WRITTEN ONCE AND THEN IT IS A FACT.
 //
@@ -60,7 +69,9 @@ export default function NutritionPage() {
 
       const { data: p } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (!p) { router.push("/onboarding"); return; }
-      if (!p.nutrition_enabled) { setBlocked("off"); setLoading(false); return; }
+      // Declined is not blocked, it is unconfigured: send them to the question rather
+      // than to a dead end they cannot get out of.
+      if (p.nutrition_opt_in !== true) { window.location.href = "/nutrition/setup"; return; }
       // Age is checked here as well as on the setup screen rather than only there. A profile
       // whose birth year is corrected downwards after setup would otherwise keep a calorie
       // target it should no longer have, because the gate would only ever have run once.

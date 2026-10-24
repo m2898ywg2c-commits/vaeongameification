@@ -60,6 +60,11 @@ export default function NutritionSetupPage() {
   const [budget, setBudget] = useState("any");
   const [allergens, setAllergens] = useState([]);
   const [noneConfirmed, setNoneConfirmed] = useState(false);
+  // null = not answered yet, true = wants meal plans, false = declined.
+  // Seeded from profiles.nutrition_opt_in in the loader below, so somebody who already
+  // said yes is not asked again every time they open their settings.
+  const [wants, setWants] = useState(null);
+  const [declining, setDeclining] = useState(false);
 
   const router = useRouter();
 
@@ -69,7 +74,6 @@ export default function NutritionSetupPage() {
       if (!user) { router.push("/login"); return; }
       const { data: p } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (!p) { router.push("/onboarding"); return; }
-      if (!p.nutrition_enabled) { setBlocked("off"); setLoading(false); return; }
       if (!oldEnoughForNutrition(p.birth_year)) { setBlocked("age"); setLoading(false); return; }
 
       const { data: a } = await supabase.from("assessment_results").select("type_id")
@@ -84,6 +88,7 @@ export default function NutritionSetupPage() {
       if (p.household_size) setHousehold(p.household_size);
       if (p.budget_pref) setBudget(p.budget_pref);
       if (p.allergens && p.allergens.length) { setAllergens(p.allergens); setNoneConfirmed(true); }
+      if (p.nutrition_opt_in === true) setWants(true);
       setLoading(false);
     }
     load();
@@ -101,6 +106,19 @@ export default function NutritionSetupPage() {
         ? prev.concat([key])
         : prev.filter(function (k) { return k !== key; });
     });
+  };
+
+  // NO IS A REAL ANSWER AND IS STORED AS ONE.
+  //
+  // Writing false rather than leaving it null is the difference between "has not been
+  // asked" and "has been asked and said no". Only the second should stop the dashboard
+  // tile appearing, and only the second can be undone from settings without the app
+  // nagging about it again on the next load.
+  const decline = async function () {
+    setDeclining(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from("profiles").update({ nutrition_opt_in: false }).eq("id", user.id);
+    window.location.href = "/dashboard";
   };
 
   const save = async function (e) {
@@ -122,6 +140,11 @@ export default function NutritionSetupPage() {
       household_size: Number(household),
       budget_pref: budget,
       allergens: allergens,
+      // The answer to "do you want meal plans?", recorded with the setup it produced.
+      // Completing this form IS the yes, so it is written here rather than when the
+      // question was tapped: a half-finished form should not leave the tile claiming to
+      // be configured.
+      nutrition_opt_in: true,
       kcal_target: preview.kcal,
       protein_target: preview.protein,
     }).eq("id", user.id);
@@ -149,14 +172,12 @@ export default function NutritionSetupPage() {
         <div className="max-w-md mx-auto">
           <div className="mb-6"><Home /></div>
           <h1 className="font-display text-2xl font-normal mb-2">
-            {blocked === "age" ? "Not available on this account" : "Not switched on yet"}
+            Not available on this account
           </h1>
           <p className="text-sm text-brand-muted">
-            {blocked === "age"
-              ? "Meal planning and calorie targets are for accounts aged " + NUTRITION_MIN_AGE
-                + " and over. Everything else in Vaeon is unaffected. If your date of birth is"
-                + " wrong on your profile, put it right and this will open up."
-              : "Meal planning is being tested before it goes out properly."}
+            {"Meal planning and calorie targets are for accounts aged " + NUTRITION_MIN_AGE
+              + " and over. Everything else in Vaeon is unaffected. If your date of birth is"
+              + " wrong on your profile, put it right and this will open up."}
           </p>
         </div>
       </main>
@@ -185,6 +206,52 @@ export default function NutritionSetupPage() {
       </div>
     );
   };
+
+  // THE QUESTION COMES BEFORE THE ALLERGY FORM, NOT AFTER IT.
+  //
+  // Asking fourteen allergen questions and a body weight before establishing that somebody
+  // wants the feature at all is the wrong order: it collects sensitive information from
+  // people who are about to say no. One question first, and a no costs them two taps and
+  // tells us nothing we did not need.
+  if (wants !== true) {
+    return (
+      <main className="min-h-screen bg-brand-bg text-brand-text px-5 py-8">
+        <div className="max-w-md mx-auto">
+          <div className="mb-6"><Home /></div>
+          <h1 className="font-display text-2xl font-normal mb-2">Do you want meal plans?</h1>
+          <p className="text-sm text-brand-muted mb-6">
+            A week of dinners, chosen around what you like and what you cannot eat, with a
+            shopping list that scales to your household. It is entirely optional and the
+            training side of Vaeon does not change either way.
+          </p>
+
+          <div className="grid gap-2 mb-6">
+            <button type="button" onClick={function () { setWants(true); }}
+              className="rounded-md border px-4 py-3 text-left"
+              style={{ borderColor: accent, background: accent + "12" }}>
+              <span className="text-sm" style={{ color: accent }}>Yes, plan my food</span>
+              <span className="block text-xs mt-0.5" style={{ color: "var(--brand-dim)" }}>
+                A few questions next, including allergies.
+              </span>
+            </button>
+
+            <button type="button" onClick={decline} disabled={declining}
+              className="rounded-md border px-4 py-3 text-left"
+              style={{ borderColor: "var(--brand-line)", opacity: declining ? 0.6 : 1 }}>
+              <span className="text-sm">{declining ? "Saving..." : "No thanks"}</span>
+              <span className="block text-xs mt-0.5" style={{ color: "var(--brand-dim)" }}>
+                The food tile stops showing. You can turn it on from settings whenever.
+              </span>
+            </button>
+          </div>
+
+          <p className="text-xs" style={{ color: "var(--brand-dim)" }}>
+            Vaeon does not count your calories for you or ask you to log what you ate.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   const field = "w-full rounded-sm border bg-transparent px-3 py-2 text-sm";
   const fieldStyle = { borderColor: "var(--brand-line)" };
