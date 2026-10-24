@@ -365,6 +365,13 @@ style={{ borderColor: BRAND.line, background: BRAND.line }}>
   ? [{ href: "/nutrition", icon: "basket",
        label: profile.nutrition_opt_in ? "This week's food" : "Plan your food" }]
   : [])
+// THE ENGINE ROOM IS ALWAYS HERE, FOR EVERYONE.
+//
+// It is deliberately not in the week and not in the pledge: an extra session you can take
+// or leave. That is the whole design, so it belongs with the destinations rather than as a
+// day in the plan, and it is never greyed or hidden. One session is unlocked at a time and
+// finishing it advances the rotation, which is why the tile needs no state of its own.
+.concat([{ href: "/engine", icon: "streak", label: "Engine Room" }])
 // Was a permanent amber banner asking "can't get to the gym today?", which most days
 // is a question whose answer is obviously no. It is a destination, so it belongs with
 // the other destinations.
