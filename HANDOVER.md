@@ -2244,8 +2244,17 @@ layout.**
 
 ## Added 2026-10-24: the move onto vaeonfitness.com
 
-The app now answers on **https://vaeonfitness.com** as well as vaeon-fitness.vercel.app. Both
-work and both should stay working: anybody holding the old link still lands somewhere.
+The app answers on **https://vaeonfitness.com**, and that is now the only address it serves
+from. There were three live hostnames doing the same job: the domain, vaeon-fitness.vercel.app
+and vaeongameification.vercel.app. The two vercel.app ones are now **308 Permanent Redirects**
+to the domain, set in the project's Domains settings, so every old link still works and every
+one of them arrives at the same place.
+
+308 rather than 307 because permanent is what consolidates a canonical address: search engines
+fold the old hosts into the new one instead of treating three addresses as three sites. The
+cost is that browsers cache a permanent redirect hard, so undoing it does not take effect for
+anyone who has already followed it. That is the right trade here, because the two vercel.app
+names are auto-generated aliases nobody would ever want back as separate destinations.
 
 **The domain.** Registered 3 August 2026 through Vercel, which resells via Name.com, and
 delegated to NS1/NS2.VERCEL-DNS.COM. There is no registrar DNS to manage, which is the one real
