@@ -2453,21 +2453,26 @@ the content, which is the right fallback for a page whose job is to be readable.
 Every animation has a `prefers-reduced-motion` path, and the reduced-motion case removes the
 opening card outright rather than racing it.
 
-### THE HERO PHOTOGRAPH IS NOT THERE YET
+### The hero photograph
 
-`app/Welcome.js` points `--hero-image` at **`/hero.webp`, which does not exist**. It is a
-`background-image` and not an `<img>` precisely so that the missing file degrades to an empty
-surface panel instead of a broken-image icon. Drop a file at `public/hero.webp` and it appears,
-drains from colour to greyscale after the wordmark finishes, and needs no code change.
+`public/hero.webp`: a sled push, supplied by James. Pre-cropped to 4:5 and centred on the
+figure, which is the ratio the panel declares, so `background-size: cover` crops nothing.
+1000x1250, 37KB, small because the frame is mostly dark and webp handles that well.
 
-It could not be fetched from here: the egress policy returns 403 on CONNECT for image hosts,
-from both the container and the laptop shell, so no stock library is reachable. The Canva
-connector is installed but reads `needs_reconnect`.
+The crop was placed by finding the figure rather than the frame: a brightness centroid put
+it at 39% across, which was the white lane markings, so it was redone on warm pixels
+(R-B > 38) and landed at 60%, which is where he actually is. Worth remembering if the
+image is ever swapped for another dark-track shot.
 
-Aspect is 4:5 and the focal point sits at `center 30%`, so a figure's head is in frame. A real
-photograph of James or his actual gym would be worth more than stock here: the whole argument of
-this page is that it tells you the truth, and a stock athlete on a rower is the single most
-generic image in the category.
+Swapping it is a file swap and nothing else. A differently shaped image still works, since
+`cover` plus `center 30%` keeps a head in frame. A missing file degrades to the empty
+surface panel rather than a broken-image icon, because this is a background-image.
+
+**Two things to settle about this picture, neither of them technical.** It carries a visible
+adidas wordmark on the headband, which is incidental in a photograph but is a third-party
+trade mark on a commercial page. And nobody has written down where the photograph came from
+or who owns it: if it is not James's own, a licence needs to exist before this is marketing
+rather than a test.
 
 ### Verification
 

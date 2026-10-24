@@ -28,9 +28,16 @@ import { BRAND, TRACK } from "@/lib/brand";
 // and public/characters, so the page cannot describe a product different from the one that
 // ships. Change a tagline in one place and the marketing changes with it.
 
-// The hero photograph. Drop a file at public/hero.webp and it appears; until then the
-// panel renders as an empty surface rather than a broken image, because this is a
-// background-image and not an <img>. See the note on .site-hero-media in globals.css.
+// The hero photograph: public/hero.webp, a sled push, supplied by James.
+//
+// Pre-cropped to 4:5 and centred on the figure, which is the same ratio the panel below
+// declares, so background-size: cover crops nothing. 1000x1250 at 37KB, which is small
+// because the frame is mostly dark and webp is very good at that.
+//
+// Swapping it is a file swap and nothing else. A differently shaped image still works:
+// cover plus the center 30% position in globals.css keeps a head in frame rather than a
+// midriff. And because this is a background-image and not an <img>, a missing or failed
+// file degrades to the empty surface panel instead of a broken-image icon.
 const HERO_IMAGE = "url('/hero.webp')";
 
 const FACTS = [
@@ -228,7 +235,7 @@ function Hero() {
               aspectRatio: "4 / 5",
             }}
             role="img"
-            aria-label="Training on a ski erg"
+            aria-label="An athlete mid sled push on an indoor track"
           />
         </div>
       </div>
