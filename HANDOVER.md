@@ -2239,3 +2239,78 @@ layout.**
    double progression. It is no longer rendered on the card, so it is now dead copy in a live
    function rather than a visible lie, but it should be rewritten or removed.
 8. `FEATURES.md` and `GUIDE.md` describe neither the rep ranges nor any of this.
+
+---
+
+## Added 2026-10-24: the move onto vaeonfitness.com
+
+The app now answers on **https://vaeonfitness.com** as well as vaeon-fitness.vercel.app. Both
+work and both should stay working: anybody holding the old link still lands somewhere.
+
+**The domain.** Registered 3 August 2026 through Vercel, which resells via Name.com, and
+delegated to NS1/NS2.VERCEL-DNS.COM. There is no registrar DNS to manage, which is the one real
+advantage of having bought it inside Vercel. It is connected at the **apex** rather than a
+subdomain, so there is no www record and no marketing site in front of the app. If a landing
+page is ever wanted, the app moves to app.vaeonfitness.com and the apex gets the site, and that
+is a change to this connection rather than to any code.
+
+**NEXT_PUBLIC_SITE_URL is now the contract for "where does this app live".** Set to
+https://vaeonfitness.com, Production only, as a Config rather than a Secret because it is a
+public string that ends up in the client bundle regardless and ought to stay readable.
+
+Two places read it:
+
+- `app/ShareButton.js`, which previously hardcoded the vercel.app URL. That URL was correct at
+  the time, which is exactly why it was worth removing: **a share URL is the one string in the
+  app that nothing ever exercises**, so the day the canonical address changes it goes stale in
+  silence and keeps sending people to the old host. It now falls back to the origin the visitor
+  is actually on, so it cannot be wrong even if the variable is deleted.
+- `app/layout.js`, via `metadataBase`, which is what lets WhatsApp, Slack and iMessage resolve
+  `/icon-512.png` to something absolute. There was no `metadataBase` and no `openGraph` at all
+  before this, so every shared link rendered a blank card.
+
+**It must include the protocol.** `new URL()` throws at build time on a bare hostname. That is
+deliberate and worth keeping: a failed deploy is a far better outcome than a silently wrong
+canonical domain, because nothing in the app surfaces the difference.
+
+The Open Graph image is the 512 app icon, not a purpose-made asset. It is square where the
+platforms want 1200x630, so it renders as a thumbnail rather than a banner. Enough to stop links
+looking broken. A proper OG image wants the wordmark on it and is a separate job.
+
+### Still manual, and it will break password resets if it is forgotten
+
+**Supabase Auth, URL Configuration.** Site URL must be set to https://vaeonfitness.com, and
+`https://vaeonfitness.com/**` must be added to the Redirect URLs allow-list.
+`app/forgot-password/page.js` builds its link from `window.location.origin`, so a reset
+requested from the new domain is rejected until that origin is allow-listed. Everything else in
+the auth flow is origin-relative and needs nothing.
+
+Everyone is signed out by the move, because Supabase auth cookies are scoped per origin.
+
+### Three things found while doing this
+
+1. **Auto Renewal is OFF on the domain**, which expires 3 August 2027 at $11.25 a year. Vercel
+   is also showing "the billing address or payment method is missing or incomplete", which is
+   almost certainly the cause. Fix the payment method, then turn auto-renewal on. Losing the
+   name the brand is built on, to an unticked box, would be a bad way to find this out.
+2. **The team is on the Hobby plan.** Fine for a private test. Vercel's terms require Pro for
+   commercial use, which matters the moment this takes money.
+3. **`NEXT_PUBLIC_VAPID_PUBLIC_KEY` is not set in Vercel at all.** `lib/push.js` defaults it to
+   an empty string, so `subscribeToPush` cannot ever have produced a valid subscription. That
+   is consistent with `push_subscriptions` being empty: **the reminders feature has never been
+   able to work in production**, and no error was ever surfaced because the whole module
+   degrades to "not supported" rather than throwing. The private half is in
+   `vapid-keys.local.txt`, which `.gitignore` says to delete once both halves are pasted into
+   Vercel and Supabase. Only the Supabase half appears to have happened.
+
+### The line endings, which are now in the way
+
+About eighty files in the working tree are CRLF while every committed version is LF, so
+`git status` reports the whole project as modified and every diff is unreadable. This predates
+all of the above. `app/ShareButton.js` was converted to LF as part of this change so that its
+diff could be reviewed at all; the rest were deliberately left alone, because renormalising
+eighty files inside a domain-migration commit would bury the actual change.
+
+The fix is a `.gitattributes` containing `* text=auto eol=lf`, then
+`git add --renormalize .` as a commit of its own that touches nothing but endings. Worth doing
+before the next real piece of work, not after.
