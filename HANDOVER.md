@@ -2323,3 +2323,81 @@ eighty files inside a domain-migration commit would bury the actual change.
 The fix is a `.gitattributes` containing `* text=auto eol=lf`, then
 `git add --renormalize .` as a commit of its own that touches nothing but endings. Worth doing
 before the next real piece of work, not after.
+
+---
+
+## Added 2026-10-24: the front door, and being findable
+
+Typing vaeonfitness.com used to produce a password box. Nothing said what the product was,
+there was nothing for a search engine to read, and there was no way in for anyone who had
+not already been told about Vaeon by James. The landing page existed the whole time, parked
+at app/welcome/page.js with a comment saying it needed more work, and nothing linked to it.
+
+**It now renders at "/" as a component, not as a route.** `app/Welcome.js` is rendered
+directly by `app/page.js` for signed-out visitors; signed-in visitors still redirect to the
+dashboard exactly as before. Two URLs carrying the same copy is duplicate content, and the
+address a stranger types has to be the canonical one, so `/welcome` is now a
+`permanentRedirect` home and old links still land somewhere sensible.
+
+The brand bar needed no change: `"/"` was already in `HIDE_BAR_ON` in `app/Brand.js`,
+because that list is for pages that carry their own lockup, which this one does.
+
+### What changed in the design, and why
+
+The copy was already good and is almost untouched. The structure was the problem. Everything
+sat in one 672px column, every section had the identical label-then-bordered-box rhythm, and
+there was no header, so there was no persistent way to log in or to see what the page
+contained.
+
+- **A sticky header** with the lockup, three section anchors, the theme toggle and the
+  primary action. This is most of what makes a page read as a site rather than an app screen.
+- **Varied widths.** Prose stays near 36rem where it is readable; the grids go to 64rem.
+  One column for everything is what made it feel like a phone screen stretched wide.
+- **A hairline figure row** under the hero: eight types, two minutes, six week blocks, zero
+  sessions you cannot do at home. Four facts before anybody has to read a paragraph.
+- **The eight types go four across** on a wide screen instead of two. They are the strongest
+  visual asset in the product and they were being shown small.
+- **What it is and what it is not sit side by side** rather than stacked in one box, because
+  the honesty is the argument and splitting it makes both halves read.
+
+Everything still comes from `lib/personality.js` and `lib/brand.js`, so the page cannot
+describe a product different from the one that ships, and it follows `data-theme` like every
+other screen rather than hardcoding the dark palette.
+
+### Two Tailwind v4 traps this hit, both caught before deploy
+
+**The important modifier moved from a prefix to a suffix.** `!px-4` is v3 and generates
+nothing in v4; it is `px-4!` now. The header button was written with `!px-4 !py-2` and would
+have silently rendered at full size, which is the worst kind of bug because the page still
+builds and still looks deliberate. Fixed by passing padding as a prop, which cannot fail
+that way. **If a utility seems to do nothing in this repo, check it is not v3 spelling.**
+
+**Arbitrary-value colour hovers are fragile.** `hover:text-[color:var(--brand-text)]` is a
+v3 spelling whose failure mode is a nav that looks dead on hover. Replaced with a
+`.site-nav-link` class in `globals.css`. Same for the sticky header's translucency, which
+needs a solid fallback and therefore two declarations of the same property, which an inline
+style object cannot express: it is `.site-header`, behind an `@supports` query for
+`backdrop-filter`.
+
+### Indexing
+
+`app/robots.js` and `app/sitemap.js` are new. Everything behind the login is disallowed, not
+because it is secret, it is protected by auth rather than by robots.txt, but because a
+crawler that follows `/dashboard` gets bounced to the login form and reports a pile of thin
+near-identical pages. That is how a small site teaches Google most of it is worthless. The
+sitemap lists three URLs: the landing page, signup and the disclaimer.
+
+Both read `NEXT_PUBLIC_SITE_URL` and fall back to the literal domain.
+
+**Google still has to be told the site exists.** Nothing here submits it. Add the property in
+Search Console and submit `https://vaeonfitness.com/sitemap.xml`.
+
+### Verification, given there is still no local build
+
+`node_modules` is not installed and npm is blocked by the egress policy, so none of this has
+been through `next build`. What it has been through: a `tsc` parse of every changed file, a
+`react-dom/server` render of the landing page asserting 40 things including that all eight
+types appear with their orbs and taglines and that every nav anchor has a matching target, 11
+assertions on the robots and sitemap output, and 8 source checks that specifically fail if
+either Tailwind v3-ism reappears. **The thing none of that covers is what it looks like.**
+Open it and judge the design with your eyes before telling anyone about it.

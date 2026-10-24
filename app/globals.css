@@ -336,3 +336,34 @@ main.min-h-screen {
 .pager::-webkit-scrollbar {
   display: none;
 }
+
+
+/* THE PUBLIC SITE HEADER.
+   Lives here rather than inline because a translucent sticky bar needs a solid fallback,
+   and an inline style object cannot declare the same property twice. Solid by default, so
+   a browser without backdrop-filter gets an opaque bar rather than unreadable text over
+   scrolling content; translucent and blurred only where the support query passes. */
+.site-header {
+  background: var(--brand-bg);
+  border-color: var(--brand-line);
+}
+
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  .site-header {
+    background: color-mix(in srgb, var(--brand-bg) 82%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+}
+
+/* Public site nav links. A class rather than a Tailwind arbitrary-value utility, because
+   hover:text-[color:var(--brand-text)] is a v3 spelling and the cost of it silently not
+   generating is a nav that looks dead on hover. */
+.site-nav-link {
+  color: var(--brand-muted);
+  transition: color 150ms ease;
+}
+
+.site-nav-link:hover {
+  color: var(--brand-text);
+}
