@@ -76,15 +76,56 @@ const STEPS = [
 
 const IS = [
   "A training plan, a way to log what you did, and progression that comes off your own logged sets.",
+  "A week of dinners with a shopping list, if you want one. Optional, and off until you ask.",
   "A leaderboard and kudos if your type is the sort that wants them, and neither if it is not.",
   "A version of every session for the days you cannot get to a gym.",
   "Your data, exportable, and an account you can delete in full whenever you like.",
 ];
 
+// "A nutrition plan" was in this list until meal planning shipped to every account on
+// 2026-10-24, at which point the page was advertising the absence of a feature the product
+// has. What belongs here is what Vaeon genuinely will not do, and asking you to photograph
+// your lunch is still on that list.
 const IS_NOT = [
-  "A nutrition plan, a calorie counter, or a video library you will not watch.",
+  "A calorie counter. It will not ask you to log what you ate or weigh anything out.",
   "A substitute for a physio, a doctor, or a coach who can see you move.",
   "A subscription that quietly keeps charging you after you stop opening it.",
+];
+
+// HOW THE PLAN IS BUILT. Every line here is something the engine actually does, and the
+// file it lives in is named so nobody has to take the marketing on trust.
+const ENGINE_POINTS = [
+  {
+    icon: "level",
+    title: "It reads your sets, not a template",
+    body:
+      "Every working weight is a percentage of an estimated max worked out from what you actually lifted, across your last three sessions. Nobody else's averages come into it.",
+  },
+  {
+    icon: "chart",
+    title: "It moves with you, both ways",
+    body:
+      "Finish a block above target and the next one climbs faster. Come in under and it backs off and makes you earn it again. The step shrinks as the bar gets heavier, because a plate is a bigger ask at 150kg than at 60kg.",
+  },
+  {
+    icon: "sliders",
+    title: "It works around you",
+    body:
+      "Mark a movement not for me and it finds a replacement that trains the same thing. No gym today and it rebuilds the session for a front room.",
+  },
+  {
+    icon: "target",
+    title: "It talks to you the way you need",
+    body:
+      "Your type decides the structure, the tone and whether there is a leaderboard at all. The same block is a different app depending which of the eight you are.",
+  },
+];
+
+const FOOD_POINTS = [
+  "A week of dinners, picked for you, that you can change.",
+  "A shopping list that scales to however many people you are feeding, sorted the way a supermarket is actually walked.",
+  "It learns. Like something and you get more of that sort of thing; not for me and it goes away.",
+  "Fourteen UK allergens filtered properly, including the ones recipes forget to mention.",
 ];
 
 const FOCUS =
@@ -172,8 +213,9 @@ function Header() {
 
         <nav className="hidden md:flex items-center gap-7 ml-4 text-sm">
           <a href="#how" className={"site-nav-link " + FOCUS}>How it works</a>
+          <a href="#engine" className={"site-nav-link " + FOCUS}>How it builds it</a>
           <a href="#types" className={"site-nav-link " + FOCUS}>The eight types</a>
-          <a href="#plainly" className={"site-nav-link " + FOCUS}>What it is</a>
+          <a href="#food" className={"site-nav-link " + FOCUS}>Food</a>
         </nav>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-4">
@@ -211,12 +253,23 @@ function Hero() {
             alone. Vaeon works out which you are, and then behaves like it.
           </p>
 
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-3 flex-wrap mb-9">
             <PrimaryLink href="/signup">
               Find your type
               <span aria-hidden="true" className="inline-flex"><Icon name="arrow" size={15} /></span>
             </PrimaryLink>
             <GhostLink href="/login">Log in</GhostLink>
+          </div>
+
+          {/* The eight, as faces, high on the page. They are the most distinctive thing the
+              product has and they were buried three sections down. The face variant is a
+              head-and-shoulders crop with no size floor, which is why it works at 46px
+              where the full figure would collapse into eight identical pale blobs. */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {Object.keys(TYPES).map(function (id) {
+              return <TypeCharacter key={id} typeId={id} size={46} variant="face" />;
+            })}
+            <span className="text-sm ml-1" style={{ color: BRAND.dim }}>One of these is you.</span>
           </div>
         </div>
 
@@ -343,6 +396,110 @@ function Eight() {
   );
 }
 
+function Engine() {
+  // HOW THE PROGRAMME IS BUILT.
+  //
+  // The page said "a plan off your own numbers" once, in a four word step, and then moved
+  // on. That is the whole product and it was getting a line. This section is the argument.
+  //
+  // Every claim here is checkable against lib/progression.js, which is deliberate: an app
+  // whose pitch is that it tells you the truth cannot describe itself loosely. No claim
+  // about understanding you, no claim about anything it does not compute.
+  return (
+    <section id="engine" className="site-reveal max-w-5xl mx-auto px-5 sm:px-8 pb-20 sm:pb-28 scroll-mt-20">
+      <p className="rule-label rule-label-left mb-3">Built, not chosen</p>
+      <h2 className="font-bold text-2xl sm:text-3xl leading-tight max-w-2xl mb-4">
+        Nobody wrote your programme. It is calculated, every week, from what you lifted.
+      </h2>
+      <p className="text-sm sm:text-base leading-relaxed max-w-2xl mb-9" style={{ color: BRAND.muted }}>
+        A paper plan is a guess made by somebody who has never seen you train. Vaeon does not
+        guess. It works out what you can do from your own logged sets and rebuilds the next
+        six weeks around the answer, then does it again, and again.
+      </p>
+
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 gap-px panel-soft overflow-hidden border"
+        style={{ borderColor: BRAND.line, background: BRAND.line }}
+      >
+        {ENGINE_POINTS.map(function (pt) {
+          return (
+            <div key={pt.title} className="p-6 sm:p-8" style={{ background: "var(--brand-bg)" }}>
+              <span className="inline-flex mb-4" style={{ color: BRAND.accent }}>
+                <Icon name={pt.icon} size={20} />
+              </span>
+              <p className="font-bold text-lg mb-2 leading-snug">{pt.title}</p>
+              <p className="text-sm leading-relaxed" style={{ color: BRAND.muted }}>{pt.body}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="text-xs mt-4" style={{ color: BRAND.dim }}>
+        The first week of every block is a testing week. That is where the numbers come from,
+        and it is why the second week already fits.
+      </p>
+    </section>
+  );
+}
+
+function Food() {
+  // MEAL PLANNING, SOLD RATHER THAN DISCLAIMED.
+  //
+  // This was one line in the "what it is not" list saying Vaeon is not a nutrition plan.
+  // That stopped being true on 2026-10-24 when meal planning opened to every account.
+  //
+  // Two things stay honest here. It is OPT IN and says so, because the setup screen now
+  // asks before it collects anything. And no calorie promise is made anywhere on this page:
+  // the feature plans dinners and writes a shopping list, and an app that hands somebody a
+  // daily number is a different and more careful product than this one.
+  return (
+    <section id="food" className="site-reveal max-w-5xl mx-auto px-5 sm:px-8 pb-20 sm:pb-28 scroll-mt-20">
+      <div
+        className="panel-soft border overflow-hidden grid md:grid-cols-2"
+        style={{ borderColor: BRAND.line, background: BRAND.surface }}
+      >
+        <div className="p-6 sm:p-10">
+          <p className="rule-label rule-label-left mb-3">The food, if you want it</p>
+          <h2 className="font-bold text-2xl sm:text-3xl leading-tight mb-4">
+            Training is half of it. The other half is what is in the fridge.
+          </h2>
+          <p className="text-sm sm:text-base leading-relaxed mb-7" style={{ color: BRAND.muted }}>
+            Ask for it and Vaeon plans your week of dinners and writes the shopping list to go
+            with them. It gets better at it the longer you use it, because it is paying
+            attention to what you actually liked.
+          </p>
+
+          <ul className="space-y-3.5 text-sm leading-relaxed mb-8" style={{ color: BRAND.muted }}>
+            {FOOD_POINTS.map(function (line) {
+              return (
+                <li key={line} className="flex gap-3">
+                  <span className="shrink-0 mt-0.5" style={{ color: BRAND.accent }} aria-hidden="true">
+                    <Icon name="basket" size={15} />
+                  </span>
+                  <span>{line}</span>
+                </li>
+              );
+            })}
+          </ul>
+
+          <p className="text-xs" style={{ color: BRAND.dim }}>
+            Entirely optional, off until you ask for it, and switchable off again. Meal
+            planning is for accounts aged 18 and over; the training side is unaffected.
+          </p>
+        </div>
+
+        <div className="hidden md:flex items-center justify-center p-10" style={{ background: "var(--brand-bg)" }}>
+          <div className="grid grid-cols-2 gap-5">
+            {["captain", "monk", "anchor", "spark"].map(function (id) {
+              return <TypeCharacter key={id} typeId={id} size={96} />;
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Plainly() {
   return (
     <section id="plainly" className="site-reveal max-w-5xl mx-auto px-5 sm:px-8 pb-20 sm:pb-28 scroll-mt-20">
@@ -439,7 +596,9 @@ export default function Welcome() {
       <Hero />
       <Facts />
       <How />
+      <Engine />
       <Eight />
+      <Food />
       <Plainly />
       <Close />
       <Footer />
