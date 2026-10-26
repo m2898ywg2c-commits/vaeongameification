@@ -296,7 +296,7 @@ const week = isGymReady(p.goals)
 // separately as extra, so a fourth session logged reads "3 of 3 +1" rather than "3 of 4".
 // Credit for turning up, no penalty for not.
 : buildWeek(p.goals, (p.sessions_per_week || 3) + (p.bonus_day ? 1 : 0), p.train_days, p.fixed_days,
-currentWeekIn(p.block_start, blockWeeksFor(p)));
+currentWeekIn(p.block_start, blockWeeksFor(p)), p.equipment);
 // Freestyle types land on a choice, not on a weekday.
 //
 // A Hunter or a Wanderer opening the app on a Wednesday and being shown "Wednesday"
