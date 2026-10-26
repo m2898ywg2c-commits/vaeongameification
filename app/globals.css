@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* The character motion layer: eight moves, one per training type. Kept in its own file
+   because it is a self-contained system with its own rules, and because this one is going
+   to grow as the characters get more poses. @import sits here, immediately after Tailwind,
+   because CSS requires every @import to precede any other rule. */
+@import "./motion.css";
 
 /* Vaeon Fitness brand tokens.
    Single source of truth for the app chrome: background, surfaces, hairlines, type and

@@ -1,0 +1,178 @@
+
+/* ─────────────────────────── CHARACTER MOTION ───────────────────────────
+
+   Eight moves, one per type. See lib/motion.js for which belongs to whom and why.
+
+   Rotation, translation and scale are animated as INDEPENDENT properties rather than
+   through transform, matching the fanfare keyframes above. A move that holds a rotation
+   while changing scale cannot do it through transform, because each keyframe would rewrite
+   the whole matrix and throw the angle away.
+
+   transform-origin sits low on purpose. A jump squashes from the feet, not from the navel,
+   and a lean pivots from the floor. Centre origin made every move look like a sticker being
+   wobbled rather than a character moving its own weight.
+
+   Everything here is off under reduced motion, at the bottom of this block. Somebody who
+   asked the operating system to stop moving things at them did not make an exception for a
+   robot being pleased about a set. */
+
+.mv-wrap {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.mv-body {
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 82%;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.22, 0.68, 0.3, 1);
+}
+
+/* The Hunter: winds up, drives forward, settles. The sled it is pushing, basically. */
+.mv-drive { animation-name: mv-drive; }
+@keyframes mv-drive {
+  0%   { translate: 0 0;      rotate: 0deg;    scale: 1; }
+  16%  { translate: -7% 1%;   rotate: -4deg;   scale: 1; }
+  44%  { translate: 10% -2%;  rotate: 5deg;    scale: 1.04; }
+  66%  { translate: -2% 0;    rotate: -1deg;   scale: 1; }
+  100% { translate: 0 0;      rotate: 0deg;    scale: 1; }
+}
+
+/* The Captain: draws itself up, two firm nods. Approval rather than delight. */
+.mv-square { animation-name: mv-square; }
+@keyframes mv-square {
+  0%   { translate: 0 0;    rotate: 0deg;     scale: 1; }
+  18%  { translate: 0 -5%;  rotate: 0deg;     scale: 1.07; }
+  34%  { translate: 0 -4%;  rotate: -3deg;    scale: 1.06; }
+  52%  { translate: 0 -2%;  rotate: 3deg;     scale: 1.05; }
+  68%  { translate: 0 -1%;  rotate: -1.5deg;  scale: 1.03; }
+  100% { translate: 0 0;    rotate: 0deg;     scale: 1; }
+}
+
+/* The Wanderer: unbothered. Floats, sways, gets there anyway. */
+.mv-drift { animation-name: mv-drift; animation-timing-function: ease-in-out; }
+@keyframes mv-drift {
+  0%   { translate: 0 0;      rotate: 0deg; }
+  28%  { translate: -3% -6%;  rotate: 3deg; }
+  58%  { translate: 3% 1%;    rotate: -3deg; }
+  80%  { translate: -1% -2%;  rotate: 1deg; }
+  100% { translate: 0 0;      rotate: 0deg; }
+}
+
+/* The Spark: the one that jumps, as asked. Crouch, leap, squash on landing, small rebound.
+   The scale pairs are the squash and stretch: wide and short on the crouch and the landing,
+   narrow and tall through the air. Without them a jump reads as a sticker sliding upward. */
+.mv-leap { animation-name: mv-leap; animation-timing-function: cubic-bezier(0.3, 0.1, 0.2, 1); }
+@keyframes mv-leap {
+  0%   { translate: 0 0;     scale: 1 1; }
+  10%  { translate: 0 4%;    scale: 1.1 0.86; }
+  34%  { translate: 0 -28%;  scale: 0.94 1.12; }
+  50%  { translate: 0 -33%;  scale: 0.97 1.06; }
+  70%  { translate: 0 0;     scale: 1.12 0.85; }
+  84%  { translate: 0 -4%;   scale: 0.98 1.04; }
+  100% { translate: 0 0;     scale: 1 1; }
+}
+
+/* The Gladiator: shakes it off, then chest out. The only move with no rest in the middle. */
+.mv-shake { animation-name: mv-shake; animation-timing-function: ease-out; }
+@keyframes mv-shake {
+  0%   { rotate: 0deg;    scale: 1;     translate: 0 0; }
+  10%  { rotate: -5deg;   scale: 1;     translate: 0 0; }
+  22%  { rotate: 5deg;    scale: 1;     translate: 0 0; }
+  34%  { rotate: -4deg;   scale: 1;     translate: 0 0; }
+  46%  { rotate: 3deg;    scale: 1;     translate: 0 0; }
+  58%  { rotate: -2deg;   scale: 1;     translate: 0 0; }
+  76%  { rotate: 0deg;    scale: 1.08;  translate: 0 -4%; }
+  100% { rotate: 0deg;    scale: 1;     translate: 0 0; }
+}
+
+/* The Anchor: the steady one does not bounce. It grows and settles. */
+.mv-swell { animation-name: mv-swell; animation-timing-function: ease-in-out; }
+@keyframes mv-swell {
+  0%   { scale: 1;     translate: 0 0; }
+  35%  { scale: 1.06;  translate: 0 -3%; }
+  62%  { scale: 1.02;  translate: 0 -1%; }
+  100% { scale: 1;     translate: 0 0; }
+}
+
+/* The Monk: a slow breath in and out. The heart is drawn beside it, not held by it. */
+.mv-breathe { animation-name: mv-breathe; animation-timing-function: ease-in-out; }
+@keyframes mv-breathe {
+  0%   { scale: 1;      translate: 0 0; }
+  30%  { scale: 1.035;  translate: 0 -3%; }
+  62%  { scale: 1.01;   translate: 0 -1%; }
+  100% { scale: 1;      translate: 0 0; }
+}
+
+/* The Architect: tilt, hold, tilt, hold, settle. The holds are what make it read as a scan
+   rather than a wobble, so do not smooth them out. */
+.mv-scan { animation-name: mv-scan; animation-timing-function: ease-in-out; }
+@keyframes mv-scan {
+  0%   { rotate: 0deg;    translate: 0 0; }
+  18%  { rotate: -4deg;   translate: 0 0; }
+  32%  { rotate: -4deg;   translate: 0 0; }
+  52%  { rotate: 4deg;    translate: 0 0; }
+  66%  { rotate: 4deg;    translate: 0 0; }
+  82%  { rotate: -1deg;   translate: 0 -2%; }
+  100% { rotate: 0deg;    translate: 0 0; }
+}
+
+/* The ring that goes out with every move, in the type's own colour. Shared on purpose: the
+   CHARACTER is what differs between the eight, and giving each a different ring as well
+   turned the strip into noise. */
+.mv-flare {
+  position: absolute;
+  inset: -7%;
+  border-radius: 50%;
+  border: 2px solid var(--mv-accent);
+  opacity: 0;
+  pointer-events: none;
+  animation: mv-flare 760ms ease-out both;
+}
+@keyframes mv-flare {
+  0%   { opacity: 0;    scale: 0.72; }
+  18%  { opacity: 0.55; scale: 0.95; }
+  100% { opacity: 0;    scale: 1.35; }
+}
+
+/* The Monk's heart. Rises out of the top of the medallion and fades. */
+.mv-heart {
+  position: absolute;
+  left: 50%;
+  top: 4%;
+  width: 26%;
+  height: 26%;
+  margin-left: -13%;
+  opacity: 0;
+  pointer-events: none;
+  animation: mv-heart 1700ms ease-out both;
+  animation-delay: 240ms;
+}
+@keyframes mv-heart {
+  0%   { opacity: 0;    translate: 0 12%;  scale: 0.4; }
+  22%  { opacity: 0.95; translate: 0 0;    scale: 1; }
+  70%  { opacity: 0.8;  translate: 0 -40%; scale: 0.95; }
+  100% { opacity: 0;    translate: 0 -72%; scale: 0.86; }
+}
+
+/* The ambient float under a character that is going to sit on screen for a while. Standing
+   perfectly still for ten seconds is what makes a render look like a photograph of a toy. */
+.mv-idle { animation: mv-idle 5200ms ease-in-out infinite; }
+@keyframes mv-idle {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -2.5%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mv-body,
+  .mv-drive, .mv-square, .mv-drift, .mv-leap,
+  .mv-shake, .mv-swell, .mv-breathe, .mv-scan,
+  .mv-flare, .mv-heart, .mv-idle {
+    animation: none;
+  }
+  /* The heart is the one piece of information rather than decoration, so it stays visible
+     instead of being animated in. Everything else is movement and simply stops. */
+  .mv-heart { opacity: 0.9; }
+}
