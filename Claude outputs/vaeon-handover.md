@@ -52,13 +52,17 @@ Partnership and should not be discussed as if it were.
 Last four commits, newest first:
 
 ```
-12f1df8  Put the gym robots on the front page and say an AI writes the plan   NOT PUSHED
+b3cee06  Put the HYROX stations back, decided by kit instead of by goal     NOT PUSHED
+f4272ea  Create vaeon-handover.md
+12f1df8  Put the gym robots on the front page and say an AI writes the plan
 7bfb16c  Decide line endings once, in the repo, instead of 77 times a day
 c3dc6fb  Rebuild the Wanderer so it belongs to the family
 3044ae1  Put the characters in the gym
 ```
 
-Working tree is clean. Only `12f1df8` is waiting to go up.
+Working tree is clean. Only `b3cee06` is waiting to go up.
+
+Nine test files now, not eight. `test/finishers.mjs` is the new one.
 
 The eight character renders in `public/characters/*.webp` are now gym poses with real
 alpha channels, 512x512. The eight `*-face.webp` crops were deliberately left alone and
@@ -70,22 +74,32 @@ so nobody reads it as an oversight.
 
 ## Open items, most important first
 
-### 1. HYROX is now unreachable, and that contradicts a standing instruction
+### 1. HYROX stations are back, decided by kit  (DONE, 26 Oct, commit b3cee06)
 
-James asked for more HYROX work in every training day. That was never implemented as a
-general injection. The sled pushes and pulls, wall balls, burpee broad jumps and farmers
-carries exist in exactly two places: as finishers on the `hyrox` goal, and as exercises
-inside the `hyroxlean` days. Both goals have now been removed from the picker, `hyrox` on
-24 October and `hyroxlean` on 26 October at his request.
+This was the top item and it is now fixed, so read it as context rather than as work.
 
-So a profile created today gets the general `FINISHERS` pool and never sees a station.
+The stations were reachable only by picking a HYROX goal, and once both HYROX goals left
+the picker they were reachable by nobody. Gating on the goal was the wrong axis: a sled
+push is not a preference, it is a question of whether there is a sled in the room. So
+`finisherPool()` in `lib/training.js` now asks about kit. A gym gets HYROX stations
+whatever goal was picked; home or no equipment keeps the kit-free set. Null counts as a
+gym, matching onboarding's default and `plan/page.js`'s existing homeMode rule.
 
-The fix belongs in `finisherPool()` in `lib/training.js`, not in the picker: make
-`HYROX_STATIONS` the pool that strength and hypertrophy goals draw from, rather than
-something only a HYROX goal can reach. That puts a station on the end of most days for
-everyone, which is what was actually wanted. It changes every user's plan, so it needs
-James to say yes before it ships. Both goal definitions were kept in `GOALS` for this
-reason.
+`buildWeek` gained a sixth argument, `equipment`, passed from `app/plan/page.js`.
+
+The pool was also five stations against an eight station event, so burpee broad jumps,
+farmers carry and wall balls were added.
+
+Two things to know. Fourteen of twenty accounts are at a gym and every one of their weeks
+now ends differently. And running and yoga goals still get no finisher at all, whatever
+the kit, because every focus they own is on `NO_FINISHER`. The stations land on the
+lifting goals: cut, bulk, glutes, strength, calisthenics and general.
+
+`test/finishers.mjs` holds the line, 2731 checks. The one that matters is that no home or
+equipment-free profile is ever handed a station.
+
+Calisthenics at a gym now gets sled pushes, which follows the kit rule but may not be what
+anyone wants. Nobody has looked at that yet.
 
 ### 2. Two live accounts are mid-block on hyroxlean
 
