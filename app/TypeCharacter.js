@@ -29,11 +29,16 @@ const PENDING_ARTWORK = [];
 //
 // WHY THE DARK MEDALLION ON THE FULL VARIANT.
 //
-// The renders have their background baked in. There is no alpha and there cannot be,
-// because the characters are charcoal-black and so is the backdrop, so nothing can key
-// them apart. Dropped raw onto the light theme they are black rectangles, which would
-// break the one feature in this app that exists for accessibility rather than taste.
-// Framing them fixes it honestly: invisible in dark mode, a framed picture in light mode.
+// The full renders now carry a real alpha channel, so the medallion is no longer covering
+// for a baked-in backdrop. It still earns its place. The characters are charcoal-black, so
+// cut out and dropped onto the light theme they read as black silhouettes, and the accent
+// colour that identifies the type goes with them. The medallion supplies the dark ground
+// they were lit against: invisible in dark mode, a framed picture in light mode. Change
+// the colour here and you are changing what the artwork sits on, not just its frame.
+//
+// The full renders are the gym poses. The face crops are still the earlier calm portraits,
+// because a head-and-shoulders crop of a robot mid sled-push is a bad 38px avatar. The two
+// sets are different artwork of the same character, tied together by the accent colour.
 export default function TypeCharacter({ typeId, size, variant, className }) {
   const t = TYPES[typeId];
   if (!t) return null;
