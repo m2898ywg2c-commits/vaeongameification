@@ -5,7 +5,8 @@
 // app does not feel like it has two personalities, but with no prescribed weight, no form
 // or coaching content, and a title the user owns.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import CharacterMotion from "../CharacterMotion";
 import { suggestExercises, canonicalName } from "@/lib/gymready";
 
 const LOCKED = "Only available when Vaeon plans your training.";
@@ -31,11 +32,20 @@ const MODES = [
   { id: "time", label: "Time" },
 ];
 
-export default function GymBlock({ block, blockIdx, accent, done, onComplete, onReopen, onTitleChange, onAddSet }) {
+export default function GymBlock({ block, blockIdx, accent, done, onComplete, onReopen, onTitleChange, onAddSet, typeId }) {
   const [touchedMode, setTouchedMode] = useState(null);
   const [showSuggest, setShowSuggest] = useState(false);
   const [locked, setLocked] = useState(false);
   const [fields, setFields] = useState({});
+
+  // Cheer on the transition to done, never on mounting already done. ExerciseCard has the
+  // full reasoning; this is the same rule so the two session types behave as one app.
+  const [cheer, setCheer] = useState(0);
+  const wasDone = useRef(done);
+  useEffect(function () {
+    if (done && !wasDone.current) setCheer(function (n) { return n + 1; });
+    wasDone.current = done;
+  }, [done]);
 
   const title = block.title || "";
   const total = block.sets || 3;
@@ -60,6 +70,9 @@ export default function GymBlock({ block, blockIdx, accent, done, onComplete, on
       >
         <span className="font-display text-lg font-normal" style={{ color: "#3DDC97" }}>&#10003;</span>
         <span className="flex-1 font-display text-sm" style={{ color: "#3DDC97" }}>{title || "Block " + (blockIdx + 1)}</span>
+        {typeId ? (
+          <CharacterMotion typeId={typeId} size={40} variant="face" on={cheer ? "mount" : "none"} replayKey={cheer} />
+        ) : null}
         <span className="text-xs text-brand-muted">Tap to reopen</span>
       </button>
     );

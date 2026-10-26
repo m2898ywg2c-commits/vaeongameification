@@ -2,6 +2,7 @@ import { TYPES } from "@/lib/personality";
 import { BrandLockup, VaeonMark } from "./Brand";
 import ThemeToggle from "./ThemeToggle";
 import TypeCharacter from "./TypeCharacter";
+import CharacterMotion from "./CharacterMotion";
 import Icon from "./Icon";
 import { BRAND, TRACK } from "@/lib/brand";
 
@@ -298,8 +299,10 @@ function Hero() {
           it. */}
       <div className="mt-14 sm:mt-16">
         <div className="flex items-end justify-center gap-3 sm:gap-4 flex-wrap mb-6">
-          {Object.keys(TYPES).map(function (id) {
-            return <TypeCharacter key={id} typeId={id} size={84} />;
+          {/* Staggered by index so the eight arrive one after another rather than
+              twitching in unison. 90ms apart puts the last one in under a second. */}
+          {Object.keys(TYPES).map(function (id, i) {
+            return <CharacterMotion key={id} typeId={id} size={84} on="inview" delay={i * 90} />;
           })}
         </div>
         <p
@@ -397,7 +400,7 @@ function Eight() {
               className="site-lift p-6 flex flex-col items-center text-center border border-transparent"
               style={{ background: "var(--brand-bg)" }}
             >
-              <TypeCharacter typeId={id} size={120} />
+              <CharacterMotion typeId={id} size={120} on="inview hover" />
               <p className="font-bold text-base leading-tight mt-5 mb-1">{t.name}</p>
               <p
                 className="text-[0.625rem] uppercase leading-tight mb-3"

@@ -221,7 +221,7 @@ last={lastSets ? lastSets[(ex.name || "").toLowerCase()] : null}
 history={weekBests ? weekBests[(ex.name || "").toLowerCase()] : null}
 sessions={liftSessions ? liftSessions[(ex.name || "").toLowerCase()] : null}
 weekNo={weekNo} ladder={ladder}
-onComplete={onComplete} onReopen={onReopen} onAvoid={onAvoid}
+onComplete={onComplete} onReopen={onReopen} onAvoid={onAvoid} typeId={tid}
 logged={loggedThisWeek ? loggedThisWeek[(ex.name || "").toLowerCase()] : null} />
 </section>
 );

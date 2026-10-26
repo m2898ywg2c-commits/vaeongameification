@@ -138,6 +138,7 @@ export default function GymDayView({ day, active, profile, accent, deep, tid, do
             onReopen={onReopen}
             onTitleChange={setTitle}
             onAddSet={addSet}
+            typeId={tid}
           />
         );
       })}

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { workingSets, workingReps, progressNote, blockProjection, workingHold, increaseHint, repsFrom, floorFromEst, bestInBlock, adaptFrom, adaptNote, bodyweightLadder, bodyweightTarget, bestBodyweightFrom } from "@/lib/progression";
 import { formTip, coachTip, homeAlternative, needsGym } from "@/lib/exercisedb";
 import { setIsComplete } from "@/lib/setlog";
 import { BRAND } from "@/lib/brand";
 import Icon from "../Icon";
+import CharacterMotion from "../CharacterMotion";
 import NotForMe from "./NotForMe";
 import SetFeedback from "./SetFeedback";
 
@@ -163,8 +164,23 @@ function describeSet(row) {
   return bits.join(" ");
 }
 
-export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, history, sessions, weekNo, ladder, holdProgression, onComplete, onReopen, onAvoid, logged }) {
+export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, accent, homeMode, done, maxes, isTestWeek, last, history, sessions, weekNo, ladder, holdProgression, onComplete, onReopen, onAvoid, logged, typeId }) {
   const total = Number(ex.sets) || 1;
+
+  // THE CHEER WHEN THIS EXERCISE IS FINISHED.
+  //
+  // It plays on the transition to done, not on being done. A card that mounts already done,
+  // because the page was reloaded or the day reopened, stays still: otherwise reloading a
+  // finished session would set six robots jumping at once and the moment would mean nothing.
+  // The count is state rather than a flag so that reopening and finishing again cheers again.
+  // 40px and the face crop, because the full figure turns into an orb below 60px, and it
+  // lives inside the finished card so it can never sit between the thumb and the next set.
+  const [cheer, setCheer] = useState(0);
+  const wasDone = useRef(done);
+  useEffect(function () {
+    if (done && !wasDone.current) setCheer(function (n) { return n + 1; });
+    wasDone.current = done;
+  }, [done]);
   const swap = homeMode && needsGym(ex.name);
   const alt = swap ? homeAlternative(ex.name) : "";
   const altTitle = swap ? swapTitle(alt) : "";
@@ -518,6 +534,9 @@ export default function ExerciseCard({ ex, exIdx, dayKey, profile, weekPct, acce
         >
           <span style={{ color: "#3DDC97" }}><Icon name="check" size={22} /></span>
           <span className="flex-1 font-display text-xl" style={{ color: "#3DDC97", letterSpacing: "-0.02em" }}>{title}</span>
+          {typeId ? (
+            <CharacterMotion typeId={typeId} size={40} variant="face" on={cheer ? "mount" : "none"} replayKey={cheer} />
+          ) : null}
           <span className="text-base text-brand-muted">Reopen</span>
         </button>
 

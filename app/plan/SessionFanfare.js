@@ -1,6 +1,7 @@
 "use client";
 
 import TypeCharacter from "../TypeCharacter";
+import CharacterMotion from "../CharacterMotion";
 import { TYPES } from "@/lib/personality";
 
 // The session fanfare.
@@ -84,7 +85,7 @@ export default function SessionFanfare({ typeId, dayKey, size }) {
   return (
     <div className="vf-wrap" style={{ width: box, height: box }} aria-hidden="false">
       <div className="vf-layer">{bits}</div>
-      <TypeCharacter typeId={typeId} size={s} variant="face" />
+      <CharacterMotion typeId={typeId} size={s} variant="face" on="mount" />
     </div>
   );
 }
