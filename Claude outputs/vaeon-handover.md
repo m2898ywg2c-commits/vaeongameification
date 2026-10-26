@@ -1,148 +1,148 @@
 # Vaeon: handover
 
-Paste this into a new chat to pick up where this one stopped.
+Paste this into a new chat to pick up where the last one stopped.
 
-Vaeon is James Hampton's commercial fitness app. It is nothing to do with Unify
-Partnership and should not be discussed as if it were.
+Vaeon is James Hampton's commercial fitness app. Nothing to do with Unify Partnership and
+should not be discussed as if it were.
 
 ---
 
 ## What it is built on
 
 - Next.js 16.2.10, App Router, Turbopack. React 19. Plain JavaScript, no TypeScript.
-- Tailwind v4. `@theme inline` lives in `app/globals.css`.
+- Tailwind v4. `@theme inline` in `app/globals.css`.
 - Supabase for auth and Postgres 17. Project `wctsiafaiogyciqnmvad`, named "Intent", eu-west-1.
 - GitHub `m2898ywg2c-commits/vaeongameification`, deployed by Vercel to vaeonfitness.com.
-- The repo sits on James's laptop at `C:\Users\JamesHampton\vaeon`.
+- Repo on James's laptop at `C:\Users\JamesHampton\vaeon`.
 
 ### Things that will waste your time if nobody tells you
 
-- **You cannot push.** The shell on James's machine has no git credentials: no helper,
-  no token, no SSH key. James pushes himself from GitHub Desktop on Windows. Commit,
-  then ask him.
-- **Git identity is unset in that shell.** Commit with
-  `git -c user.name="James" -c user.email="m2898ywg2c@privaterelay.appleid.com"`,
-  which matches the existing history.
-- **canva.com and vaeonfitness.com are both blocked** from the cloud container and from
-  the laptop shell. Package registries work in the container. To get a Canva image,
-  generate it, remove its background, then ask James to download and attach it.
-- **`device_commit_files` can report success without the bytes landing.** It did exactly
-  that once in this session. Verify afterwards by size or content, not by the response.
-- **That transfer re-encodes WEBP**, so files arrive roughly 20% larger than you wrote.
-  Compare pixel means, never byte counts, when checking a file arrived intact.
+- **You cannot push.** The shell on James's machine has no git credentials. He pushes from
+  GitHub Desktop on Windows. Commit, then ask him.
+- **Git identity is unset there.** Commit with
+  `git -c user.name="James" -c user.email="m2898ywg2c@privaterelay.appleid.com"`.
+- **Git leaves lock files behind.** Deletion is off in the connected folder, so `git commit`
+  works but cannot remove `.git/HEAD.lock` and `.git/objects/maintenance.lock`. Left there,
+  they break GitHub Desktop. After every commit, `mv` them to `.git/stale-*` names (never
+  under `.git/refs`), or ask James to approve deletion for the folder.
+- **Working-tree line endings are mixed** (some CRLF, some LF) even though `.gitattributes`
+  stores LF. Any scripted edit must match the file's own ending or the match fails.
+- **canva.com and vaeonfitness.com are blocked** from the cloud container and from the
+  laptop shell. To use a Canva image: generate it, remove its background, then ask James to
+  download and attach it. There is no fetch path.
+- **Canva cannot animate.** Its motion tool only imports an MP4 that already exists, and its
+  layer-separation tool works on flat graphics and badly on photographic images. There is no
+  rigging and no image-to-video route. Checked, not assumed.
+- **`device_commit_files` can report success without the bytes landing.** Verify after
+  writing, by size or by content.
+- **That transfer re-encodes WEBP**, so files arrive about 20% larger than written. Compare
+  pixel means, never byte counts.
 - **Supabase: use `execute_sql`, not `apply_migration`** for non-destructive DDL.
-  `apply_migration` blocks on an approval prompt that may never reach him. It timed out
-  four times before anyone worked that out.
-- **No `next build` has ever run.** npm cannot reach the project's dependencies from
-  either machine, so every visual change in this project is unverified until deployed.
-  `node test/*.mjs` is the only automated check, and all eight files currently pass.
-  `esbuild` installed in the container will parse JSX if you need a syntax check.
+  `apply_migration` blocks on an approval prompt that may never reach him.
+- **No `next build` has ever run.** npm cannot reach the project's dependencies from either
+  machine, and cannot install esbuild on the laptop either. `node test/*.mjs` is the only
+  automated check, nine files, all passing. `esbuild` in the cloud container will parse JSX
+  if you can get the file there.
 
 ### Tailwind v4, which bit twice
 
-- The important modifier is a **suffix** now: `px-4!`, not `!px-4`. The v3 spelling
-  silently generates nothing.
-- Arbitrary-value colour utilities like `hover:text-[color:var(--x)]` fail silently.
-  Use a named class in `globals.css` instead.
+- The important modifier is a **suffix**: `px-4!`, not `!px-4`. The v3 spelling silently
+  generates nothing.
+- Arbitrary-value colour utilities like `hover:text-[color:var(--x)]` fail silently. Use a
+  named class in `globals.css`.
 
 ---
 
 ## Where things stand
 
-Last four commits, newest first:
-
 ```
-12f1df8  Put the gym robots on the front page and say an AI writes the plan   NOT PUSHED
-7bfb16c  Decide line endings once, in the repo, instead of 77 times a day
-c3dc6fb  Rebuild the Wanderer so it belongs to the family
-3044ae1  Put the characters in the gym
+9f542be  Wire the character motion into the reveal, the landing page and completion  NOT PUSHED
+7fc0bfa  Rewrite the handover around the half-built motion layer                     NOT PUSHED?
+b1bf003  Add the character motion layer                                              NOT PUSHED?
+0d854f6  Cut the avatars from the gym renders
+b3cee06  Put the HYROX stations back, decided by kit instead of by goal
 ```
 
-Working tree is clean. Only `12f1df8` is waiting to go up.
+Working tree clean. Nine test files, all passing.
 
-The eight character renders in `public/characters/*.webp` are now gym poses with real
-alpha channels, 512x512. The eight `*-face.webp` crops were deliberately left alone and
-are still the older calm portraits, so the two sets are different artwork of the same
-character tied together by accent colour. That is written down in `app/TypeCharacter.js`
-so nobody reads it as an oversight.
+All sixteen character images in `public/characters` are cut from the same gym renders,
+512x512 with real alpha. `TypeCharacter` paints `#0B0B0E` behind them. The full figure
+falls back to an orb below 60px; the `face` variant has no floor.
 
 ---
 
-## Open items, most important first
+## Character motion: wired, not yet seen
 
-### 1. HYROX is now unreachable, and that contradicts a standing instruction
+`lib/motion.js` (eight moves), `app/motion.css` (keyframes, flare, Monk's heart, idle float,
+reduced-motion off-switch) and `app/CharacterMotion.js` (the wrapper) are now used in:
 
-James asked for more HYROX work in every training day. That was never implemented as a
-general injection. The sled pushes and pulls, wall balls, burpee broad jumps and farmers
-carries exist in exactly two places: as finishers on the `hyrox` goal, and as exercises
-inside the `hyroxlean` days. Both goals have now been removed from the picker, `hyrox` on
-24 October and `hyroxlean` on 26 October at his request.
+1. **Post-assessment reveal**, `app/assessment/page.js`. 168px, `on="mount" idle`.
+2. **Landing hero strip**, `app/Welcome.js` `Hero()`. 84px, `on="inview"`, `delay={i * 90}`.
+3. **Landing Eight grid**, `app/Welcome.js` `Eight()`. 120px, `on="inview hover"`.
+4. **Session complete**, `app/plan/SessionFanfare.js`. Face variant, `on="mount"`, inside
+   the burst. Covers DayView and GymDayView, which share the fanfare.
+5. **Exercise complete**, `app/plan/ExerciseCard.js` and `app/plan/GymBlock.js`, in the
+   `done` branch. 40px face beside the title. Plays only on the transition to done, via a
+   `wasDone` ref and a `cheer` counter, so a reload of a finished day stays still and
+   reopen-then-finish cheers again. `typeId` is passed from `DayView` and `GymDayView` as
+   `tid`. The Nutrition 96px grid on the landing page was deliberately left static.
 
-So a profile created today gets the general `FINISHERS` pool and never sees a station.
+**Interpretation to confirm with James:** "completion of sets" was wired as completion of an
+exercise (all its sets), not every individual set. Per-set would put movement inside the
+live card next to the next set's button, which is exactly where it should not be.
 
-The fix belongs in `finisherPool()` in `lib/training.js`, not in the picker: make
-`HYROX_STATIONS` the pool that strength and hypertrophy goals draw from, rather than
-something only a HYROX goal can reach. That puts a station on the end of most days for
-everyone, which is what was actually wanted. It changes every user's plan, so it needs
-James to say yes before it ships. Both goal definitions were kept in `GOALS` for this
-reason.
+**Unverified until it deploys.** Nothing in the motion layer has ever rendered. If the build
+rejects the `@import "./motion.css"`, inline the file into `globals.css`.
 
-### 2. Two live accounts are mid-block on hyroxlean
+**The ceiling.** Each render is one flat pose. Every move is whole-body. A thumbs up or hands
+making a heart needs new artwork: one celebration pose per character, eight generations,
+each downloaded and attached by James, with real risk of the character drifting.
 
-`james.hampton828@gmail.com` is on block three with a start date of 25 October, the day
-before the goal was cut. `james@james.com` is on block one. Both keep training normally,
-because `buildWeek` reads `GOALS` and never reads `GOAL_ORDER`. What they lose is the
-ability to choose it again: open the goal picker, change anything, and the option they are
-currently training under is not on the list.
+---
 
-Unlike the five goals removed on the 24th, this one was not unoccupied. Worth telling him
-plainly if he touches goals again.
+## Other open items
 
-### 3. Push notifications have never worked in production
+### Push notifications have never worked in production
 
-`NEXT_PUBLIC_VAPID_PUBLIC_KEY` is absent from Vercel entirely. The code ships, the feature
-cannot work. This is the oldest unfixed thing on the list.
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY` is absent from Vercel entirely. Oldest unfixed thing.
 
-### 4. Vercel housekeeping
+### Vercel housekeeping
 
 - Auto-renewal is **off** on vaeonfitness.com. It expires 3 August 2027.
-- Billing address and payment method are incomplete.
-- The team is on the Hobby plan. Commercial use needs Pro.
+- Billing address and payment method incomplete.
+- Team is on the Hobby plan. Commercial use needs Pro.
 
-### 5. Asked for, never started
+### Two live accounts are mid-block on a goal that is no longer pickable
 
-- **Post-assessment reveal**: when someone finishes the assessment, the robot should be
-  front and centre and animated. Nothing has been built.
-- **Engine Room placement**: it is buried in the "Elsewhere" grid on the dashboard.
-  Promoting it to a proper card was recommended and not accepted or refused.
-- **`engine_logs.effort`** is written on every Engine Room session and read by nothing.
-  The intended loop, three "easy" scores lengthening the cap or adding a station, is
-  unbuilt.
+`hyroxlean` was removed from the picker on 26 October at James's request.
+`james.hampton828@gmail.com` (block three) and `james@james.com` (block one) keep training,
+because `buildWeek` reads `GOALS` and never `GOAL_ORDER`. They cannot choose it again.
 
-### 6. Optional
+### Smaller
 
-The face crops could be regenerated from the new gym poses for consistency. The argument
-against is that a head-and-shoulders crop of a robot mid sled-push makes a poor 38px
-avatar, which is why it has not been done. His call.
+- **Engine Room is buried** in the "Elsewhere" grid. Promoting it to a card was recommended,
+  neither accepted nor refused.
+- **`engine_logs.effort`** is written and read by nothing. The "three easy scores lengthen
+  the cap" loop is unbuilt.
+- **Calisthenics at a gym now gets sled pushes.** Honest to the kit rule, maybe not wanted.
+- **Two avatar crops have equipment in frame**: `hunter` (sled post) and `gladiator` (rope).
 
 ---
 
 ## Settled, so nobody reopens them
 
-- **The `/onboarding` redirect is not a bug.** A browser signed in as `james@james2.com`,
-  a test account created on 24 October with `goals = []`, correctly gets sent from the
-  dashboard to onboarding. His real accounts have goals and go straight through.
-- **Nothing auto-pushes.** An earlier commit appearing on the remote unprompted was James
-  pushing it himself between messages.
-- **The line-ending churn is fixed.** 77 files showed as permanently modified because the
-  repo stored LF, the worktree wrote CRLF, and git had no instruction. `.gitattributes`
-  settles it. Nothing needed renormalising, because what was in git was already correct.
+- **HYROX stations are back**, decided by kit rather than goal, in `finisherPool()`.
+  `test/finishers.mjs` holds the line. Running and yoga goals get no finisher, correctly.
+- **The `/onboarding` redirect is not a bug** for `james@james2.com`, which has `goals = []`.
+- **Nothing auto-pushes.** James pushes himself.
+- **Line endings in the repo are fixed** by `.gitattributes`. The working tree is still mixed;
+  that is cosmetic.
+- **Motion restarts by class toggle, never by React key**, so the `<img>` never blinks.
 
 ---
 
 ## How James works
 
-British English. Warm and direct, no corporate polish, no em dashes. He wants pushback and
-a better way when one exists, not agreement. Do not sugar-coat and do not over-format.
-He is building this himself and takes correction well, so tell him when something he asked
-for conflicts with something else he asked for, which has happened twice now.
+British English. Warm and direct, no corporate polish, no em dashes. He wants pushback and a
+better way when one exists, not agreement. Do not sugar-coat and do not over-format. Tell
+him when something he has asked for conflicts with something else he has asked for.
