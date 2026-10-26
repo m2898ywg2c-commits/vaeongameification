@@ -36,9 +36,19 @@ const PENDING_ARTWORK = [];
 // they were lit against: invisible in dark mode, a framed picture in light mode. Change
 // the colour here and you are changing what the artwork sits on, not just its frame.
 //
-// The full renders are the gym poses. The face crops are still the earlier calm portraits,
-// because a head-and-shoulders crop of a robot mid sled-push is a bad 38px avatar. The two
-// sets are different artwork of the same character, tied together by the accent colour.
+// Both variants now come from the same gym renders, so the avatar on the dashboard and the
+// figure on the type page are finally the same character.
+//
+// The face crop was held back at first on the theory that a head-and-shoulders crop of a
+// robot mid sled-push would make a poor avatar. That was wrong, and the old portraits were
+// reported from the dashboard as an unreadable pale shape at 46px. The crop is the helmet
+// plus a hint of shoulder, found by taking the largest bright desaturated blob in the top
+// two thirds of the frame, which in these renders can only be the glossy white dome.
+//
+// It also helps the colour-blindness problem noted above, though it does not solve it. The
+// eight domes differ in visor shape and eye shape as well as hue, so there is now something
+// other than colour to go on. At 38px that difference is slight. The alt text is still what
+// actually carries the name.
 export default function TypeCharacter({ typeId, size, variant, className }) {
   const t = TYPES[typeId];
   if (!t) return null;
