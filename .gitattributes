@@ -1,0 +1,23 @@
+# Line endings are decided here, not by whatever editor or tool last wrote a file.
+#
+# Without this the repo carried 77 files permanently listed as modified: LF in
+# git, CRLF on disk, and not one real content difference between them. That is
+# worse than untidy. It hides genuine changes in noise and makes every diff and
+# every blame argue with you.
+#
+# text=auto lets git decide per file whether it is text and store text as LF.
+# eol=lf checks text out as LF as well, on Windows too, so the working tree
+# matches what is stored and nothing drifts back the next time a file is saved.
+* text=auto eol=lf
+
+# Binaries, marked so git never inspects their bytes or tries to fix them.
+*.webp  binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.ico   binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary
+
+# SVG is text and its diffs are worth reading, so it stays text.
