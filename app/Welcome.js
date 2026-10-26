@@ -239,7 +239,7 @@ function Hero() {
     <section className="max-w-5xl mx-auto px-5 sm:px-8 pt-16 pb-16 sm:pt-24 sm:pb-24">
       <div className="grid lg:grid-cols-12 gap-10 lg:gap-12 items-center">
         <div className="lg:col-span-7">
-          <p className="rule-label rule-label-left mb-7">Eight training personalities</p>
+          <p className="rule-label rule-label-left mb-7">Eight AI coaches</p>
 
           <h1 className="font-bold leading-[1.06] text-[2.1rem] sm:text-[3rem] lg:text-[3.4rem] mb-7">
             Most training plans tell you what to do.
@@ -250,7 +250,9 @@ function Hero() {
           <p className="text-base sm:text-lg leading-relaxed max-w-xl mb-9" style={{ color: BRAND.muted }}>
             Two people can want the same result and need completely different coaching to get
             there. One wants the week planned to the hour. One wants a list and to be left
-            alone. Vaeon works out which you are, and then behaves like it.
+            alone. Vaeon works out which you are, then hands you the AI coach that trains that
+            way. It writes your week, reads what you actually lifted, and writes the next one
+            differently.
           </p>
 
           <div className="flex gap-3 flex-wrap mb-9">
@@ -261,16 +263,6 @@ function Hero() {
             <GhostLink href="/login">Log in</GhostLink>
           </div>
 
-          {/* The eight, as faces, high on the page. They are the most distinctive thing the
-              product has and they were buried three sections down. The face variant is a
-              head-and-shoulders crop with no size floor, which is why it works at 46px
-              where the full figure would collapse into eight identical pale blobs. */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {Object.keys(TYPES).map(function (id) {
-              return <TypeCharacter key={id} typeId={id} size={46} variant="face" />;
-            })}
-            <span className="text-sm ml-1" style={{ color: BRAND.dim }}>One of these is you.</span>
-          </div>
         </div>
 
         {/* The photograph drains from colour to greyscale once the wordmark has finished
@@ -291,6 +283,32 @@ function Hero() {
             aria-label="An athlete mid sled push on an indoor track"
           />
         </div>
+      </div>
+
+      {/* THE EIGHT, HIGH ON THE PAGE, AS FULL FIGURES.
+
+          These were 46px face crops tucked into the left column. The full figure needs
+          room: TypeCharacter refuses below 60px and hands back an orb, because under that
+          every one of the eight is the same pale dome on a dark body. The gym renders are
+          worth the space, so the strip comes out of the column and takes the whole width
+          at 84px.
+
+          This is not the Eight section further down duplicated. That one names each type
+          and gives it a tagline, and you read it. This is the hook, and you only look at
+          it. */}
+      <div className="mt-14 sm:mt-16">
+        <div className="flex items-end justify-center gap-3 sm:gap-4 flex-wrap mb-6">
+          {Object.keys(TYPES).map(function (id) {
+            return <TypeCharacter key={id} typeId={id} size={84} />;
+          })}
+        </div>
+        <p
+          className="text-center text-sm sm:text-base leading-relaxed max-w-2xl mx-auto"
+          style={{ color: BRAND.muted }}
+        >
+          One of these is you. A short assessment works out which, and that one becomes your
+          coach: an AI that writes every session you do, from what you lifted last time.
+        </p>
       </div>
     </section>
   );
