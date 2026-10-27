@@ -1,0 +1,22 @@
+<!doctype html><meta charset=utf-8><title>Character motion preview</title>
+<style>
+body{margin:0;background:#0B0B0E;color:#ccc;font:14px system-ui;padding:32px}
+.row{display:flex;gap:32px;align-items:center;flex-wrap:wrap;margin-bottom:40px}
+.t{border-radius:24px;overflow:hidden;background:#0B0B0E}
+.t video{width:100%;height:100%;display:block}
+.light{background:#f4f4f4;padding:20px;border-radius:12px;color:#333}
+h2{font-weight:600;font-size:16px;color:#eee;margin:0 0 12px}
+p{margin:8px 0 0;text-align:center}
+</style>
+<body>
+<script>
+const clips=[["Hunter: squat","hunter-squat.mp4","#FF8C42"],["Gladiator: ball slam","gladiator-slam.mp4","#E052A0"],["Spark: wall ball","spark-wallball.mp4","#FF6B57"],["Anchor: kettlebell swing","anchor-kettlebell.mp4","#AE63F0"],["Captain: burpee","captain-burpee.mp4","#2DD4BF"],["Architect: deadlift","architect-deadlift.mp4","#7C8CF8"],["Monk: lunge","monk-lunge.mp4","#4CC9F0"],["Wanderer: box jump","wanderer-boxjump.mp4","#3DDC97"]];
+for(const [name,src,acc] of clips){
+  document.write(`<h2>${name}</h2><div class=row>
+  <div><div class=t style="width:168px;height:168px;border:1px solid ${acc}40;box-shadow:0 0 30px ${acc}24"><video src="${src}" autoplay muted loop playsinline></video></div><p>168px, reveal</p></div>
+  <div><div class=t style="width:360px;height:360px;border:1px solid #333"><video src="${src}" autoplay muted loop playsinline></video></div><p>Large</p></div>
+  <div class=light><div class=t style="width:168px;height:168px"><video src="${src}" autoplay muted loop playsinline></video></div><p>Light theme</p></div>
+  </div>`);
+}
+</script>
+</body>
