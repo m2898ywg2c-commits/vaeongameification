@@ -100,6 +100,25 @@ each downloaded and attached by James, with real risk of the character drifting.
 
 ---
 
+## Video: the group reel and the character clips (27 October)
+
+- `app/CoachReel.js`, used in a new `Coaches()` section on `app/Welcome.js`, straight after
+  the hero. Plays `public/media/coaches-1.mp4` then `coaches-2.mp4` (15s each, 1280x548, no
+  audio) as one pan, crossfading and looping. Poster first; clip one loads only near the
+  viewport, clip two four seconds before clip one ends; paused off screen; reduced motion or
+  Save-Data get the poster and a play button.
+- `CharacterMotion` has a `clip` prop: at 60px and above it plays
+  `public/characters/motion/<type>.mp4` (384px, about 1MB for all eight) instead of the CSS
+  move, and falls back to the CSS move if the video will not play. On the assessment reveal
+  and the Eight grid only. Hero strip and 40px faces stay CSS on purpose.
+- `lib/motion.js` gained `clipFor()` and `motionAllowed()`.
+- Source clips, raws and the Dreamina briefs are in `Claude outputs/motion` and
+  `Claude outputs/gym-scene`, untracked (35MB of raws should stay out of the repo).
+  `motion/tidy.py` is the grade-to-#0B0B0E and loop-crossfade step for any new clip.
+- Dreamina Basic plan taken 27 October at 23p; renews at 11.90 a month. A reminder to
+  cancel is set for 17 November. Credits left about 1.1K.
+- Unverified until it deploys: nothing here has rendered in a real build.
+
 ## Other open items
 
 ### Push notifications have never worked in production
