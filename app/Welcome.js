@@ -3,6 +3,7 @@ import { BrandLockup, VaeonMark } from "./Brand";
 import ThemeToggle from "./ThemeToggle";
 import TypeCharacter from "./TypeCharacter";
 import CharacterMotion from "./CharacterMotion";
+import CoachReel from "./CoachReel";
 import Icon from "./Icon";
 import { BRAND, TRACK } from "@/lib/brand";
 
@@ -317,6 +318,30 @@ function Hero() {
   );
 }
 
+// THE COACHES, TRAINING TOGETHER.
+//
+// Straight after the hero because it is the first thing anybody scrolls to, and the best
+// single answer on the page to "what is this". Not IN the hero, because the hero's photo and
+// headline are what the page is judged on in its first second, and a five megabyte video
+// there would make that second slower for everybody. CoachReel shows a poster until the reel
+// is about to be seen and only then starts fetching; the reasoning is in that file.
+function Coaches() {
+  return (
+    <section id="coaches" className="site-reveal max-w-6xl mx-auto px-5 sm:px-8 pb-20 sm:pb-28 scroll-mt-20">
+      <p className="rule-label rule-label-left mb-3">Meet the coaches</p>
+      <h2 className="font-bold leading-tight text-[1.6rem] sm:text-[2.1rem] mb-4 max-w-3xl">
+        Eight coaches, one training hall. One of them trains you.
+      </h2>
+      <p className="text-sm sm:text-base leading-relaxed max-w-2xl mb-8" style={{ color: BRAND.muted }}>
+        Each one has its own way of moving, its own way of talking and its own idea of a good
+        session. The Hunter squats, the Gladiator slams, the Monk takes its time. Your
+        assessment decides which of them is in your corner.
+      </p>
+      <CoachReel label="The eight Vaeon coaches training together in a neon-lit gym: squats, ball slams, wall balls, burpees, kettlebell swings, lunges, deadlifts and box jumps, with high fives in between." />
+    </section>
+  );
+}
+
 function Facts() {
   return (
     <section className="site-reveal max-w-5xl mx-auto px-5 sm:px-8 pb-20 sm:pb-28">
@@ -400,7 +425,7 @@ function Eight() {
               className="site-lift p-6 flex flex-col items-center text-center border border-transparent"
               style={{ background: "var(--brand-bg)" }}
             >
-              <CharacterMotion typeId={id} size={120} on="inview hover" />
+              <CharacterMotion typeId={id} size={120} on="inview hover" clip />
               <p className="font-bold text-base leading-tight mt-5 mb-1">{t.name}</p>
               <p
                 className="text-[0.625rem] uppercase leading-tight mb-3"
@@ -615,6 +640,7 @@ export default function Welcome() {
       <Opening />
       <Header />
       <Hero />
+      <Coaches />
       <Facts />
       <How />
       <Engine />

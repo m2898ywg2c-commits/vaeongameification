@@ -264,7 +264,7 @@ export default function AssessmentPage() {
       <main className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-brand-text px-6 py-12">
         <div className="w-full max-w-md text-center">
           <div className="flex justify-center mb-2">
-            <CharacterMotion typeId={result.scored.typeId} size={168} on="mount" idle />
+            <CharacterMotion typeId={result.scored.typeId} size={168} on="mount" idle clip />
           </div>
           <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">{t.code}</p>
           <h1 className="font-display text-3xl font-normal mb-2">{t.name}</h1>

@@ -21,3 +21,4 @@
 *.woff2 binary
 
 # SVG is text and its diffs are worth reading, so it stays text.
+*.mp4   binary
