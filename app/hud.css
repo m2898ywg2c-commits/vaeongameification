@@ -1,0 +1,209 @@
+/* THE HUD LAYER: THE COACH BRIEFING, THE BLOCK ROUTE AND THE COACH LINK.
+   Added 2026-11-01. Its own file for the same reason as motion.css: a self-contained system
+   with its own rules, imported once from globals.css.
+
+   THE RULES IT KEEPS.
+   - Lines, hairlines and the user's own accent. No colour sweeps: the faint grid below is
+     drawn with repeating-linear-gradient, but every stop is the hairline colour, so what you
+     see is a ruled line, not a gradient pretending to be a brand.
+   - Nothing round. Status dots, beacons and typing indicators are squares and diamonds,
+     because the mark is mitred and round shapes belong to the orbs alone.
+   - Every movement has a reduced-motion path at the bottom, and it removes the movement
+     rather than slowing it.
+
+   The accent comes from --accent on the dashboard (the scoped style tag) and from --hud on
+   the coach link sheet, which also appears on the plan page where only a hex is to hand. */
+
+.hud-panel {
+  background: var(--brand-surface);
+}
+
+.hud-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image:
+    repeating-linear-gradient(0deg, var(--brand-line) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(90deg, var(--brand-line) 0 1px, transparent 1px 22px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+}
+
+/* A single scan line drifting down the briefing, slowly. One pass every six seconds. */
+.hud-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--hud, var(--accent, var(--brand-accent)));
+  opacity: 0;
+  pointer-events: none;
+  animation: hud-scan 6s linear infinite;
+}
+@keyframes hud-scan {
+  0% { transform: translateY(0); opacity: 0; }
+  8% { opacity: 0.35; }
+  70% { opacity: 0.12; }
+  100% { transform: translateY(260px); opacity: 0; }
+}
+
+/* Status light. Square, blinking like a carrier signal. */
+.hud-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 2px;
+  vertical-align: 1px;
+  background: currentColor;
+  animation: hud-blink 2.4s steps(1, end) infinite;
+}
+@keyframes hud-blink {
+  0%, 70% { opacity: 1; }
+  71%, 100% { opacity: 0.25; }
+}
+
+/* The plinth under the character turns, slowly, by moving its dashes. */
+.hud-plinth {
+  stroke-dasharray: 6 4;
+  animation: hud-turn 9s linear infinite;
+}
+@keyframes hud-turn {
+  to { stroke-dashoffset: -100; }
+}
+
+/* The walked part of the block route draws itself in on load. */
+.hud-trace {
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+  animation: hud-draw 1.6s ease-out 0.2s forwards;
+}
+@keyframes hud-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* You are here. A diamond pinging outward from behind the character's face. */
+.hud-beacon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  border: 1.5px solid;
+  transform: translate(-50%, -50%) rotate(45deg);
+  animation: hud-ping 2.2s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes hud-ping {
+  0% { opacity: 0.8; transform: translate(-50%, -50%) rotate(45deg) scale(0.9); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(45deg) scale(1.9); }
+}
+
+/* THE COACH LINK SHEET. */
+.hud-sheet {
+  animation: hud-rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 -1px 0 var(--hud, var(--brand-line));
+}
+@keyframes hud-rise {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.hud-avatar {
+  position: relative;
+  flex: 0 0 auto;
+}
+.hud-avatar::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 1.5px solid var(--hud, var(--accent, var(--brand-accent)));
+  opacity: 0.35;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.hud-avatar.is-listening::after {
+  opacity: 1;
+  animation: hud-listen 1.1s ease-in-out infinite;
+}
+.hud-avatar.is-speaking::after {
+  opacity: 1;
+  animation: hud-speak 0.42s ease-in-out infinite alternate;
+}
+.hud-avatar.is-thinking::after {
+  opacity: 0.8;
+  border-style: dashed;
+  animation: hud-think 1.4s linear infinite;
+}
+@keyframes hud-listen {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+@keyframes hud-speak {
+  from { transform: scale(1); }
+  to { transform: scale(1.05); }
+}
+@keyframes hud-think {
+  to { transform: rotate(90deg); }
+}
+
+.hud-mic.is-on {
+  animation: hud-listen 1.1s ease-in-out infinite;
+}
+
+.hud-typing {
+  display: inline-flex;
+  gap: 5px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--hud, var(--accent, var(--brand-accent)));
+}
+.hud-typing span {
+  width: 6px;
+  height: 6px;
+  background: var(--hud, var(--accent, var(--brand-accent)));
+  animation: hud-bit 1s ease-in-out infinite;
+}
+.hud-typing span:nth-child(2) { animation-delay: 0.15s; }
+.hud-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes hud-bit {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-3px); }
+}
+
+/* THE DRAWER. Native details; the marker is replaced by the arrow icon, turned on open. */
+.hud-drawer > summary {
+  list-style: none;
+}
+.hud-drawer > summary::-webkit-details-marker {
+  display: none;
+}
+.hud-drawer .hud-chevron {
+  transition: transform 0.2s ease;
+}
+.hud-drawer[open] .hud-chevron {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-scan,
+  .hud-beacon {
+    display: none;
+  }
+  .hud-dot,
+  .hud-plinth,
+  .hud-sheet,
+  .hud-avatar::after,
+  .hud-mic.is-on,
+  .hud-typing span {
+    animation: none !important;
+  }
+  .hud-trace {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .hud-drawer .hud-chevron {
+    transition: none;
+  }
+}

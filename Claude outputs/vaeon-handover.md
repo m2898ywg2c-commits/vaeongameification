@@ -165,3 +165,13 @@ because `buildWeek` reads `GOALS` and never `GOAL_ORDER`. They cannot choose it 
 British English. Warm and direct, no corporate polish, no em dashes. He wants pushback and a
 better way when one exists, not agreement. Do not sugar-coat and do not over-format. Tell
 him when something he has asked for conflicts with something else he has asked for.
+
+---
+
+## 1 November: coach briefing, block route, coach link
+
+Dashboard rebuilt around the character (briefing + one button), the block drawn as a route
+with the report visible at the end, and a push-to-talk coach on the dashboard and in the
+session. Full notes in HANDOVER.md, "Added 2026-11-01". First ever passing `next build`
+(fonts stubbed). Model replies need `ANTHROPIC_API_KEY` as a Supabase Edge Function secret;
+without it the coach runs on its local brain.

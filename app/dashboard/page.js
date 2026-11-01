@@ -13,6 +13,9 @@ import TypeCharacter from "../TypeCharacter";
 import ShareButton from "../ShareButton";
 import Track from "../Track";
 import ChallengeCard from "./ChallengeCard";
+import CoachBrief from "./CoachBrief";
+import BlockPath from "./BlockPath";
+import { briefingFor } from "@/lib/briefing";
 import ToDo from "./ToDo";
 import Icon from "../Icon";
 import { BRAND, TRACK } from "@/lib/brand";
@@ -155,6 +158,19 @@ const brandNew = !sessions || sessions.length === 0;
 
 // Shared card. One radius, one border, one surface, all from the token layer rather than
 // a bg-brand-surface written out by hand on twenty elements.
+// The briefing and the coach link read the same numbers the old cards showed. Nothing new
+// is calculated here.
+const brief = briefingFor({
+typeId: typeId, stats: stats, pledged: pledged, finished: finished, weekNo: weekNo,
+blockWeeks: blockWeeks, ruleLabel: gym ? null : rule.label, gym: gym, blockNumber: profile.block_number || 1,
+});
+const talkContext = {
+mode: "dashboard", weekNo: weekNo, blockWeeks: blockWeeks,
+ruleLabel: gym ? null : rule.label, ruleFocus: gym ? null : rule.focus,
+thisWeek: stats.thisWeekCount, pledged: pledged, streak: stats.weekStreak,
+gymReady: gym, testWeek: !gym && weekNo === 1, finished: finished,
+};
+
 const card = "rounded-md border p-4 mb-3";
 const cardStyle = { borderColor: BRAND.line, background: BRAND.surface };
 
@@ -214,68 +230,60 @@ accentCss above for why this is a style tag rather than inline custom properties
 {/* SETUP TASKS FIRST, BECAUSE THEY END.
 Starting weights, this week's measurements and the install offer are jobs with a
 finish line, and each one disappears the moment it is done. Grouped, counted and
-placed above the workout button they read as a short list to clear. Left loose below
-it, as they were, an amber card about starting weights read as permanent furniture. */}
+placed above the briefing they read as a short list to clear. */}
 <ToDo accent={accent} needsBaselines={noBaselines} needsMetrics={!thisWeekMetrics} />
 
-{/* ONE CARD FOR TODAY, NOT THREE.
-The date label, the workout button and the block context used to be three separate
-blocks stacked on top of each other, all saying something about the same session.
-They are one thing: what you are doing today and why it looks like that. The block
-line is the answer to "why is today heavy", so it belongs on the same card as today
-rather than in a card of its own underneath.
-
-When the block is finished this becomes the block end link instead. There is no
-sense offering week seven of a six week block, and there used to be two separate
-"block complete" prompts on this screen fighting each other. */}
-{finished ? (
-<a href="/blockend" className="flex items-center gap-3 rounded-md p-5 mb-3"
-style={{ background: "#3DDC97", color: "#000000" }}>
-<div className="flex-1">
-<p className="font-display text-2xl font-normal leading-none">Block {profile.block_number || 1} done</p>
-<p className="text-xs mt-1.5" style={{ color: "var(--on-accent-dim)" }}>
-See your {blockWeeks}-week summary and start the next one
-</p>
-</div>
-<Icon name="arrow" size={22} />
-</a>
-) : (
-<a href="/plan" className="rounded-md p-5 mb-3 block"
-style={{ background: accent, color: "var(--on-accent)" }}>
-<div className="flex items-center gap-3">
-<div className="flex-1">
-<p className="text-[0.6875rem] uppercase" style={{ color: "var(--on-accent-dim)", letterSpacing: TRACK.label }}>
-{profile.fixed_days === false ? "Next up" : today}
-</p>
-<p className="font-display text-2xl font-normal leading-none mt-1">Today&rsquo;s workout</p>
-</div>
-<Icon name="arrow" size={22} />
-</div>
-<p className="text-xs mt-3 pt-3" style={{ color: "var(--on-accent-dim)", borderTop: "1px solid var(--on-accent-line)" }}>
-Block {profile.block_number || 1} &middot; Week {weekNo} of {blockWeeks}
-{!gym ? " \u00b7 " + rule.label : ""}
-</p>
-</a>
-)}
-
-{/* The week's coaching, as one line rather than a bordered card. It is a sentence,
-not an object. */}
-<p className="text-xs leading-relaxed mb-4 px-1" style={{ color: BRAND.muted }}>
-{gym
-? "Your coach sets the training. Vaeon counts the sessions and reports back at the end of the block."
-: rule.increase}
-</p>
+{/* THE COACH BRIEFING, 2026-11-01.
+The date label, the workout card and the week's guidance line were three blocks that all
+described today. They are now one: the character at full size, one line of fact, one line in
+its voice, one button, and the coach link. The fact line carries exactly the numbers the old
+card did (block, week, the week's rule, sessions against the pledge), from the same
+functions. See lib/briefing.js and app/dashboard/CoachBrief.js. */}
+<CoachBrief typeId={typeId} typeName={type ? type.name : null} framing={profile.framing}
+brief={brief} finished={finished} blockNumber={profile.block_number || 1}
+blockWeeks={blockWeeks} gym={gym} talkContext={talkContext} />
 
 {!profile.block_start ? (
-<a href="/settings" className="block text-xs underline mb-4 px-1" style={{ color: "#FFB020" }}>Set your block start date</a>
+<a href="/settings" className="block text-sm underline mb-4 px-1" style={{ color: "#FFB020" }}>Set your block start date</a>
 ) : null}
+
+{/* THE BLOCK AS A ROUTE, WITH THE VERDICT ALREADY ON THE MAP. See BlockPath.js. */}
+<BlockPath typeId={typeId} weeks={gym ? null : weeksFor(category)} blockWeeks={blockWeeks} weekNo={weekNo}
+finished={finished} blockStart={profile.block_start} sessions={sessions || []} pledged={pledged}
+frozenWeeks={frozenWeeks} freezeCredits={freezeCredits} blockNumber={profile.block_number || 1} gym={gym} />
+
+{!type ? (
+<a href="/assessment" className="block rounded-md border p-4 mb-3" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
+<p className="font-display text-sm mb-1">Find your training personality</p>
+<p className="text-xs text-brand-muted">Two minutes. It decides how you get coached, and which character talks to you.</p>
+</a>
+) : null}
+
+{/* ---------- Kudos received ---------- */}
+<KudosCard kudos={myKudos} accent={accent} />
+
+<AchievementWatcher profile={plain} />
+
+{/* EVERYTHING ELSE, IN ONE DRAWER.
+Level, streak, the group challenge, the grace week and every destination are still here,
+unchanged, one tap down. They are context that never ends, and the rule on this screen has
+always been that context sits below the action. A native details element: no JavaScript,
+keyboard and screen reader behaviour for free, and it opens with the stats visible in the
+summary so the numbers people glance at are not hidden behind it. */}
+<details className="hud-drawer rounded-md border mb-5" style={{ borderColor: BRAND.line }}>
+<summary className="flex items-center gap-3 px-4 cursor-pointer select-none" style={{ minHeight: 56 }}>
+<span className="font-display text-base flex-1">Systems</span>
+<span className="text-sm tabular-nums" style={{ color: BRAND.muted }}>
+Lv {stats.level} &middot; {stats.thisWeekCount}/{pledged} &middot; {stats.weekStreak} wk streak
+</span>
+<span className="hud-chevron" style={{ color: accent, display: "inline-flex" }}><Icon name="arrow" size={16} /></span>
+</summary>
+<div className="px-3 pb-3 pt-1">
 
 <ChallengeCard challenge={challenge} accent={accent} />
 
 {/* ONE INSTRUMENT PANEL. The number is the largest thing, the label is a tracked
-micro-caption above it, and the borders are drawn by the gaps rather than by three
-sets of corners. Tabular figures come from globals.css, so nothing shuffles when a
-digit changes. */}
+micro-caption above it. Tabular figures come from globals.css. */}
 <div className="grid grid-cols-3 gap-px mb-2 rounded-md overflow-hidden border"
 style={{ borderColor: BRAND.line, background: BRAND.line }}>
 {[
@@ -293,28 +301,20 @@ style={{ color: t.on ? accent : BRAND.text }}>{t.value}</p>
 })}
 </div>
 
-{/* Grace weeks, as a footnote to the streak rather than a card of its own. It is a
-fact about the number directly above it, and it was taking up a whole bordered box
-to say one sentence. Still shown when unused, because half the value of a safety net
-is knowing it is there. */}
+{/* Grace weeks, as a footnote to the streak. Still shown when unused, because half the
+value of a safety net is knowing it is there. */}
 {profile.block_start ? (
-<p className="text-[0.75rem] leading-snug mb-5 px-1" style={{ color: BRAND.dim }}>
+<p className="text-[0.75rem] leading-snug mb-4 px-1" style={{ color: BRAND.dim }}>
 {stats.frozenInStreak > 0
 ? "A missed week is being held for you, so the streak stands. " + (freezeCredits > 0 ? "You have another grace week in reserve." : "That was your one for this block.")
 : (freezeCredits > 0
 ? "One grace week in hand. Miss a week and the streak survives it."
 : "No grace week left. Your next missed week resets the streak.")}
 </p>
-) : <div className="mb-5" />}
+) : <div className="mb-4" />}
 
-{/* Same tab, matching the header link above. This opened with target="_blank", which
-    on a home-screen install throws people out of the standalone app and into browser
-    chrome they did not ask for, with no way back but the back gesture. */}
-{/* ONE TIME, NOT FOREVER.
-    Once somebody has logged a session they know what their style is, and a permanent
-    card explaining it becomes furniture. It shows while they have logged nothing, which
-    self-clears the moment they train and needs no column to track it. After that the
-    arrow in the header above is the way through. */}
+{/* ONE TIME, NOT FOREVER. Shows while nothing has been logged, then the header arrow is
+the way through to the type page. */}
 {type && brandNew ? (
 <a href={"/type?id=" + typeId}
 className="rounded-md p-4 mb-3 border block" style={{ borderColor: "color-mix(in srgb, var(--accent) 27%, transparent)", background: BRAND.surface }}>
@@ -325,17 +325,7 @@ className="rounded-md p-4 mb-3 border block" style={{ borderColor: "color-mix(in
 </div>
 <p className="text-sm leading-relaxed" style={{ color: "var(--brand-muted)" }}>{nudge}</p>
 </a>
-) : !type ? (
-<a href="/assessment" className="block rounded-md border p-4 mb-3" style={{ borderColor: BRAND.line, background: BRAND.surface }}>
-<p className="font-display text-sm mb-1">Find your training personality</p>
-<p className="text-xs text-brand-muted">Two minutes. It decides how you get coached.</p>
-</a>
 ) : null}
-
-{/* ---------- Kudos received ---------- */}
-<KudosCard kudos={myKudos} accent={accent} />
-
-<AchievementWatcher profile={plain} />
 
 <p className="rule-label mb-3">Elsewhere</p>
 
@@ -417,6 +407,8 @@ return (
 <div className="mb-4"><ShareButton accent={accent} /></div>
 
 <a href="/onboarding" className="block text-center text-xs text-brand-dim underline">Change goals, days or sessions a week</a>
+</div>
+</details>
 </div>
 </main>
 );

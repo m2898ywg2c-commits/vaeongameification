@@ -81,6 +81,13 @@ const PATHS = {
   eyeOff: <path d="M4 4l16 16 M9.5 9.6A3 3 0 0012 15a3 3 0 002.4-1.2 M6.3 6.4C3.7 8.1 2 12 2 12s4 6 10 6c1.7 0 3.2-.5 4.5-1.2 M19.2 15.1C21 13.6 22 12 22 12s-4-6-10-6c-.9 0-1.7.1-2.5.4" />,
   check: <path d="M4 12l5 5L20 6" />,
   arrow: <path d="M4 12h15 M13 6l6 6-6 6" />,
+  // The coach link. Mic is a squared capsule rather than a rounded one, to sit with the mark.
+  mic: <path d="M9 3h6v11H9z M5 11v1a7 7 0 0014 0v-1 M12 19v3 M8 22h8" />,
+  send: <path d="M3 11l18-8-8 18-2-8z M11 13l10-10" />,
+  speaker: <path d="M3 9h4l5-4v14l-5-4H3z M16 8l2-2 M16 16l2 2 M17 12h4" />,
+  mute: <path d="M3 9h4l5-4v14l-5-4H3z M16 9l6 6 M22 9l-6 6" />,
+  close: <path d="M5 5l14 14 M19 5L5 19" />,
+  link: <path d="M4 12h6 M14 12h6 M10 8v8 M14 8v8 M2 6h4 M18 18h4" />,
 };
 
 export const ICON_NAMES = Object.keys(PATHS);

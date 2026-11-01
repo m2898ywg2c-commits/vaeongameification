@@ -2552,3 +2552,73 @@ exact insert the screen makes was run against the live table inside a transactio
 back, leaving nothing behind.
 
 Still no `next build`.
+
+---
+
+## Added 2026-11-01: the coach briefing, the block route and the coach link
+
+James asked for the dashboard to be rethought from how other apps present themselves, keeping
+the robots front and centre and pointing the product at an AI coach you can talk to while
+training. No calculation, schema or progression change. Three things shipped together.
+
+**This is also the first time `next build` has ever passed.** npm reached the registry from
+the cloud container on this date. Fonts were stubbed in a throwaway copy (as the note in
+Brand says), everything else is the real build. 27 routes compiled. The three new screens
+were rendered in a harness with mock data and screenshotted at 390px in dark and light.
+
+### 1. The coach briefing (`app/dashboard/CoachBrief.js`, `lib/briefing.js`)
+
+Replaces the date label, the workout card and the guidance line. The character at 128px on
+a HUD plinth playing its own clip, one line of fact (block, week, the week's rule, sessions
+against the pledge, from the same functions as before) and one line in its voice by
+situation: fresh, behind, on track, met, lapsed, finished. Then one button. Borrowed from
+Oura's Today tab and Apple's Workout Buddy pep talk. **The briefing reads numbers and never
+makes them.**
+
+### 2. The block route (`app/dashboard/BlockPath.js`)
+
+The block as a trail of diamonds with the character standing on this week, light weeks drawn
+as a dip, grace weeks dashed, and a locked "End" node for the block report, visible from day
+one (the IKEA "picture of the finished thing" idea). Week counts come from `sessionsByWeek()`,
+so it agrees with the streak and the leaderboard. Labels are W1 to W6 because seven full week
+names collided at 390px; the current week's name sits in the header.
+
+Everything else from the old dashboard (stats, challenge, grace footnote, first-run type card,
+Elsewhere grid, share) is unchanged inside a native `<details>` drawer called Systems, with the
+stats in its summary line.
+
+### 3. The coach link (`app/coach/CoachTalk.js`, `lib/coachtalk.js`, `supabase/functions/coach-talk`)
+
+Push-to-talk conversation with your character, on the dashboard and top right of the session
+screen. Browser speech recognition in, browser speech synthesis out with per-type pace and
+pitch, typing always works. Two brains:
+
+- **Local** (`lib/coachtalk.js`): every chip, plus anything about pain, no gym, swapping,
+  what's next, last time, rest, progress or today. Instant, free, offline. Pain always gets
+  "stop and talk to someone qualified", never the model.
+- **Model** (`coach-talk` Edge Function): free chat, in character, via the Anthropic API.
+  **Off until `ANTHROPIC_API_KEY` is added as an Edge Function secret.** Without it the
+  function returns 503 and the sheet falls back to the local brain and says "Offline brain".
+  Optional `COACH_MODEL` secret overrides the default model id.
+
+Rules both obey: never state a load, rep or distance not in the context; the session context
+deliberately passes sets and last-time only, not authored reps or notes, because rep ranges
+re-prescribe reps weekly and some notes predate double progression.
+
+**Nothing is stored.** `coach_opened` and `coach_asked` events record mode, channel, intent
+and which brain answered. Never the words. That is the evidence for whether this is worth
+paying a model for.
+
+`test/coachtalk.mjs`: 269 checks, including that no reply invents a kg figure.
+
+### Not verified, and worth knowing
+
+1. **Speech on a real iPhone.** Safari needs a tap before it will speak; opening the sheet
+   speaks a silent utterance to unlock it. Recognition on iOS home-screen web apps has been
+   patchy historically. Test on James's phone before trusting it.
+2. **The Edge Function is deployed** (coach-talk v1, verify_jwt on, 1 Nov 2026) and dormant
+   until the key is added. If you change the repo copy, redeploy it.
+3. **Under-18s are still on the platform** with no age gate. A model talking to them needs
+   that decided before strangers are invited.
+4. Voice audio never leaves the browser except as text, but sending typed or transcribed text
+   to Anthropic is a third-party processor. Privacy notice needs a line before others use it.

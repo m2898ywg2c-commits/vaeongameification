@@ -4,6 +4,8 @@
    to grow as the characters get more poses. @import sits here, immediately after Tailwind,
    because CSS requires every @import to precede any other rule. */
 @import "./motion.css";
+/* The HUD layer: coach briefing, block route, coach link. Same reasoning as motion.css. */
+@import "./hud.css";
 
 /* Vaeon Fitness brand tokens.
    Single source of truth for the app chrome: background, surfaces, hairlines, type and

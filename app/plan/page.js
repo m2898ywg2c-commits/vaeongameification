@@ -14,6 +14,7 @@ import { startOfThisWeekISO } from "@/lib/week";
 import TypeOrb from "../TypeOrb";
 import TypeCharacter from "../TypeCharacter";
 import DayView from "./DayView";
+import CoachTalk from "../coach/CoachTalk";
 import GymDayView from "./GymDayView";
 import BlockReview from "./BlockReview";
 
@@ -801,14 +802,37 @@ style={{ borderColor: accent + "66", background: "var(--brand-surface)", color: 
 &#8592; Back to dashboard
 </a>
 
+{/* THE COACH LINK, MID-SESSION. Beside the character it belongs to, top right of the
+session rather than pinned to the bottom, because the bottom of this screen is the rest
+timer's and the two must never compete for a thumb. The context is the session as it
+stands: what is done, what is left, and what each lift was last time, all read off state
+this page already holds. No loads are passed, because loads are worked out per set inside
+ExerciseCard and the coach must never improvise one. See lib/coachtalk.js. */}
 <div className="flex items-center gap-3 mb-4">
 <TypeCharacter typeId={tid} size={40} variant="face" />
-<div>
+<div className="flex-1 min-w-0">
 <p className="font-display text-sm leading-tight">{type ? type.name : "Your plan"}</p>
 <p className="text-xs text-brand-muted leading-tight">
 Week {weekNo}/{blockWeeks}{gym ? "" : " · " + rule.label}
 </p>
 </div>
+<CoachTalk typeId={tid} framing={profile ? profile.framing : null} mode="session" variant="compact" accent={accent}
+context={{
+weekNo: weekNo, blockWeeks: blockWeeks, ruleLabel: gym ? null : rule.label, ruleFocus: gym ? null : rule.focus,
+gymReady: gym, testWeek: isTestWeek,
+sessionTitle: day ? (day.title || day.focus || null) : null,
+exercises: day && day.exercises ? day.exercises.map(function (ex, i) {
+const prev = lastSets ? lastSets[(ex.name || "").toLowerCase()] : null;
+const lastText = prev && prev.sets ? prev.sets.filter(Boolean).map(function (r) {
+if (r.time_text) return String(r.time_text);
+return (r.weight ? Number(r.weight) + "kg" : "") + (r.reps ? (r.weight ? " x " : "") + r.reps + (r.weight ? "" : " reps") : "");
+}).filter(Boolean).join(", ") : "";
+// Sets only, deliberately not reps or the authored note. Reps are re-prescribed per week
+// by the rep ranges in lib/progression.js, and some notes predate double progression
+// ("push for 2-3kg up"), so either could contradict the card in front of the user.
+return { name: ex.name, sets: ex.sets, done: Boolean(done && done[i]), last: lastText || null };
+}) : [],
+}} />
 </div>
 
 {isTestWeek ? (
