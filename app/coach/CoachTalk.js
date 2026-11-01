@@ -33,11 +33,12 @@ import {
 // still works; where synthesis is missing the replies are text. Voice replies can be muted
 // and the choice is remembered.
 //
-// iOS ONLY SPEAKS AFTER A TAP.
+// iOS ONLY SPEAKS AFTER A TAP, AND NOT AT ALL WITH THE RING SWITCH ON SILENT.
 //
 // Safari refuses speechSynthesis until it has been triggered inside a user gesture. Opening
-// the link is that gesture, so it speaks an empty utterance there to unlock the engine, and
-// every later reply, even one that arrives after a network wait, is allowed.
+// the link is that gesture, so the greeting is spoken synchronously inside it, which unlocks
+// the engine for every later reply. The silent switch is the phone's decision and no web page
+// can override it; the sheet says so the first time.
 //
 // THE WORDS ARE NEVER STORED.
 //
@@ -113,12 +114,18 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
     return supabaseRef.current;
   }
 
+  // TWO BROWSER QUIRKS HANDLED HERE, BOTH OF WHICH LOOK LIKE "IT JUST DOES NOT TALK".
+  // WebKit can drop an utterance queued in the same tick as cancel(), so cancel only when
+  // something is actually playing and queue the new line on the next tick. And Chrome can
+  // leave the engine paused after a tab has been in the background, so resume() first.
   function speak(text) {
     if (muted || !text) return;
     try {
       const synth = window.speechSynthesis;
       if (!synth) return;
-      synth.cancel();
+      const busy = synth.speaking || synth.pending;
+      if (busy) synth.cancel();
+      try { synth.resume(); } catch (e) {}
       const u = new SpeechSynthesisUtterance(text);
       const v = voiceFor(tid);
       u.rate = v.rate;
@@ -129,7 +136,8 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
       u.onstart = function () { setSpeaking(true); };
       u.onend = function () { setSpeaking(false); };
       u.onerror = function () { setSpeaking(false); };
-      synth.speak(u);
+      if (busy) setTimeout(function () { synth.speak(u); }, 60);
+      else synth.speak(u);
     } catch (e) {
       setSpeaking(false);
     }
@@ -142,18 +150,21 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
 
   function openLink() {
     setOpen(true);
-    // Unlock speech on iOS inside the tap. See the note at the top.
-    try {
-      if (window.speechSynthesis && !muted) {
-        const u = new SpeechSynthesisUtterance(" ");
-        u.volume = 0;
-        window.speechSynthesis.speak(u);
-      }
-    } catch (e) {}
+    // iOS only allows speech that starts inside a tap, so the first line is spoken right here,
+    // synchronously, rather than after a timer. Once one utterance has played in a gesture the
+    // engine stays unlocked, so later replies that arrive after a network wait still speak.
     if (!messages.length) {
       const hello = { text: greetingFor(tid, m) };
       setMessages([Object.assign({ role: "assistant" }, hello)]);
-      setTimeout(function () { speak(hello.text); }, 120);
+      speak(hello.text);
+    } else {
+      try {
+        if (window.speechSynthesis && !muted) {
+          const u = new SpeechSynthesisUtterance(" ");
+          u.volume = 0;
+          window.speechSynthesis.speak(u);
+        }
+      } catch (e) {}
     }
     track(client(), EVENTS.COACH_OPENED, { mode: m });
   }
@@ -248,7 +259,7 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
     if (next) { try { window.speechSynthesis.cancel(); } catch (e) {} setSpeaking(false); }
   }
 
-  const status = listening ? "Listening" : thinking ? "Thinking" : speaking ? "Speaking" : offline ? "Offline brain" : "Online";
+  const status = listening ? "Listening" : thinking ? "Thinking" : speaking ? "Speaking" : offline ? "Offline brain" : muted ? "Voice off" : "Online";
   const name = type ? type.name.replace("The ", "") : "coach";
 
   const trigger = variant === "compact" ? (
@@ -359,6 +370,7 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
               </button>
             </form>
             <p className="text-[0.75rem] mt-2 leading-snug" style={{ color: "var(--brand-dim)" }}>
+              {muted ? "Voice replies are off. Tap the speaker to hear them. " : "No sound? Check your phone is not on silent. "}
               Your coach reads your plan, it never changes it. Not medical advice.
             </p>
           </div>

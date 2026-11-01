@@ -264,15 +264,19 @@ frozenWeeks={frozenWeeks} freezeCredits={freezeCredits} blockNumber={profile.blo
 
 <AchievementWatcher profile={plain} />
 
-{/* EVERYTHING ELSE, IN ONE DRAWER.
-Level, streak, the group challenge, the grace week and every destination are still here,
-unchanged, one tap down. They are context that never ends, and the rule on this screen has
-always been that context sits below the action. A native details element: no JavaScript,
-keyboard and screen reader behaviour for free, and it opens with the stats visible in the
-summary so the numbers people glance at are not hidden behind it. */}
+{/* THE STATS, IN ONE DRAWER. THE DESTINATIONS ARE NOT IN IT.
+Level, streak, the group challenge and the grace week sit one tap down, with the headline
+numbers in the summary line so a glance still gets them. A native details element: no
+JavaScript, keyboard and screen reader behaviour for free.
+
+The first version of this drawer also held the Elsewhere grid, and on 1 November James
+opened the new dashboard and reported nutrition, the Engine Room and the rest as "lost".
+They were there, collapsed under a word that did not say what was inside. A destination
+you cannot see is a destination you do not have, so the grid lives on the screen, below
+the route, and only the numbers are folded away. */}
 <details className="hud-drawer rounded-md border mb-5" style={{ borderColor: BRAND.line }}>
 <summary className="flex items-center gap-3 px-4 cursor-pointer select-none" style={{ minHeight: 56 }}>
-<span className="font-display text-base flex-1">Systems</span>
+<span className="font-display text-base flex-1">Your numbers</span>
 <span className="text-sm tabular-nums" style={{ color: BRAND.muted }}>
 Lv {stats.level} &middot; {stats.thisWeekCount}/{pledged} &middot; {stats.weekStreak} wk streak
 </span>
@@ -326,6 +330,9 @@ className="rounded-md p-4 mb-3 border block" style={{ borderColor: "color-mix(in
 <p className="text-sm leading-relaxed" style={{ color: "var(--brand-muted)" }}>{nudge}</p>
 </a>
 ) : null}
+
+</div>
+</details>
 
 <p className="rule-label mb-3">Elsewhere</p>
 
@@ -407,8 +414,6 @@ return (
 <div className="mb-4"><ShareButton accent={accent} /></div>
 
 <a href="/onboarding" className="block text-center text-xs text-brand-dim underline">Change goals, days or sessions a week</a>
-</div>
-</details>
 </div>
 </main>
 );
