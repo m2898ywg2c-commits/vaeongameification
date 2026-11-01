@@ -2644,3 +2644,24 @@ still in flight. Six second timeout, then the phone voice.
 Not verified: playback on a real iPhone, and that the `ballad` voice name is still offered by
 the API (the others are long-standing). If a type plays in the phone voice while others work,
 check the coach-voice logs for a 400 naming the voice.
+
+### Added the same day, later: pick your coach's voice
+
+`profiles.coach_voice`, nullable, checked against the thirteen OpenAI voice ids
+(`supabase/2026-11-01_coach_voice.sql`, **applied** via `execute_sql`). Null means the type's
+default. The coach link opens a picker the first time it is opened with nothing chosen, and a
+Voice button in its header reopens it. Tapping a voice saves it and plays a sample in it;
+"Keep the default" saves the default so the picker stops offering itself.
+
+**Only the timbre is chosen. The delivery stays the type's**, so a Monk with a deep voice still
+speaks slowly and softly. Voices are described by sound, not by a person: real, named people's
+voices were asked about and deliberately not offered, because cloning a voice needs that
+person's consent and the provider does not allow it.
+
+Three lists must agree: `VOICE_CHOICES` / `DEFAULT_VOICE` in `lib/coachtalk.js`, `ALLOWED` /
+`VOICES` in `supabase/functions/coach-voice` (redeployed with the `voice` parameter), and the
+check constraint. Checked by script on 1 November.
+
+**At 17:33 on 1 November coach-voice was still returning 503**: the `OPENAI_API_KEY` secret had
+not been added, which is why the Captain sounded like the phone. The Supabase MCP shortcut for
+storing secrets was paused that day; add it by hand in Edge Functions > Secrets.

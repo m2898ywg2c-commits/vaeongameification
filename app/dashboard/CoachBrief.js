@@ -16,7 +16,7 @@ import { TRACK } from "@/lib/brand";
 // scan line. Lines and hairlines only, so it stays inside the brand rules (no gradients in
 // chrome, nothing round except the orbs) and still reads as a screen from a machine.
 
-export default function CoachBrief({ typeId, typeName, framing, brief, finished, blockNumber, blockWeeks, gym, talkContext }) {
+export default function CoachBrief({ typeId, typeName, framing, coachVoice, brief, finished, blockNumber, blockWeeks, gym, talkContext }) {
   const accent = "var(--accent)";
   const now = new Date();
   const stamp = now.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
@@ -62,7 +62,7 @@ export default function CoachBrief({ typeId, typeName, framing, brief, finished,
             <Icon name="arrow" size={22} />
           </a>
         )}
-        <CoachTalk typeId={typeId} framing={framing} mode="dashboard" context={talkContext} />
+        <CoachTalk typeId={typeId} framing={framing} voice={coachVoice} mode="dashboard" context={talkContext} />
       </div>
     </section>
   );

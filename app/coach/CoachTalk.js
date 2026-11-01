@@ -9,6 +9,7 @@ import { track, EVENTS } from "@/lib/events";
 import { TRACK } from "@/lib/brand";
 import {
   CHIPS, LOCAL_FIRST, intentOf, localReply, greetingFor, voiceFor, contextForModel,
+  VOICE_CHOICES, DEFAULT_VOICE, voiceChoice,
 } from "@/lib/coachtalk";
 
 // THE COACH LINK. TALK TO YOUR CHARACTER, IN ITS OWN VOICE, WHILE YOU TRAIN.
@@ -72,7 +73,7 @@ function pickVoice() {
   }
 }
 
-export default function CoachTalk({ typeId, framing, context, mode, variant, accent }) {
+export default function CoachTalk({ typeId, framing, context, mode, variant, accent, voice }) {
   const tid = typeId && TYPES[typeId] ? typeId : "architect";
   const type = TYPES[tid];
   const m = mode === "session" ? "session" : "dashboard";
@@ -88,6 +89,12 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
   const [muted, setMuted] = useState(false);
   const [canListen, setCanListen] = useState(false);
   const [offline, setOffline] = useState(false);
+  // The voice the user chose, from profiles.coach_voice, or null for the type's default. The
+  // picker opens by itself the first time the link is opened with nothing chosen, which is the
+  // "set up" moment: you meet your coach and choose how it sounds in the same breath.
+  const [coachVoice, setCoachVoice] = useState(voice || null);
+  const [picking, setPicking] = useState(false);
+  const [voicesLive, setVoicesLive] = useState(true);
 
   const supabaseRef = useRef(null);
   const recRef = useRef(null);
@@ -167,7 +174,10 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
   // playId makes a newer line win: if the user taps again before the audio arrives, the older
   // line is dropped rather than playing over the top.
   async function fetchVoice(text) {
-    const cached = voiceCache.current[text];
+    const vid = voiceOverride.current || coachVoice || DEFAULT_VOICE[tid] || "sage";
+    voiceOverride.current = null;
+    const ck = vid + "|" + text;
+    const cached = voiceCache.current[ck];
     if (cached) return cached;
     const { data } = await client().auth.getSession();
     const token = data && data.session ? data.session.access_token : null;
@@ -179,13 +189,21 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
         apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ text: text, typeId: tid }),
+      body: JSON.stringify({ text: text, typeId: tid, voice: vid }),
     });
-    if (res.status === 503) { voiceOff.current = true; throw new Error("no voice"); }
+    if (res.status === 503) { voiceOff.current = true; setVoicesLive(false); throw new Error("no voice"); }
     if (!res.ok) throw new Error("voice " + res.status);
     const url = URL.createObjectURL(await res.blob());
-    voiceCache.current[text] = url;
+    voiceCache.current[ck] = url;
     return url;
+  }
+
+  // The sample in the picker has to use the voice just tapped, and state has not updated yet
+  // inside the same handler, so the voice is passed through a ref rather than read from state.
+  const voiceOverride = useRef(null);
+  function speakAs(id, text) {
+    voiceOverride.current = id;
+    speak(text);
   }
 
   function speak(text) {
@@ -239,9 +257,30 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
     } catch (e) {}
   }
 
+  // Choosing a voice saves it to the profile and plays a sample straight away, so the choice is
+  // made by ear rather than by reading a label. The save is fire-and-forget: if it fails the
+  // voice still applies for this visit, and the picker will simply offer itself again next time.
+  async function chooseVoice(id) {
+    setCoachVoice(id);
+    voiceOff.current = false;
+    unlockAudio();
+    const sample = greetingFor(tid, m);
+    setTimeout(function () { speakAs(id, sample); }, 120);
+    saveVoice(id);
+  }
+
+  async function saveVoice(id) {
+    try {
+      const sb = client();
+      const { data } = await sb.auth.getUser();
+      if (data && data.user) await sb.from("profiles").update({ coach_voice: id }).eq("id", data.user.id);
+    } catch (e) {}
+  }
+
   function openLink() {
     setOpen(true);
     if (!muted) unlockAudio();
+    if (!coachVoice && !messages.length) setPicking(true);
     if (!messages.length) {
       const hello = { text: greetingFor(tid, m) };
       setMessages([Object.assign({ role: "assistant" }, hello)]);
@@ -389,6 +428,10 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
                   <span className="hud-dot" aria-hidden="true" />{status}
                 </p>
               </div>
+              <button type="button" onClick={function () { setPicking(!picking); }} aria-pressed={picking} aria-label="Choose your coach's voice"
+                className="flex items-center justify-center rounded-md border px-2 font-display text-sm" style={{ height: 44, borderColor: picking ? ac : "var(--brand-line)", color: ac }}>
+                Voice
+              </button>
               <button type="button" onClick={toggleMute} aria-label={muted ? "Turn voice replies on" : "Turn voice replies off"}
                 className="flex items-center justify-center rounded-md border" style={{ width: 44, height: 44, borderColor: "var(--brand-line)", color: muted ? "var(--brand-dim)" : ac }}>
                 <Icon name={muted ? "mute" : "speaker"} size={20} />
@@ -398,6 +441,44 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
                 <Icon name="close" size={18} />
               </button>
             </div>
+
+            {picking ? (
+              <div className="mb-3 rounded-md border p-3" style={{ borderColor: "color-mix(in srgb, " + ac + " 40%, var(--brand-line))", background: "var(--brand-surface)" }}>
+                <p className="font-display text-base mb-0.5">How should your {name} sound?</p>
+                <p className="text-sm mb-2" style={{ color: "var(--brand-muted)" }}>
+                  Tap one to hear it. It keeps the {name}&rsquo;s way of talking, only the voice changes.
+                </p>
+                {!voicesLive ? (
+                  <p className="text-sm mb-2" style={{ color: "#FFB020" }}>
+                    Character voices are not switched on yet, so this sample uses your phone&rsquo;s voice. Your choice is saved for when they are.
+                  </p>
+                ) : null}
+                <div className="grid grid-cols-2 gap-2 overflow-y-auto pr-1" style={{ maxHeight: "30vh" }}>
+                  {VOICE_CHOICES.map(function (v) {
+                    const on = (coachVoice || DEFAULT_VOICE[tid]) === v.id;
+                    return (
+                      <button key={v.id} type="button" onClick={function () { chooseVoice(v.id); }} aria-pressed={on}
+                        className="text-left rounded-sm border px-3 py-2"
+                        style={{ minHeight: 52, borderColor: on ? ac : "var(--brand-line)", background: on ? "color-mix(in srgb, " + ac + " 12%, transparent)" : "var(--brand-bg)" }}>
+                        <span className="block font-display text-base" style={{ color: on ? ac : "var(--brand-text)" }}>
+                          {v.label}{DEFAULT_VOICE[tid] === v.id ? " \u00b7 default" : ""}
+                        </span>
+                        <span className="block text-sm" style={{ color: "var(--brand-muted)" }}>{v.feel}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button type="button" onClick={function () {
+                  // Keeping the default is still a choice, and saving it stops the picker
+                  // offering itself on every visit.
+                  if (!coachVoice) { const d = DEFAULT_VOICE[tid] || "sage"; setCoachVoice(d); saveVoice(d); }
+                  setPicking(false);
+                }}
+                  className="mt-2 w-full rounded-md font-display text-base" style={{ height: 48, background: ac, color: "var(--on-accent)" }}>
+                  {coachVoice ? "Keep " + (voiceChoice(coachVoice) || { label: "this" }).label : "Keep the default"}
+                </button>
+              </div>
+            ) : null}
 
             <div ref={scrollRef} className="hud-log overflow-y-auto mb-3 pr-1" style={{ maxHeight: "38vh" }} aria-live="polite">
               {messages.map(function (msg, i) {

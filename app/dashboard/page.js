@@ -239,7 +239,7 @@ described today. They are now one: the character at full size, one line of fact,
 its voice, one button, and the coach link. The fact line carries exactly the numbers the old
 card did (block, week, the week's rule, sessions against the pledge), from the same
 functions. See lib/briefing.js and app/dashboard/CoachBrief.js. */}
-<CoachBrief typeId={typeId} typeName={type ? type.name : null} framing={profile.framing}
+<CoachBrief typeId={typeId} typeName={type ? type.name : null} framing={profile.framing} coachVoice={profile.coach_voice || null}
 brief={brief} finished={finished} blockNumber={profile.block_number || 1}
 blockWeeks={blockWeeks} gym={gym} talkContext={talkContext} />
 

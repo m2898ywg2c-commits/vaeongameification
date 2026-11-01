@@ -12,6 +12,9 @@
 // Needs OPENAI_API_KEY as an Edge Function secret. Without it this returns 503 "no_voice".
 // Optional COACH_VOICE_MODEL overrides the model (default gpt-4o-mini-tts).
 //
+// The user can pick the voice (profiles.coach_voice, sent as `voice`). The delivery always
+// comes from the type, so the character survives a change of voice.
+//
 // WHY THIS MODEL.
 //
 // gpt-4o-mini-tts takes an `instructions` field describing HOW to speak, not just a voice
@@ -55,6 +58,10 @@ const VOICES: Record<string, { voice: string; how: string }> = {
   spark: { voice: "nova", how: "Bright, bubbly and enthusiastic, bursting with energy. Quick, lively and fun, like a friend hyping you up." },
 };
 
+// Voices a user may pick. Must match the check constraint on profiles.coach_voice and
+// VOICE_CHOICES in lib/coachtalk.js. Anything else is ignored and the type default is used.
+const ALLOWED = ["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse", "marin", "cedar"];
+
 const ACCENT = "Speak with a natural British English accent. Keep it short and conversational; this is played through earphones between sets.";
 
 Deno.serve(async (req: Request) => {
@@ -90,7 +97,7 @@ Deno.serve(async (req: Request) => {
       headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: Deno.env.get("COACH_VOICE_MODEL") || "gpt-4o-mini-tts",
-        voice: v.voice,
+        voice: ALLOWED.indexOf(String(body.voice)) !== -1 ? String(body.voice) : v.voice,
         input: text,
         instructions: v.how + " " + ACCENT,
         response_format: "mp3",

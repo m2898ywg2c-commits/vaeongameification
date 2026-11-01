@@ -816,7 +816,7 @@ ExerciseCard and the coach must never improvise one. See lib/coachtalk.js. */}
 Week {weekNo}/{blockWeeks}{gym ? "" : " · " + rule.label}
 </p>
 </div>
-<CoachTalk typeId={tid} framing={profile ? profile.framing : null} mode="session" variant="compact" accent={accent}
+<CoachTalk typeId={tid} framing={profile ? profile.framing : null} voice={profile ? profile.coach_voice || null : null} mode="session" variant="compact" accent={accent}
 context={{
 weekNo: weekNo, blockWeeks: blockWeeks, ruleLabel: gym ? null : rule.label, ruleFocus: gym ? null : rule.focus,
 gymReady: gym, testWeek: isTestWeek,
