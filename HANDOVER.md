@@ -2622,3 +2622,25 @@ paying a model for.
    that decided before strangers are invited.
 4. Voice audio never leaves the browser except as text, but sending typed or transcribed text
    to Anthropic is a third-party processor. Privacy notice needs a line before others use it.
+
+### Added the same day: the character voice, and the destinations back on screen
+
+**The Elsewhere grid is out of the drawer.** James opened the new dashboard and reported
+nutrition, the Engine Room and the rest as "lost": they were folded inside "Systems". The grid
+is back on screen below the route; only the stats stay folded, under "Your numbers".
+
+**The coach speaks in the character's own voice.** `supabase/functions/coach-voice`, deployed
+v1, `verify_jwt` on. OpenAI `gpt-4o-mini-tts`: a base voice per type plus delivery instructions
+(the Monk slow and soft, the Gladiator a fight-night announcer), British accent, about $0.015 a
+minute. **Needs `OPENAI_API_KEY` as an Edge Function secret**; without it the function returns
+503 and the client switches to the phone's built-in speech for the rest of the visit.
+
+Client (`app/coach/CoachTalk.js`): one audio element, unlocked with a tenth of a second of
+silence inside the opening tap because iOS will not unlock it later; the speech engine is
+unlocked in the same tap as the fallback. Audio for lines already heard is cached as object
+URLs, so chip answers are paid for once per visit. `playId` lets a newer line win over one
+still in flight. Six second timeout, then the phone voice.
+
+Not verified: playback on a real iPhone, and that the `ballad` voice name is still offered by
+the API (the others are long-standing). If a type plays in the phone voice while others work,
+check the coach-voice logs for a 400 naming the voice.

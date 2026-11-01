@@ -25,10 +25,12 @@ import {
 // language model behind the character. If that function has no key, fails or is slow, the
 // local brain answers instead and the link says it is running offline. Nothing breaks.
 //
-// SPEECH IN AND OUT IS THE BROWSER'S OWN.
+// SPEECH IN IS THE BROWSER'S OWN. SPEECH OUT IS THE CHARACTER'S, WITH THE BROWSER AS BACKUP.
 //
-// SpeechRecognition (webkit-prefixed on Safari) for listening, speechSynthesis for talking,
-// with each type's pace and pitch from lib/coachtalk.js. Both are free and on the device or
+// SpeechRecognition (webkit-prefixed on Safari) for listening. Replies are spoken in the
+// character's own voice by the coach-voice Edge Function (OpenAI gpt-4o-mini-tts, a base voice
+// plus delivery instructions per type), and fall back to the browser's speechSynthesis with each
+// type's pace and pitch from lib/coachtalk.js whenever that is unavailable. Both are free and on the device or
 // the platform's own service. Where recognition is missing the mic button hides and typing
 // still works; where synthesis is missing the replies are text. Voice replies can be muted
 // and the choice is remembered.
@@ -47,6 +49,12 @@ import {
 // its keep without keeping anybody's mid-workout muttering.
 
 const MUTE_KEY = "vaeon-coach-muted";
+
+// A tenth of a second of silence, played inside the opening tap to unlock the audio element on
+// iOS. Safari only lets an element play sound if it has been played inside a user gesture at
+// least once; after that, the real line can be dropped into the same element and played even
+// though it arrives after a network round trip.
+const SILENCE = "data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==";
 
 function recognitionCtor() {
   if (typeof window === "undefined") return null;
@@ -83,6 +91,12 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
 
   const supabaseRef = useRef(null);
   const recRef = useRef(null);
+  // The character voice. One audio element for the life of the component, unlocked once, plus
+  // a cache of lines already spoken so a repeated chip answer is not paid for twice.
+  const audioRef = useRef(null);
+  const voiceCache = useRef({});
+  const voiceOff = useRef(false);
+  const playId = useRef(0);
   const scrollRef = useRef(null);
   const ctxRef = useRef(context);
   ctxRef.current = Object.assign({ mode: m }, context || {});
@@ -103,6 +117,7 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
   useEffect(function () {
     if (open) return undefined;
     try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
+    try { audioRef.current && audioRef.current.pause(); } catch (e) {}
     try { recRef.current && recRef.current.abort(); } catch (e) {}
     setListening(false);
     setSpeaking(false);
@@ -118,7 +133,7 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
   // WebKit can drop an utterance queued in the same tick as cancel(), so cancel only when
   // something is actually playing and queue the new line on the next tick. And Chrome can
   // leave the engine paused after a tab has been in the background, so resume() first.
-  function speak(text) {
+  function speakDevice(text) {
     if (muted || !text) return;
     try {
       const synth = window.speechSynthesis;
@@ -143,28 +158,95 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
     }
   }
 
+  // THE CHARACTER VOICE, WITH THE PHONE'S OWN VOICE AS THE NET UNDER IT.
+  //
+  // Asks the coach-voice Edge Function for this line in this character's voice and plays it.
+  // Anything going wrong (no key yet, offline, slow, a refused play) falls straight back to the
+  // browser's built-in speech for that line. After one 503, which means no key is configured,
+  // it stops asking for the rest of the visit rather than paying a round trip on every reply.
+  // playId makes a newer line win: if the user taps again before the audio arrives, the older
+  // line is dropped rather than playing over the top.
+  async function fetchVoice(text) {
+    const cached = voiceCache.current[text];
+    if (cached) return cached;
+    const { data } = await client().auth.getSession();
+    const token = data && data.session ? data.session.access_token : null;
+    if (!token) throw new Error("no session");
+    const res = await fetch(process.env.NEXT_PUBLIC_SUPABASE_URL + "/functions/v1/coach-voice", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token,
+        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text: text, typeId: tid }),
+    });
+    if (res.status === 503) { voiceOff.current = true; throw new Error("no voice"); }
+    if (!res.ok) throw new Error("voice " + res.status);
+    const url = URL.createObjectURL(await res.blob());
+    voiceCache.current[text] = url;
+    return url;
+  }
+
+  function speak(text) {
+    if (muted || !text) return;
+    const audio = audioRef.current;
+    if (voiceOff.current || !audio) { speakDevice(text); return; }
+    const id = playId.current + 1;
+    playId.current = id;
+    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
+    try { audio.pause(); } catch (e) {}
+    setSpeaking(true);
+    const slow = new Promise(function (_r, reject) { setTimeout(function () { reject(new Error("slow")); }, 6000); });
+    Promise.race([fetchVoice(text), slow]).then(function (url) {
+      if (playId.current !== id) return;
+      audio.src = url;
+      audio.onended = function () { if (playId.current === id) setSpeaking(false); };
+      audio.onerror = function () { if (playId.current === id) { setSpeaking(false); speakDevice(text); } };
+      const p = audio.play();
+      if (p && typeof p.catch === "function") {
+        p.catch(function () { if (playId.current === id) { setSpeaking(false); speakDevice(text); } });
+      }
+    }).catch(function () {
+      if (playId.current !== id) return;
+      setSpeaking(false);
+      speakDevice(text);
+    });
+  }
+
   function say(reply) {
     setMessages(function (list) { return list.concat([Object.assign({ role: "assistant" }, reply)]); });
     speak(reply.text);
   }
 
+  function unlockAudio() {
+    // Both sound channels are unlocked here, inside the tap, because iOS will not unlock either
+    // later: the audio element for the character voice and the speech engine for the fallback.
+    try {
+      if (!audioRef.current) audioRef.current = new Audio();
+      const a = audioRef.current;
+      a.setAttribute("playsinline", "");
+      a.src = SILENCE;
+      const p = a.play();
+      if (p && typeof p.catch === "function") p.catch(function () {});
+    } catch (e) {}
+    try {
+      if (window.speechSynthesis) {
+        const u = new SpeechSynthesisUtterance(" ");
+        u.volume = 0;
+        window.speechSynthesis.speak(u);
+      }
+    } catch (e) {}
+  }
+
   function openLink() {
     setOpen(true);
-    // iOS only allows speech that starts inside a tap, so the first line is spoken right here,
-    // synchronously, rather than after a timer. Once one utterance has played in a gesture the
-    // engine stays unlocked, so later replies that arrive after a network wait still speak.
+    if (!muted) unlockAudio();
     if (!messages.length) {
       const hello = { text: greetingFor(tid, m) };
       setMessages([Object.assign({ role: "assistant" }, hello)]);
-      speak(hello.text);
-    } else {
-      try {
-        if (window.speechSynthesis && !muted) {
-          const u = new SpeechSynthesisUtterance(" ");
-          u.volume = 0;
-          window.speechSynthesis.speak(u);
-        }
-      } catch (e) {}
+      // A beat after the unlock, so the silent clip is not cut off before Safari registers it.
+      setTimeout(function () { speak(hello.text); }, 150);
     }
     track(client(), EVENTS.COACH_OPENED, { mode: m });
   }
@@ -222,6 +304,8 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
     const Ctor = recognitionCtor();
     if (!Ctor) return;
     try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
+    try { audioRef.current && audioRef.current.pause(); } catch (e) {}
+    playId.current += 1;
     const rec = new Ctor();
     rec.lang = "en-GB";
     rec.interimResults = true;
@@ -256,7 +340,14 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
     const next = !muted;
     setMuted(next);
     try { window.localStorage.setItem(MUTE_KEY, next ? "1" : "0"); } catch (e) {}
-    if (next) { try { window.speechSynthesis.cancel(); } catch (e) {} setSpeaking(false); }
+    if (next) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+      try { audioRef.current && audioRef.current.pause(); } catch (e) {}
+      playId.current += 1;
+      setSpeaking(false);
+    } else {
+      unlockAudio();
+    }
   }
 
   const status = listening ? "Listening" : thinking ? "Thinking" : speaking ? "Speaking" : offline ? "Offline brain" : muted ? "Voice off" : "Online";
