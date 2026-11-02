@@ -9,7 +9,7 @@ import { track, EVENTS } from "@/lib/events";
 import { TRACK } from "@/lib/brand";
 import {
   CHIPS, LOCAL_FIRST, intentOf, localReply, greetingFor, voiceFor, contextForModel,
-  VOICE_CHOICES, DEFAULT_VOICE, voiceChoice,
+  VOICE_CHOICES, VOICE_GROUPS, DEFAULT_VOICE, voiceChoice,
 } from "@/lib/coachtalk";
 
 // THE COACH LINK. TALK TO YOUR CHARACTER, IN ITS OWN VOICE, WHILE YOU TRAIN.
@@ -62,12 +62,27 @@ function recognitionCtor() {
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
-function pickVoice() {
+// THE PHONE'S OWN VOICE, MATCHED TO THE SEX OF THE VOICE THE USER PICKED.
+//
+// The Web Speech API does not say whether a system voice is male or female, so this goes by
+// the names the platforms actually ship: Apple's British voices are Daniel, Arthur, Kate,
+// Serena and Martha; Google's are labelled "UK English Female/Male"; Microsoft's are Libby,
+// Sonia, Mia, Ryan, Thomas and George. A name not on either list is treated as unknown and
+// only used if nothing better exists. British first, then any English, then whatever is left.
+const FEMALE_NAMES = /(kate|serena|martha|stephanie|fiona|moira|tessa|karen|samantha|victoria|susan|hazel|libby|sonia|mia|maisie|bella|female)/i;
+const MALE_NAMES = /(daniel|arthur|oliver|rishi|aaron|fred|alex\b|tom\b|thomas|george|ryan|gordon|lee\b|male)/i;
+
+function pickVoice(sex) {
   try {
     const voices = window.speechSynthesis.getVoices() || [];
-    return voices.find(function (v) { return /en-GB/i.test(v.lang); })
-      || voices.find(function (v) { return /^en/i.test(v.lang); })
-      || null;
+    function isSex(v) {
+      if (sex === "f") return FEMALE_NAMES.test(v.name) && !/\bmale\b/i.test(v.name.replace(/female/i, ""));
+      if (sex === "m") return MALE_NAMES.test(v.name) && !/female/i.test(v.name);
+      return true;
+    }
+    const gb = voices.filter(function (v) { return /en-GB/i.test(v.lang); });
+    const en = voices.filter(function (v) { return /^en/i.test(v.lang); });
+    return gb.find(isSex) || en.find(isSex) || gb[0] || en[0] || null;
   } catch (e) {
     return null;
   }
@@ -89,6 +104,7 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
   const [muted, setMuted] = useState(false);
   const [canListen, setCanListen] = useState(false);
   const [offline, setOffline] = useState(false);
+  const [offlineWhy, setOfflineWhy] = useState("");
   // The voice the user chose, from profiles.coach_voice, or null for the type's default. The
   // picker opens by itself the first time the link is opened with nothing chosen, which is the
   // "set up" moment: you meet your coach and choose how it sounds in the same breath.
@@ -140,7 +156,7 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
   // WebKit can drop an utterance queued in the same tick as cancel(), so cancel only when
   // something is actually playing and queue the new line on the next tick. And Chrome can
   // leave the engine paused after a tab has been in the background, so resume() first.
-  function speakDevice(text) {
+  function speakDevice(text, vid) {
     if (muted || !text) return;
     try {
       const synth = window.speechSynthesis;
@@ -153,7 +169,8 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
       u.rate = v.rate;
       u.pitch = v.pitch;
       u.lang = "en-GB";
-      const voice = pickVoice();
+      const chosen = voiceChoice(vid || coachVoice || DEFAULT_VOICE[tid]);
+      const voice = pickVoice(chosen ? chosen.sex : null);
       if (voice) u.voice = voice;
       u.onstart = function () { setSpeaking(true); };
       u.onend = function () { setSpeaking(false); };
@@ -173,9 +190,7 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
   // it stops asking for the rest of the visit rather than paying a round trip on every reply.
   // playId makes a newer line win: if the user taps again before the audio arrives, the older
   // line is dropped rather than playing over the top.
-  async function fetchVoice(text) {
-    const vid = voiceOverride.current || coachVoice || DEFAULT_VOICE[tid] || "sage";
-    voiceOverride.current = null;
+  async function fetchVoice(text, vid) {
     const ck = vid + "|" + text;
     const cached = voiceCache.current[ck];
     if (cached) return cached;
@@ -199,36 +214,32 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
   }
 
   // The sample in the picker has to use the voice just tapped, and state has not updated yet
-  // inside the same handler, so the voice is passed through a ref rather than read from state.
-  const voiceOverride = useRef(null);
-  function speakAs(id, text) {
-    voiceOverride.current = id;
-    speak(text);
-  }
-
-  function speak(text) {
+  // inside the same handler, so the voice id is passed straight through rather than read from
+  // state. Every other line uses the saved choice, or the type's default.
+  function speak(text, pick) {
     if (muted || !text) return;
+    const vid = pick || coachVoice || DEFAULT_VOICE[tid] || "sage";
     const audio = audioRef.current;
-    if (voiceOff.current || !audio) { speakDevice(text); return; }
+    if (voiceOff.current || !audio) { speakDevice(text, vid); return; }
     const id = playId.current + 1;
     playId.current = id;
     try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
     try { audio.pause(); } catch (e) {}
     setSpeaking(true);
     const slow = new Promise(function (_r, reject) { setTimeout(function () { reject(new Error("slow")); }, 6000); });
-    Promise.race([fetchVoice(text), slow]).then(function (url) {
+    Promise.race([fetchVoice(text, vid), slow]).then(function (url) {
       if (playId.current !== id) return;
       audio.src = url;
       audio.onended = function () { if (playId.current === id) setSpeaking(false); };
-      audio.onerror = function () { if (playId.current === id) { setSpeaking(false); speakDevice(text); } };
+      audio.onerror = function () { if (playId.current === id) { setSpeaking(false); speakDevice(text, vid); } };
       const p = audio.play();
       if (p && typeof p.catch === "function") {
-        p.catch(function () { if (playId.current === id) { setSpeaking(false); speakDevice(text); } });
+        p.catch(function () { if (playId.current === id) { setSpeaking(false); speakDevice(text, vid); } });
       }
     }).catch(function () {
       if (playId.current !== id) return;
       setSpeaking(false);
-      speakDevice(text);
+      speakDevice(text, vid);
     });
   }
 
@@ -265,7 +276,7 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
     voiceOff.current = false;
     unlockAudio();
     const sample = greetingFor(tid, m);
-    setTimeout(function () { speakAs(id, sample); }, 120);
+    setTimeout(function () { speak(sample, id); }, 120);
     saveVoice(id);
   }
 
@@ -300,7 +311,19 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
         context: contextForModel(ctxRef.current),
       },
     });
-    if (res.error || !res.data || !res.data.reply) throw new Error("no reply");
+    if (res.error || !res.data || !res.data.reply) {
+      // Read the function's own explanation where there is one, so "Offline brain" can say
+      // why. A 503 means no key is configured; anything else carries the provider's status.
+      let why = "no reply";
+      try {
+        const ctx = res.error && res.error.context;
+        const body = ctx && typeof ctx.json === "function" ? await ctx.json() : res.data;
+        if (body && body.error === "no_model") why = "no AI key set";
+        else if (body && body.status) why = body.status + (body.type ? " " + body.type : "");
+        else if (body && body.error) why = String(body.error);
+      } catch (e) {}
+      throw new Error(why);
+    }
     return String(res.data.reply);
   }
 
@@ -329,6 +352,7 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
       } catch (e) {
         setThinking(false);
         setOffline(true);
+        setOfflineWhy(e && e.message && e.message !== "slow" ? e.message : "too slow to answer");
         say(localReply(tid, intent, ctxRef.current));
       }
     }
@@ -450,21 +474,31 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
                 </p>
                 {!voicesLive ? (
                   <p className="text-sm mb-2" style={{ color: "#FFB020" }}>
-                    Character voices are not switched on yet, so this sample uses your phone&rsquo;s voice. Your choice is saved for when they are.
+                    Character voices are not switched on yet, so you will hear your phone&rsquo;s own voice, matched to a woman&rsquo;s or man&rsquo;s voice where your phone has one. Your choice is saved for when they are.
                   </p>
                 ) : null}
-                <div className="grid grid-cols-2 gap-2 overflow-y-auto pr-1" style={{ maxHeight: "30vh" }}>
-                  {VOICE_CHOICES.map(function (v) {
-                    const on = (coachVoice || DEFAULT_VOICE[tid]) === v.id;
+                <div className="overflow-y-auto pr-1" style={{ maxHeight: "34vh" }}>
+                  {VOICE_GROUPS.map(function (g) {
+                    const list = VOICE_CHOICES.filter(function (v) { return v.sex === g.sex; });
                     return (
-                      <button key={v.id} type="button" onClick={function () { chooseVoice(v.id); }} aria-pressed={on}
-                        className="text-left rounded-sm border px-3 py-2"
-                        style={{ minHeight: 52, borderColor: on ? ac : "var(--brand-line)", background: on ? "color-mix(in srgb, " + ac + " 12%, transparent)" : "var(--brand-bg)" }}>
-                        <span className="block font-display text-base" style={{ color: on ? ac : "var(--brand-text)" }}>
-                          {v.label}{DEFAULT_VOICE[tid] === v.id ? " \u00b7 default" : ""}
-                        </span>
-                        <span className="block text-sm" style={{ color: "var(--brand-muted)" }}>{v.feel}</span>
-                      </button>
+                      <div key={g.sex} className="mb-2">
+                        <p className="text-[0.75rem] uppercase mb-1.5" style={{ color: "var(--brand-dim)", letterSpacing: TRACK.label }}>{g.label}</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {list.map(function (v) {
+                            const on = (coachVoice || DEFAULT_VOICE[tid]) === v.id;
+                            return (
+                              <button key={v.id} type="button" onClick={function () { chooseVoice(v.id); }} aria-pressed={on}
+                                className="text-left rounded-sm border px-3 py-2"
+                                style={{ minHeight: 52, borderColor: on ? ac : "var(--brand-line)", background: on ? "color-mix(in srgb, " + ac + " 12%, transparent)" : "var(--brand-bg)" }}>
+                                <span className="block font-display text-base" style={{ color: on ? ac : "var(--brand-text)" }}>
+                                  {v.label}{DEFAULT_VOICE[tid] === v.id ? " \u00b7 default" : ""}
+                                </span>
+                                <span className="block text-sm" style={{ color: "var(--brand-muted)" }}>{v.feel}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -542,6 +576,7 @@ export default function CoachTalk({ typeId, framing, context, mode, variant, acc
               </button>
             </form>
             <p className="text-[0.75rem] mt-2 leading-snug" style={{ color: "var(--brand-dim)" }}>
+              {offline && offlineWhy ? "Offline brain: " + offlineWhy + ". " : ""}
               {muted ? "Voice replies are off. Tap the speaker to hear them. " : "No sound? Check your phone is not on silent. "}
               Your coach reads your plan, it never changes it. Not medical advice.
             </p>

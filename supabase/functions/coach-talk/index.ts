@@ -126,19 +126,41 @@ Deno.serve(async (req: Request) => {
 
   const model = Deno.env.get("COACH_MODEL") || "claude-haiku-5-5";
 
+  // AUTH HEADER, AND WHY THERE ARE TWO ATTEMPTS.
+  //
+  // The Claude API now documents `Authorization: Bearer` as the primary header and `x-api-key`
+  // as the legacy fallback. Newer user-linked keys (sk-ant-usr-...) are the reason this matters.
+  // The first live call on 1 November failed with a 502 whose cause never reached the logs, so
+  // this tries Bearer first, retries once with x-api-key only on a 401, and returns the
+  // provider's status and error type in the response so the next failure explains itself.
+  // The key itself is never echoed back.
+  const payload = JSON.stringify({ model, max_tokens: 180, system, messages: clean });
+  async function call(useBearer: boolean) {
+    const headers: Record<string, string> = {
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    };
+    if (useBearer) headers["Authorization"] = "Bearer " + key;
+    else headers["x-api-key"] = key!;
+    return await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers, body: payload });
+  }
+
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ model, max_tokens: 180, system, messages: clean }),
-    });
+    let res = await call(true);
+    if (res.status === 401) res = await call(false);
     if (!res.ok) {
-      console.error("coach-talk model error", res.status, await res.text());
-      return json({ error: "model_failed" }, 502);
+      const raw = await res.text();
+      let type = "";
+      let msg = "";
+      try {
+        const j = JSON.parse(raw);
+        type = j && j.error ? String(j.error.type || "") : "";
+        msg = j && j.error ? String(j.error.message || "").slice(0, 200) : "";
+      } catch (_e) {
+        msg = raw.slice(0, 200);
+      }
+      console.log("coach-talk model error", res.status, type, msg);
+      return json({ error: "model_failed", status: res.status, type, detail: msg }, 502);
     }
     const out = await res.json();
     const text = (out.content || [])
@@ -150,7 +172,7 @@ Deno.serve(async (req: Request) => {
     if (!text) return json({ error: "model_empty" }, 502);
     return json({ reply: text }, 200);
   } catch (e) {
-    console.error("coach-talk fetch failed", String(e));
-    return json({ error: "model_unreachable" }, 502);
+    console.log("coach-talk fetch failed", String(e));
+    return json({ error: "model_unreachable", detail: String(e).slice(0, 200) }, 502);
   }
 });

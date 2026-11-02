@@ -2665,3 +2665,26 @@ check constraint. Checked by script on 1 November.
 **At 17:33 on 1 November coach-voice was still returning 503**: the `OPENAI_API_KEY` secret had
 not been added, which is why the Captain sounded like the phone. The Supabase MCP shortcut for
 storing secrets was paused that day; add it by hand in Edge Functions > Secrets.
+
+### Added 2026-11-02: women's voices, a gender-matched fallback, and a chat that explains itself
+
+**"Voices do not change"** was not a picker bug. coach-voice was still returning 503 at 07:24
+on 2 November, so `OPENAI_API_KEY` had still not been added and every voice fell back to the
+phone's single default. The picker also hid that five of the thirteen are women's voices
+(Nova, Coral, Shimmer, Sage, Marin), because it described them by sound only.
+
+- `VOICE_CHOICES` carries `sex` (f, m, n), and the picker groups by it under "Women's voices",
+  "Men's voices" and "In between". This is how the voices are generally heard, not anything the
+  provider publishes.
+- **The phone fallback now matches it.** `pickVoice(sex)` in `CoachTalk.js` picks a British
+  system voice of the matching sex by name (Apple Kate, Serena, Martha, Daniel, Arthur; Google
+  "UK English Female/Male"; Microsoft Libby, Sonia, Mia, Ryan, Thomas, George). So choosing a
+  woman's voice is audible even before the key exists, where the phone has one.
+- The voice id is passed explicitly through `speak(text, pick)` to both the character voice and
+  the fallback; the earlier ref-based override was cleared before the fallback could read it.
+
+**coach-talk returned 502 at 20:21 on 1 November and the logs held no reason**: `console.error`
+did not reach the function logs. The function (deployed v4) now sends `Authorization: Bearer`
+first, retries with `x-api-key` on a 401, logs with `console.log`, and returns the provider's
+status and error type in the 502 body. The sheet shows it after "Offline brain:" so the next
+failure says why on the phone. Cause of the first failure still unknown; read the next one.
