@@ -77,7 +77,11 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: whoErr } = await asCaller.auth.getUser();
   if (whoErr || !user) return json({ error: "Not signed in" }, 401);
 
-  const key = Deno.env.get("OPENAI_API_KEY");
+  // OPENAI_API_KEY is the intended name. On 2 November the key was saved in the dashboard under
+  // the label it was given in OpenAI, "vaeon-coach-voice", and the function sat returning 503
+  // with a perfectly good key a line away. Both names are read so that slip cannot recur
+  // silently; rename it to OPENAI_API_KEY whenever the key is next rotated.
+  const key = Deno.env.get("OPENAI_API_KEY") || Deno.env.get("vaeon-coach-voice");
   if (!key) return json({ error: "no_voice" }, 503);
 
   let body: any;
